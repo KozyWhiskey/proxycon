@@ -550,7 +550,7 @@ export async function pauseRoundTimer(
     // Get current timer state
     const { data: match } = await supabase
       .from('matches')
-      .select('started_at, paused_at')
+      .select('started_at, paused_at, total_paused_seconds')
       .eq('tournament_id', tournamentId)
       .eq('round_number', roundNumber)
       .limit(1)
@@ -612,10 +612,10 @@ export async function resumeRoundTimer(
       return { success: false, message: 'Timer not paused' };
     }
 
-    // Calculate how long timer was paused
-    const startTime = new Date(match.started_at).getTime();
+    // Calculate how long timer was paused (time between pause and resume)
+    const now = new Date().getTime();
     const pausedTime = new Date(match.paused_at).getTime();
-    const pausedDuration = Math.floor((pausedTime - startTime) / 1000) - (match.total_paused_seconds || 0);
+    const pausedDuration = Math.floor((now - pausedTime) / 1000);
     const newTotalPaused = (match.total_paused_seconds || 0) + pausedDuration;
 
     // Clear paused_at and update total_paused_seconds

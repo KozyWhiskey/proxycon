@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 
 interface Player {
   id: string;
@@ -78,9 +79,12 @@ export default function Feed({ matches }: FeedProps) {
         <CardTitle className="text-slate-100">The Feed</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {matches.map((match) => (
-          <div
+        {matches.map((match, index) => (
+          <motion.div
             key={match.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
             className="pb-4 border-b border-slate-800 last:border-0 last:pb-0"
           >
             <p className="text-slate-100 mb-1">{formatMatchResult(match)}</p>
@@ -89,7 +93,7 @@ export default function Feed({ matches }: FeedProps) {
             <p className="text-sm text-muted-foreground italic mt-2">
               {/* AI roast will go here */}
             </p>
-          </div>
+          </motion.div>
         ))}
       </CardContent>
     </Card>

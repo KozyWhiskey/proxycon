@@ -57,8 +57,10 @@ export default function RoundTimer({
       setIsRunning(false);
       const startTime = new Date(startedAt).getTime();
       const pauseTime = new Date(pausedAt).getTime();
-      const elapsedSeconds = Math.floor((pauseTime - startTime) / 1000) - totalPausedSeconds;
-      const remaining = roundDurationMinutes * 60 - elapsedSeconds;
+      // Calculate elapsed running time: total time minus paused time
+      const totalElapsedSeconds = Math.floor((pauseTime - startTime) / 1000);
+      const elapsedRunningSeconds = Math.max(0, totalElapsedSeconds - (totalPausedSeconds || 0));
+      const remaining = roundDurationMinutes * 60 - elapsedRunningSeconds;
       setTimeRemaining(Math.max(0, remaining));
     } else {
       // Timer is running
@@ -66,8 +68,10 @@ export default function RoundTimer({
       // Calculate initial time remaining when running
       const startTime = new Date(startedAt).getTime();
       const now = new Date().getTime();
-      const elapsedSeconds = Math.floor((now - startTime) / 1000) - totalPausedSeconds;
-      const remaining = roundDurationMinutes * 60 - elapsedSeconds;
+      // Calculate elapsed running time: total time minus paused time
+      const totalElapsedSeconds = Math.floor((now - startTime) / 1000);
+      const elapsedRunningSeconds = Math.max(0, totalElapsedSeconds - (totalPausedSeconds || 0));
+      const remaining = roundDurationMinutes * 60 - elapsedRunningSeconds;
       setTimeRemaining(Math.max(0, remaining));
     }
   }, [startedAt, pausedAt, totalPausedSeconds, roundDurationMinutes, initialRoundDurationMinutes]);
@@ -81,8 +85,10 @@ export default function RoundTimer({
     const interval = setInterval(() => {
       const startTime = new Date(startedAt).getTime();
       const now = new Date().getTime();
-      const elapsedSeconds = Math.floor((now - startTime) / 1000) - totalPausedSeconds;
-      const remaining = roundDurationMinutes * 60 - elapsedSeconds;
+      // Calculate elapsed running time: total time minus paused time
+      const totalElapsedSeconds = Math.floor((now - startTime) / 1000);
+      const elapsedRunningSeconds = Math.max(0, totalElapsedSeconds - (totalPausedSeconds || 0));
+      const remaining = roundDurationMinutes * 60 - elapsedRunningSeconds;
       setTimeRemaining(Math.max(0, remaining));
     }, 1000);
 
