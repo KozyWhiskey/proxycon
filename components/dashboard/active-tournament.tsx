@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface MatchParticipant {
   id: string;
@@ -39,6 +40,8 @@ export default function ActiveTournament({
   currentMatch,
   currentUserId,
 }: ActiveTournamentProps) {
+  const router = useRouter();
+
   if (!tournament || !currentMatch) {
     return (
       <Card className="bg-slate-900 border-slate-800">
@@ -60,8 +63,20 @@ export default function ActiveTournament({
   // Check if match is already completed
   const isCompleted = currentMatch.participants.some((p) => p.result === 'win');
 
+  const handleCardClick = () => {
+    router.push(`/tournament/${tournament.id}`);
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/tournament/${tournament.id}/match/${currentMatch.id}`);
+  };
+
   return (
-    <Card className="bg-slate-900 border-slate-800 border-yellow-500/20">
+    <Card 
+      className="bg-slate-900 border-slate-800 border-yellow-500/20 hover:border-yellow-500/40 transition-colors cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardHeader>
         <CardTitle className="text-slate-100 flex items-center gap-2">
           <span className="text-yellow-500">Active Tournament</span>
@@ -82,10 +97,11 @@ export default function ActiveTournament({
           </div>
         )}
         {!isCompleted && (
-          <Button asChild className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950">
-            <Link href={`/tournament/${tournament.id}/match/${currentMatch.id}`}>
-              Enter Result
-            </Link>
+          <Button 
+            onClick={handleButtonClick}
+            className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+          >
+            Enter Result
           </Button>
         )}
         {isCompleted && (

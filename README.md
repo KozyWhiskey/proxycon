@@ -6,11 +6,14 @@ A mobile-first companion web application for a 3-day Magic: The Gathering weeken
 
 ProxyCon 2025 is a tournament management system designed for a casual weekend Magic: The Gathering event. The app handles:
 
-- **Tournament Brackets**: Swiss-style pairings for draft/sealed tournaments
-- **Match Reporting**: Simple, thumb-friendly result submission
+- **Tournament Brackets**: Swiss-style pairings with draft seat-based Round 1 pairings
+- **Draft Seating**: Visual seat selection before tournament starts
+- **Match Reporting**: Simple, thumb-friendly result submission (win/loss/draw)
+- **Standings & Points**: Real-time standings with points system (3/2/1 for win/draw/loss)
 - **Player Stats**: Track wins, tickets (currency), and tournament performance
 - **Live Feed**: Recent match history with AI-generated commentary
-- **Dashboard**: Personal stats and active tournament information
+- **Dashboard**: Personal stats and all active tournament information
+- **Tournament Management**: View, manage, and delete tournaments
 
 ### Design Philosophy
 
@@ -94,14 +97,26 @@ proxycon/
 │   ├── login/                    # Zero-friction auth (player selection)
 │   ├── tournament/               # Tournament management
 │   │   ├── [id]/                 # Tournament bracket view
+│   │   │   ├── seating/           # Draft seating page
 │   │   │   └── match/            # Match reporting pages
-│   │   └── new/                  # Tournament creation
-│   ├── actions.ts                # Server actions
+│   │   ├── new/                  # Tournament creation
+│   │   └── actions.ts            # Tournament server actions
+│   ├── tournaments/              # Tournament management page
 │   ├── layout.tsx                # Root layout
 │   └── page.tsx                  # Dashboard/home page
 ├── components/                   # React components
 │   ├── dashboard/                # Dashboard components
+│   │   ├── active-tournament.tsx # Active tournament card
+│   │   ├── feed.tsx              # Match feed
+│   │   ├── my-stats.tsx          # Player stats
+│   │   ├── quick-actions.tsx    # Quick action buttons
+│   │   └── user-header.tsx      # User header
 │   ├── tournament/               # Tournament-specific components
+│   │   ├── draft-seating-selector.tsx  # Seat selection UI
+│   │   ├── match-reporting-form.tsx     # Match result form
+│   │   ├── round-timer.tsx              # Round timer component
+│   │   ├── tournament-setup-form.tsx    # Tournament creation form
+│   │   └── tournament-management-list.tsx # Tournament list
 │   └── ui/                       # Shadcn UI components
 ├── lib/                          # Utility functions
 │   └── get-current-user.ts       # User session management
@@ -117,7 +132,8 @@ proxycon/
 │   ├── PROJECT_SUMMARY.md        # Project overview
 │   ├── TOURNAMENT_STRUCTURE.md   # Tournament system docs
 │   ├── TOURNAMENT_RULES.md       # Development rules
-│   └── SUPABASE_SETUP.md         # Database setup guide
+│   ├── DATABASE_STRUCTURE.md     # Database schema
+│   └── DATABASE_MIGRATION_*.md   # Migration scripts
 └── proxy.ts                      # Next.js 16 proxy (replaces middleware.ts)
 ```
 
@@ -126,11 +142,18 @@ proxycon/
 ### ✅ Implemented
 
 - **Zero-Friction Authentication**: Cookie-based player selection
-- **Dashboard**: Personal stats, active tournament info, and match feed
+- **Dashboard**: Personal stats, all active tournaments, and match feed
 - **Tournament Engine**: Swiss-style bracket generation with configurable rounds
-- **Match Reporting**: Simple, mobile-friendly result submission
+- **Draft Seating**: Visual seat selection page with clockwise table arrangement
+- **Tournament Status Workflow**: Pending → Active → Completed status management
+- **Match Reporting**: Simplified single-click interface (Player 1, Player 2, or Draw)
+- **Points System**: Win = 3 points, Draw = 2 points, Loss = 1 point
+- **Standings Display**: Real-time standings with points, wins, losses, draws
+- **Draw Support**: Full draw result support in match reporting
 - **Automatic Round Generation**: Next round generates when all matches complete
 - **Tournament Completion**: Automatic completion when max rounds reached
+- **Tournament Management**: View, manage, and delete all tournaments
+- **Round Timers**: Configurable round duration with manual start/pause/resume
 
 ### 🚧 Planned
 
@@ -147,11 +170,33 @@ See `.dev-docs/IMPLEMENTATION_PLAN.md` for the full roadmap.
 
 ### Tournament Flow
 
-1. **Create Tournament**: Select players, format (draft/sealed), and number of rounds
-2. **Round 1**: Random pairings generated automatically
-3. **Match Reporting**: Players report results via simple tap interface
-4. **Next Round**: When all matches complete, next round generates automatically using Swiss pairings
-5. **Completion**: Tournament completes when max rounds reached
+1. **Create Tournament**: Select players, format (draft/sealed), number of rounds, and round duration
+   - Tournament created with status `'pending'` (not active yet)
+   - Redirects to draft seating page
+
+2. **Draft Seating**: Players select their seats at the draft table
+   - Visual table representation with clockwise seat arrangement
+   - Any user can assign seats (allows single organizer to manage)
+   - Seats arranged: top row 1-3 (left to right), bottom row 6-4 (right to left)
+   - When all seats assigned, "Start Draft" button appears
+
+3. **Start Draft**: Click "Start Draft" to begin Round 1
+   - Round 1 pairings based on draft seats (across-table pairing, NOT Swiss)
+   - Tournament status changes from `'pending'` to `'active'`
+   - Tournament appears on dashboard
+
+4. **Match Reporting**: Players report results via simplified interface
+   - Three buttons: Player 1, Player 2, or Draw
+   - Click to select, then confirm with "Submit Result"
+   - Points awarded: Win = 3, Draw = 2, Loss = 1
+
+5. **Next Round**: When all matches complete, next round generates automatically
+   - Uses Swiss pairings based on points (Round 2+)
+   - Standings calculated and displayed on tournament page
+
+6. **Completion**: Tournament completes when max rounds reached
+   - Status changes to `'completed'`
+   - No further rounds generated
 
 ### Authentication
 
@@ -165,9 +210,10 @@ See `.dev-docs/IMPLEMENTATION_PLAN.md` for the full roadmap.
 ### Core Tables
 
 - **`players`**: Player profiles (name, nickname, avatar, wins, tickets)
-- **`tournaments`**: Tournament metadata (name, format, status, max_rounds)
-- **`matches`**: Individual matches (tournament_id, round_number, game_type)
-- **`match_participants`**: Match results (player_id, result, deck_archetype)
+- **`tournaments`**: Tournament metadata (name, format, status: 'pending'/'active'/'completed', max_rounds, round_duration_minutes)
+- **`tournament_participants`**: Tournament participants with draft seat assignments (draft_seat nullable)
+- **`matches`**: Individual matches (tournament_id, round_number, game_type, started_at, paused_at, total_paused_seconds)
+- **`match_participants`**: Match results (player_id, result: 'win'/'loss'/'draw', deck_archetype)
 - **`prize_wall`**: Prize shop items (name, cost, stock, image_url)
 - **`ledger`**: Expense tracking (payer_id, amount, description)
 
@@ -197,6 +243,17 @@ See `.dev-docs/SUPABASE_SETUP.md` for detailed schema and migration scripts.
    ```
 
 4. **Round Completion**: Check ALL participants have results before generating next round
+
+5. **Tournament Status**: Create tournaments with 'pending' status, update to 'active' when Round 1 starts
+   ```typescript
+   status: 'pending', // ✅ Not 'active' - becomes active when Round 1 starts
+   ```
+
+6. **Draft Seats**: Assign seats on seating page, not during tournament creation
+   ```typescript
+   // Seats assigned via selectSeat() action on seating page
+   // Round 1 pairings use draft seats (across-table pairing)
+   ```
 
 See `.dev-docs/TOURNAMENT_RULES.md` for complete development rules.
 
@@ -236,6 +293,15 @@ Comprehensive documentation is available in the `.dev-docs/` directory:
 - Check `max_rounds` is set and not exceeded
 - Ensure `revalidatePath()` is called before redirect
 
+**Pending tournaments showing on dashboard**
+- Only tournaments with status 'active' appear on dashboard
+- Pending tournaments can be managed from `/tournaments` page
+- Tournament becomes 'active' when "Start Draft" is clicked
+
+**Draft seats not assignable**
+- Run migration to make `draft_seat` nullable (see `.dev-docs/DATABASE_MIGRATION_make_draft_seat_nullable.md`)
+- Seats are assigned on seating page, not during tournament creation
+
 See `.dev-docs/SUPABASE_SETUP.md` and `.dev-docs/TOURNAMENT_STRUCTURE.md` for detailed troubleshooting.
 
 ## 🚢 Deployment
@@ -271,5 +337,16 @@ Built for the ProxyCon 2025 weekend tournament. Designed for maximum fun and min
 ---
 
 **Status**: Active Development  
-**Version**: 0.1.0  
+**Version**: 0.2.0  
 **Last Updated**: 2025
+
+### Recent Updates
+
+- ✅ Tournament status workflow (pending → active → completed)
+- ✅ Draft seating page with visual seat selection
+- ✅ Points system and standings display
+- ✅ Draw support in match reporting
+- ✅ Simplified match reporting UI (single-click with confirmation)
+- ✅ Tournament management page
+- ✅ Dashboard shows all active tournaments
+- ✅ Clockwise seat arrangement around draft table

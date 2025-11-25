@@ -13,6 +13,7 @@ We will follow this plan sequentially. Each feature must be implemented and test
 - [ ] **Phase 3: Tournament Engine**
   - [x] Tournament Engine (`03-feature-tournament-engine.md`) ✅ **COMPLETED**
   - [x] Match Reporting (`04-feature-match-reporting.md`) ✅ **COMPLETED**
+  - [ ] Tournament Ranking & Draft Seats (`04.5-feature-tournament-ranking-draft-seats.md`) ⏳ **IN PROGRESS**
 - [ ] **Phase 4: Casual Play & AI Integration**
   - [ ] Casual Mode (`05-feature-casual-mode.md`)
   - [ ] AI Commentary (`06-feature-ai-commentary.md`)

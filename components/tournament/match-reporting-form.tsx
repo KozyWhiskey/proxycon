@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { submitResult } from '@/app/tournament/actions';
+import { submitResult, submitDraw } from '@/app/tournament/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ export default function MatchReportingForm({
   participants,
 }: MatchReportingFormProps) {
   const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
+  const [selectedDraw, setSelectedDraw] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const player1 = participants[0];
@@ -42,25 +43,39 @@ export default function MatchReportingForm({
 
   const handlePlayerClick = (playerId: string) => {
     setSelectedWinner(playerId);
+    setSelectedDraw(false);
+  };
+
+  const handleDrawClick = () => {
+    setSelectedDraw(true);
+    setSelectedWinner(null);
   };
 
   const handleSubmit = async () => {
-    if (!selectedWinner) {
-      toast.error('Please select a winner');
-      return;
-    }
-
-    const winner = selectedWinner === player1.player_id ? player1 : player2;
-    const loser = selectedWinner === player1.player_id ? player2 : player1;
-
     setIsSubmitting(true);
 
     try {
-      const result = await submitResult(matchId, winner.player_id, loser.player_id, tournamentId);
-      
-      if (!result.success) {
-        toast.error(result.message || 'Failed to submit result');
-        setIsSubmitting(false);
+      if (selectedDraw) {
+        const result = await submitDraw(
+          matchId,
+          [player1.player_id, player2.player_id],
+          tournamentId
+        );
+        
+        if (!result.success) {
+          toast.error(result.message || 'Failed to submit draw');
+          setIsSubmitting(false);
+        }
+      } else if (selectedWinner) {
+        const winner = selectedWinner === player1.player_id ? player1 : player2;
+        const loser = selectedWinner === player1.player_id ? player2 : player1;
+
+        const result = await submitResult(matchId, winner.player_id, loser.player_id, tournamentId);
+        
+        if (!result.success) {
+          toast.error(result.message || 'Failed to submit result');
+          setIsSubmitting(false);
+        }
       }
       // If successful, the server action will redirect
     } catch (error) {
@@ -79,6 +94,8 @@ export default function MatchReportingForm({
     }
   };
 
+  const hasSelection = selectedWinner !== null || selectedDraw;
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -86,60 +103,67 @@ export default function MatchReportingForm({
           {player1.player?.nickname || player1.player?.name || 'Player 1'} vs.{' '}
           {player2.player?.nickname || player2.player?.name || 'Player 2'}
         </p>
-        <p className="text-slate-400">Tap the winner</p>
+        <p className="text-slate-400">Select the winner</p>
       </div>
 
+      {/* Player Selection */}
       <div className="grid grid-cols-1 gap-4">
-        <Card
-          className={`cursor-pointer transition-all bg-slate-900 border-2 ${
-            selectedWinner === player1.player_id
-              ? 'border-yellow-500 bg-yellow-500/10'
-              : 'border-slate-800 hover:border-yellow-500/50'
-          }`}
+        <Button
           onClick={() => handlePlayerClick(player1.player_id)}
-        >
-          <CardContent className="p-8">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-slate-100 mb-2">
-                {player1.player?.nickname || player1.player?.name || 'Player 1'}
-              </p>
-              {selectedWinner === player1.player_id && (
-                <p className="text-yellow-500 font-semibold">Selected as Winner</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={`cursor-pointer transition-all bg-slate-900 border-2 ${
-            selectedWinner === player2.player_id
-              ? 'border-yellow-500 bg-yellow-500/10'
-              : 'border-slate-800 hover:border-yellow-500/50'
+          disabled={isSubmitting}
+          className={`w-full h-16 border-2 font-semibold disabled:opacity-50 text-xl ${
+            selectedWinner === player1.player_id
+              ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500'
+              : 'bg-slate-900 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800 text-slate-100'
           }`}
-          onClick={() => handlePlayerClick(player2.player_id)}
         >
-          <CardContent className="p-8">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-slate-100 mb-2">
-                {player2.player?.nickname || player2.player?.name || 'Player 2'}
-              </p>
-              {selectedWinner === player2.player_id && (
-                <p className="text-yellow-500 font-semibold">Selected as Winner</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          {player1.player?.nickname || player1.player?.name || 'Player 1'}
+        </Button>
+
+        <Button
+          onClick={() => handlePlayerClick(player2.player_id)}
+          disabled={isSubmitting}
+          className={`w-full h-16 border-2 font-semibold disabled:opacity-50 text-xl ${
+            selectedWinner === player2.player_id
+              ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500'
+              : 'bg-slate-900 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800 text-slate-100'
+          }`}
+        >
+          {player2.player?.nickname || player2.player?.name || 'Player 2'}
+        </Button>
+
+        <Button
+          onClick={handleDrawClick}
+          disabled={isSubmitting}
+          className={`w-full h-16 border-2 font-semibold disabled:opacity-50 text-xl mt-4 ${
+            selectedDraw
+              ? 'bg-blue-500/20 border-blue-500 text-blue-500'
+              : 'bg-slate-900 border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 text-slate-100'
+          }`}
+        >
+          Draw
+        </Button>
       </div>
 
-      {selectedWinner && (
+      {/* Submit Button - Only show when selection is made */}
+      {hasSelection && (
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold disabled:opacity-50"
+          className={`w-full h-12 font-semibold disabled:opacity-50 ${
+            selectedDraw
+              ? 'bg-blue-500 hover:bg-blue-600 text-white'
+              : 'bg-yellow-500 hover:bg-yellow-600 text-slate-950'
+          }`}
         >
           {isSubmitting ? 'Submitting...' : 'Submit Result'}
         </Button>
       )}
+
+      {/* Points Information */}
+      <p className="text-xs text-slate-500 text-center mt-4">
+        Win: 3 points • Draw: 2 points each • Loss: 1 point
+      </p>
     </div>
   );
 }

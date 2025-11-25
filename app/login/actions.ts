@@ -18,3 +18,9 @@ export async function login(userId: string) {
 
   redirect('/');
 }
+
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete('proxycon_user_id');
+  redirect('/login');
+}

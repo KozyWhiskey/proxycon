@@ -76,7 +76,8 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 ### Tables:
 
 -   **`players`**: `id` (UUID), `name` (Text), `nickname` (Text), `avatar_url` (Text), `wins` (Int), `tickets` (Int - Currency).
--   **`tournaments`**: `id` (UUID), `name` (Text), `format` (Text), `status` (Text - 'active', 'completed').
+-   **`tournaments`**: `id` (UUID), `name` (Text), `format` (Text), `status` (Text - 'pending', 'active', 'completed'), `max_rounds` (Int), `round_duration_minutes` (Int).
+-   **`tournament_participants`**: `id` (UUID), `tournament_id` (UUID), `player_id` (UUID), `draft_seat` (Int, nullable).
 -   **`matches`**: `id` (UUID), `tournament_id` (UUID - Nullable), `round_number` (Int), `game_type` (Text), `notes` (Text), `created_at` (Timestamp).
 -   **`match_participants`**: `id` (UUID), `match_id` (UUID), `player_id` (UUID), `result` (Text), `deck_archetype` (Text).
 -   **`prize_wall`**: `id` (UUID), `name` (Text), `cost` (Int), `stock` (Int), `image_url` (Text).
@@ -97,21 +98,43 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 
 -   **Layout:** Single column scrollable.
 -   **Section 1: "My Stats":** Card showing Current Tickets (Large Font) and Weekend Wins.
--   **Section 2: "Active Tournament":** If a tournament is active, show the current round pairing for the logged-in user. Button: "Enter Result".
+-   **Section 2: "Active Tournaments":** Shows all active tournaments (status = 'active'). Each tournament card shows current round pairing for the logged-in user. Cards are clickable to view tournament bracket. Button: "Enter Result" for pending matches.
 -   **Section 3: "The Feed":** List of last 10 matches.
 -   **AI Integration:** Use Gemini to generate a 1-sentence "Roast" of the loser for each match item. Display this text in italicized `text-muted-foreground`.
 
 ### Feature C: Tournament Engine (Drafts)
 
--   **Route:** `/tournament/[id]`
+-   **Routes:**
+    -   `/tournament/new` - Create new tournament
+    -   `/tournament/[id]/seating` - Draft seating page (select seats before starting)
+    -   `/tournament/[id]` - Tournament bracket page (standings and matches)
+    -   `/tournament/[id]/match/[matchId]` - Match reporting page
+    -   `/tournaments` - Tournament management page (view/delete all tournaments)
 -   **UI:**
-    -   **Header:** Round X of 3.
-    -   **Bracket:** List of Match Cards. Each card shows Player A vs Player B.
-    -   **Status:** "Waiting for Result" vs "Player A Won".
--   **Logic (Server Action):**
-    -   `createTournament(playerIds)`: Creates entries in `tournaments` and Round 1 matches.
-    -   `submitResult(matchId, winnerId)`: Updates match.
-    -   `generateNextRound(tournamentId)`: Uses `tournament-pairings` to calculate Swiss pairs based on current win/loss records.
+    -   **Seating Page:** Visual table representation where players select seats clockwise around table
+    -   **Bracket Page:** 
+        -   **Header:** Round X of N
+        -   **Standings:** Points, wins, losses, draws for each player
+        -   **Bracket:** List of Match Cards. Each card shows Player A vs Player B.
+        -   **Status:** "Waiting for Result" vs "Player A Won" vs "Draw"
+    -   **Match Reporting:** Simplified single-click interface (Player 1, Player 2, or Draw buttons)
+-   **Logic (Server Actions):**
+    -   `createTournament(name, playerIds, format, maxRounds, roundDurationMinutes)`: Creates tournament with 'pending' status, redirects to seating page
+    -   `selectSeat(tournamentId, playerId, seatNumber)`: Assigns player to seat (any user can assign)
+    -   `startDraft(tournamentId)`: Creates Round 1 matches based on draft seats, updates status to 'active'
+    -   `submitResult(matchId, winnerId, loserId, tournamentId)`: Updates match with win/loss
+    -   `submitDraw(matchId, playerIds, tournamentId)`: Updates match with draw
+    -   `generateNextRound(tournamentId, currentRound)`: Uses `tournament-pairings` to calculate Swiss pairs based on points
+    -   `deleteTournament(tournamentId)`: Deletes tournament and related records
+-   **Tournament Status:**
+    -   **'pending'**: Created but Round 1 hasn't started (seats not assigned or draft not started)
+    -   **'active'**: Tournament in progress (Round 1 matches created)
+    -   **'completed'**: Tournament finished (max_rounds reached)
+-   **Points System:**
+    -   Win = 3 points
+    -   Draw = 2 points each
+    -   Loss = 1 point
+    -   Standings sorted by: points (descending), wins (descending), losses (ascending)
 
 ### Feature D: Casual Mode (Commander)
 

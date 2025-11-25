@@ -24,6 +24,7 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
   const [tournamentName, setTournamentName] = useState('');
   const [format, setFormat] = useState('draft');
   const [maxRounds, setMaxRounds] = useState('3');
+  const [roundDuration, setRoundDuration] = useState('50');
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,7 +48,8 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
         tournamentName, 
         selectedPlayers, 
         format, 
-        parseInt(maxRounds, 10)
+        parseInt(maxRounds, 10),
+        parseInt(roundDuration, 10)
       );
       
       if (!result.success) {
@@ -126,6 +128,23 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
                 <SelectItem value="6">6 Rounds</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration" className="text-slate-100">
+              Round Duration (minutes)
+            </Label>
+            <Input
+              id="duration"
+              type="number"
+              min="1"
+              max="300"
+              value={roundDuration}
+              onChange={(e) => setRoundDuration(e.target.value)}
+              placeholder="50"
+              className="h-12 bg-slate-800 border-slate-700 text-slate-100"
+              required
+            />
           </div>
 
           <PlayerSelector

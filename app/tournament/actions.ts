@@ -15,7 +15,8 @@ export async function createTournament(
   name: string,
   playerIds: string[],
   format: string = 'draft',
-  maxRounds: number = 3
+  maxRounds: number = 3,
+  roundDurationMinutes: number = 50
 ): Promise<CreateTournamentResult> {
   try {
     if (!name || name.trim().length === 0) {
@@ -33,14 +34,20 @@ export async function createTournament(
       return { success: false, message: 'Number of rounds must be between 1 and 10' };
     }
 
-    // Step 1: Create tournament entry
+    if (roundDurationMinutes < 1) {
+      return { success: false, message: 'Round duration must be positive' };
+    }
+
+    // Step 1: Create tournament entry with 'pending' status
+    // Tournament becomes 'active' when Round 1 actually starts (in startDraft)
     const { data: tournament, error: tournamentError } = await supabase
       .from('tournaments')
       .insert({
         name: name.trim(),
         format,
-        status: 'active',
+        status: 'pending', // Will become 'active' when draft starts
         max_rounds: maxRounds,
+        round_duration_minutes: roundDurationMinutes,
       })
       .select()
       .single();
@@ -53,91 +60,28 @@ export async function createTournament(
       };
     }
 
-    // Step 2: Generate pairings using tournament-pairings library
-    // For round 1, we use random pairings (no previous results)
-    // Swiss constructor takes standings with id, wins, losses, draws
-    // For round 1, all players start with 0 wins/losses/draws
-    const standings = playerIds.map((id) => ({ id, wins: 0, losses: 0, draws: 0 }));
-    const pairings = new Swiss(standings);
-
-    // Step 3 & 4: Create matches and match_participants
-    // The pairings array contains objects with player1 and player2 properties
-    for (const pairing of pairings) {
-      // Check if this is a bye (only player1 exists, player2 is undefined/null)
-      if (!pairing.player2) {
-        // Create a match with only one participant (bye)
-        const { data: match, error: matchError } = await supabase
-          .from('matches')
-          .insert({
-            tournament_id: tournament.id,
-            round_number: 1,
-            game_type: format,
-          })
-          .select()
-          .single();
-
-        if (matchError || !match) {
-          console.error('Error creating bye match:', matchError);
-          return { 
-            success: false, 
-            message: matchError?.message || 'Failed to create bye match' 
-          };
-        }
-
-        // Create match participant with automatic win for bye
-        const { error: participantError } = await supabase.from('match_participants').insert({
-          match_id: match.id,
-          player_id: pairing.player1,
-          result: 'win', // Bye is an automatic win
+    // Step 2: Create tournament participants WITHOUT draft seats (seats will be assigned on seating page)
+    // Note: draft_seat must be nullable for this to work (see migration)
+    for (const playerId of playerIds) {
+      const { error: participantError } = await supabase
+        .from('tournament_participants')
+        .insert({
+          tournament_id: tournament.id,
+          player_id: playerId,
+          // draft_seat will be NULL initially, set when player selects seat
         });
 
-        if (participantError) {
-          console.error('Error creating bye participant:', participantError);
-          return { success: false, message: `Failed to create match participant: ${participantError.message}` };
-        }
-      } else {
-        // Normal match with two players
-        const { data: match, error: matchError } = await supabase
-          .from('matches')
-          .insert({
-            tournament_id: tournament.id,
-            round_number: 1,
-            game_type: format,
-          })
-          .select()
-          .single();
-
-        if (matchError || !match) {
-          console.error('Error creating match:', matchError);
-          return { 
-            success: false, 
-            message: matchError?.message || 'Failed to create match' 
-          };
-        }
-
-        // Create match participants (both start with null result)
-        const { error: participantsError } = await supabase.from('match_participants').insert([
-          {
-            match_id: match.id,
-            player_id: pairing.player1,
-            result: null,
-          },
-          {
-            match_id: match.id,
-            player_id: pairing.player2,
-            result: null,
-          },
-        ]);
-
-        if (participantsError) {
-          console.error('Error creating match participants:', participantsError);
-          return { success: false, message: `Failed to create match participants: ${participantsError.message}` };
-        }
+      if (participantError) {
+        console.error('Error creating tournament participant:', participantError);
+        return { 
+          success: false, 
+          message: `Failed to create tournament participant: ${participantError.message}` 
+        };
       }
     }
 
-    // Step 5: Redirect to tournament bracket page
-    redirect(`/tournament/${tournament.id}`);
+    // Step 3: Redirect to draft seating page
+    redirect(`/tournament/${tournament.id}/seating`);
   } catch (error) {
     // Re-throw redirect errors (they're expected - redirect() throws to perform redirect)
     // Check if it's a redirect error by checking for the NEXT_REDIRECT symbol
@@ -169,6 +113,106 @@ interface SubmitResultResult {
   success: boolean;
   message?: string;
   nextRoundGenerated?: boolean;
+}
+
+export async function submitDraw(
+  matchId: string,
+  playerIds: string[],
+  tournamentId: string
+): Promise<SubmitResultResult> {
+  try {
+    const supabase = await createClient();
+
+    // Update both participants to 'draw'
+    const { error: updateError } = await supabase
+      .from('match_participants')
+      .update({ result: 'draw' })
+      .eq('match_id', matchId)
+      .in('player_id', playerIds);
+
+    if (updateError) {
+      console.error('Error updating draw result:', updateError);
+      return { success: false, message: `Failed to update draw result: ${updateError.message}` };
+    }
+
+    // Check if all matches in the current round are complete
+    const { data: match } = await supabase
+      .from('matches')
+      .select('round_number')
+      .eq('id', matchId)
+      .single();
+
+    if (!match) {
+      return { success: false, message: 'Match not found' };
+    }
+
+    // Get all matches for this round
+    const { data: roundMatches } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', match.round_number);
+
+    if (!roundMatches || roundMatches.length === 0) {
+      return { success: false, message: 'No matches found for this round' };
+    }
+
+    // Check if all matches have results
+    const matchIds = roundMatches.map((m) => m.id);
+    const { data: allParticipants } = await supabase
+      .from('match_participants')
+      .select('match_id, result')
+      .in('match_id', matchIds);
+
+    // Group participants by match
+    const participantsByMatch = new Map<string, { withResult: number; total: number }>();
+    
+    allParticipants?.forEach((p) => {
+      if (!participantsByMatch.has(p.match_id)) {
+        participantsByMatch.set(p.match_id, { withResult: 0, total: 0 });
+      }
+      const matchData = participantsByMatch.get(p.match_id)!;
+      matchData.total++;
+      if (p.result !== null) {
+        matchData.withResult++;
+      }
+    });
+
+    // A match is complete if all its participants have results
+    const allMatchesComplete = roundMatches.every((m) => {
+      const matchData = participantsByMatch.get(m.id);
+      if (!matchData || matchData.total === 0) return false;
+      return matchData.withResult === matchData.total;
+    });
+
+    // Generate next round if all matches are complete
+    let nextRoundGenerated = false;
+    if (allMatchesComplete) {
+      await generateNextRound(tournamentId, match.round_number);
+      nextRoundGenerated = true;
+    }
+
+    // Revalidate the tournament page and redirect
+    revalidatePath(`/tournament/${tournamentId}`);
+    
+    const redirectUrl = nextRoundGenerated 
+      ? `/tournament/${tournamentId}?roundGenerated=true`
+      : `/tournament/${tournamentId}`;
+    
+    redirect(redirectUrl);
+  } catch (error) {
+    // Re-throw redirect errors
+    if (error && typeof error === 'object' && 'digest' in error) {
+      const digest = (error as { digest?: string }).digest;
+      if (digest?.startsWith('NEXT_REDIRECT')) {
+        throw error;
+      }
+    }
+
+    console.error('Error in submitDraw:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
 }
 
 export async function submitResult(
@@ -334,29 +378,38 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
       .select('player_id, result')
       .in('match_id', matchIds);
 
-    // Calculate standings
-    const standingsMap = new Map<string, { wins: number; losses: number; draws: number }>();
+    // Calculate standings with points
+    const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number }>();
 
     allParticipants?.forEach((p) => {
       if (!standingsMap.has(p.player_id)) {
-        standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0 });
+        standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0 });
       }
 
       const standing = standingsMap.get(p.player_id)!;
       if (p.result === 'win') {
         standing.wins++;
+        standing.points += 3;
       } else if (p.result === 'loss') {
         standing.losses++;
+        standing.points += 1;
       } else if (p.result === 'draw') {
         standing.draws++;
+        standing.points += 2;
       }
     });
 
     // Convert to array format for Swiss pairing
-    const standings = Array.from(standingsMap.entries()).map(([id, stats]) => ({
-      id,
-      ...stats,
-    }));
+    // Sort by points (primary), wins (secondary), losses (tertiary)
+    const standings = Array.from(standingsMap.entries())
+      .map(([id, stats]) => ({ id, wins: stats.wins, losses: stats.losses, draws: stats.draws }))
+      .sort((a, b) => {
+        const pointsA = a.wins * 3 + a.draws * 2 + a.losses * 1;
+        const pointsB = b.wins * 3 + b.draws * 2 + b.losses * 1;
+        if (pointsB !== pointsA) return pointsB - pointsA;
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        return a.losses - b.losses;
+      });
 
     if (standings.length < 2) {
       console.error('Not enough players for next round');
@@ -365,6 +418,7 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
 
     // Step 2: Generate pairings for next round
     const nextRound = currentRound + 1;
+    // @ts-expect-error - Swiss constructor type definition may be incorrect
     const pairings = new Swiss(standings);
 
     // Step 3: Create matches and match_participants for next round
@@ -433,6 +487,474 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
   } catch (error) {
     console.error('Error in generateNextRound:', error);
     throw error;
+  }
+}
+
+interface TimerControlResult {
+  success: boolean;
+  message?: string;
+}
+
+export async function startRoundTimer(
+  tournamentId: string,
+  roundNumber: number
+): Promise<TimerControlResult> {
+  try {
+    const supabase = await createClient();
+
+    // Get all matches for this round
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', roundNumber);
+
+    if (!matches || matches.length === 0) {
+      return { success: false, message: 'No matches found for this round' };
+    }
+
+    const now = new Date().toISOString();
+
+    // Update all matches in the round with started_at
+    const { error } = await supabase
+      .from('matches')
+      .update({
+        started_at: now,
+        paused_at: null,
+        total_paused_seconds: 0,
+      })
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', roundNumber);
+
+    if (error) {
+      console.error('Error starting timer:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath(`/tournament/${tournamentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error in startRoundTimer:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function pauseRoundTimer(
+  tournamentId: string,
+  roundNumber: number
+): Promise<TimerControlResult> {
+  try {
+    const supabase = await createClient();
+
+    // Get current timer state
+    const { data: match } = await supabase
+      .from('matches')
+      .select('started_at, paused_at')
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', roundNumber)
+      .limit(1)
+      .single();
+
+    if (!match || !match.started_at) {
+      return { success: false, message: 'Timer not started' };
+    }
+
+    if (match.paused_at) {
+      return { success: false, message: 'Timer already paused' };
+    }
+
+    const now = new Date().toISOString();
+
+    // Set paused_at on all matches in the round
+    const { error } = await supabase
+      .from('matches')
+      .update({ paused_at: now })
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', roundNumber);
+
+    if (error) {
+      console.error('Error pausing timer:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath(`/tournament/${tournamentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error in pauseRoundTimer:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function resumeRoundTimer(
+  tournamentId: string,
+  roundNumber: number
+): Promise<TimerControlResult> {
+  try {
+    const supabase = await createClient();
+
+    // Get current timer state
+    const { data: match } = await supabase
+      .from('matches')
+      .select('started_at, paused_at, total_paused_seconds')
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', roundNumber)
+      .not('paused_at', 'is', null)
+      .limit(1)
+      .single();
+
+    if (!match || !match.started_at) {
+      return { success: false, message: 'Timer not started' };
+    }
+
+    if (!match.paused_at) {
+      return { success: false, message: 'Timer not paused' };
+    }
+
+    // Calculate how long timer was paused
+    const startTime = new Date(match.started_at).getTime();
+    const pausedTime = new Date(match.paused_at).getTime();
+    const pausedDuration = Math.floor((pausedTime - startTime) / 1000) - (match.total_paused_seconds || 0);
+    const newTotalPaused = (match.total_paused_seconds || 0) + pausedDuration;
+
+    // Clear paused_at and update total_paused_seconds
+    const { error } = await supabase
+      .from('matches')
+      .update({
+        paused_at: null,
+        total_paused_seconds: newTotalPaused,
+      })
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', roundNumber);
+
+    if (error) {
+      console.error('Error resuming timer:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath(`/tournament/${tournamentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error in resumeRoundTimer:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function updateRoundDuration(
+  tournamentId: string,
+  newDurationMinutes: number
+): Promise<TimerControlResult> {
+  try {
+    const supabase = await createClient();
+
+    // Validate duration
+    if (newDurationMinutes < 1 || newDurationMinutes > 300) {
+      return { success: false, message: 'Duration must be between 1 and 300 minutes' };
+    }
+
+    // Update tournament
+    const { error } = await supabase
+      .from('tournaments')
+      .update({ round_duration_minutes: newDurationMinutes })
+      .eq('id', tournamentId);
+
+    if (error) {
+      console.error('Error updating round duration:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath(`/tournament/${tournamentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error in updateRoundDuration:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+interface SelectSeatResult {
+  success: boolean;
+  message?: string;
+}
+
+export async function selectSeat(
+  tournamentId: string,
+  playerId: string,
+  seatNumber: number | null
+): Promise<SelectSeatResult> {
+  try {
+    const supabase = await createClient();
+
+    // If clearing a seat (seatNumber is null), just update that player's seat to null
+    if (seatNumber === null) {
+      const { error } = await supabase
+        .from('tournament_participants')
+        .update({ draft_seat: null })
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', playerId);
+
+      if (error) {
+        console.error('Error clearing seat:', error);
+        return { success: false, message: error.message };
+      }
+
+      revalidatePath(`/tournament/${tournamentId}/seating`);
+      return { success: true };
+    }
+
+    // Validate seat number
+    const { data: participants } = await supabase
+      .from('tournament_participants')
+      .select('id')
+      .eq('tournament_id', tournamentId);
+
+    const numPlayers = participants?.length || 0;
+    if (seatNumber < 1 || seatNumber > numPlayers) {
+      return { success: false, message: `Seat number must be between 1 and ${numPlayers}` };
+    }
+
+    // Check if seat is already taken by another player
+    const { data: existingSeat } = await supabase
+      .from('tournament_participants')
+      .select('id, player_id')
+      .eq('tournament_id', tournamentId)
+      .eq('draft_seat', seatNumber)
+      .maybeSingle();
+
+    // If seat is taken by a different player, clear it first
+    if (existingSeat && existingSeat.player_id !== playerId) {
+      await supabase
+        .from('tournament_participants')
+        .update({ draft_seat: null })
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', existingSeat.player_id);
+    }
+
+    // Clear the player's current seat if they have one (in case they're moving seats)
+    await supabase
+      .from('tournament_participants')
+      .update({ draft_seat: null })
+      .eq('tournament_id', tournamentId)
+      .eq('player_id', playerId);
+
+    // Assign the new seat
+    const { error } = await supabase
+      .from('tournament_participants')
+      .update({ draft_seat: seatNumber })
+      .eq('tournament_id', tournamentId)
+      .eq('player_id', playerId);
+
+    if (error) {
+      console.error('Error selecting seat:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath(`/tournament/${tournamentId}/seating`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error in selectSeat:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+interface StartDraftResult {
+  success: boolean;
+  message?: string;
+}
+
+interface DeleteTournamentResult {
+  success: boolean;
+  message?: string;
+}
+
+export async function deleteTournament(tournamentId: string): Promise<DeleteTournamentResult> {
+  try {
+    const supabase = await createClient();
+
+    // Delete tournament (cascade will handle related records)
+    const { error } = await supabase
+      .from('tournaments')
+      .delete()
+      .eq('id', tournamentId);
+
+    if (error) {
+      console.error('Error deleting tournament:', error);
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath('/tournaments');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error('Error in deleteTournament:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function startDraft(tournamentId: string): Promise<StartDraftResult> {
+  try {
+    const supabase = await createClient();
+
+    // Check if matches already exist
+    const { data: existingMatches } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .limit(1);
+
+    if (existingMatches && existingMatches.length > 0) {
+      return { success: false, message: 'Draft has already started' };
+    }
+
+    // Fetch tournament details
+    const { data: tournament } = await supabase
+      .from('tournaments')
+      .select('id, format')
+      .eq('id', tournamentId)
+      .single();
+
+    if (!tournament) {
+      return { success: false, message: 'Tournament not found' };
+    }
+
+    // Fetch all participants with their seats
+    const { data: participants } = await supabase
+      .from('tournament_participants')
+      .select('player_id, draft_seat')
+      .eq('tournament_id', tournamentId)
+      .order('draft_seat', { ascending: true });
+
+    if (!participants || participants.length < 2) {
+      return { success: false, message: 'Not enough participants' };
+    }
+
+    // Check that all participants have seats assigned
+    const participantsWithoutSeats = participants.filter((p) => p.draft_seat === null);
+    if (participantsWithoutSeats.length > 0) {
+      return { success: false, message: 'All players must select their seats before starting the draft' };
+    }
+
+    // Generate Round 1 pairings based on draft seats
+    const numPlayers = participants.length;
+    const pairings: Array<{ player1: string; player2?: string }> = [];
+
+    for (let i = 0; i < Math.floor(numPlayers / 2); i++) {
+      const seat1 = i + 1;
+      const seat2 = i + 1 + Math.floor(numPlayers / 2);
+      
+      const player1 = participants.find((p) => p.draft_seat === seat1);
+      const player2 = participants.find((p) => p.draft_seat === seat2);
+      
+      if (player1 && player2) {
+        pairings.push({ player1: player1.player_id, player2: player2.player_id });
+      }
+    }
+
+    // Handle bye for odd number of players
+    if (numPlayers % 2 === 1) {
+      const byeSeat = numPlayers;
+      const byePlayer = participants.find((p) => p.draft_seat === byeSeat);
+      if (byePlayer) {
+        pairings.push({ player1: byePlayer.player_id });
+      }
+    }
+
+    // Update tournament status to 'active' since Round 1 is starting
+    const { error: statusError } = await supabase
+      .from('tournaments')
+      .update({ status: 'active' })
+      .eq('id', tournamentId);
+
+    if (statusError) {
+      console.error('Error updating tournament status:', statusError);
+      return { success: false, message: 'Failed to update tournament status' };
+    }
+
+    // Create matches for Round 1
+    for (const pairing of pairings) {
+      if (!pairing.player2) {
+        // Bye match
+        const { data: match, error: matchError } = await supabase
+          .from('matches')
+          .insert({
+            tournament_id: tournamentId,
+            round_number: 1,
+            game_type: tournament.format,
+          })
+          .select()
+          .single();
+
+        if (matchError || !match) {
+          console.error('Error creating bye match:', matchError);
+          return { success: false, message: 'Failed to create bye match' };
+        }
+
+        const { error: participantError } = await supabase.from('match_participants').insert({
+          match_id: match.id,
+          player_id: pairing.player1,
+          result: 'win', // Bye is an automatic win
+        });
+
+        if (participantError) {
+          console.error('Error creating bye participant:', participantError);
+          return { success: false, message: 'Failed to create match participant' };
+        }
+      } else {
+        // Normal match
+        const { data: match, error: matchError } = await supabase
+          .from('matches')
+          .insert({
+            tournament_id: tournamentId,
+            round_number: 1,
+            game_type: tournament.format,
+          })
+          .select()
+          .single();
+
+        if (matchError || !match) {
+          console.error('Error creating match:', matchError);
+          return { success: false, message: 'Failed to create match' };
+        }
+
+        const { error: participantsError } = await supabase.from('match_participants').insert([
+          {
+            match_id: match.id,
+            player_id: pairing.player1,
+            result: null,
+          },
+          {
+            match_id: match.id,
+            player_id: pairing.player2,
+            result: null,
+          },
+        ]);
+
+        if (participantsError) {
+          console.error('Error creating match participants:', participantsError);
+          return { success: false, message: 'Failed to create match participants' };
+        }
+      }
+    }
+
+    revalidatePath(`/tournament/${tournamentId}`);
+    revalidatePath(`/tournament/${tournamentId}/seating`);
+    redirect(`/tournament/${tournamentId}`);
+  } catch (error) {
+    // Re-throw redirect errors
+    if (error && typeof error === 'object' && 'digest' in error) {
+      const digest = (error as { digest?: string }).digest;
+      if (digest?.startsWith('NEXT_REDIRECT')) {
+        throw error;
+      }
+    }
+
+    console.error('Error in startDraft:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
   }
 }
 
