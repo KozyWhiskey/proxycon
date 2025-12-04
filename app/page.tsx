@@ -84,6 +84,54 @@ export default async function Home() {
     })
   );
 
+  // Calculate user stats
+  // Get all match participants for the current user
+  const { data: allUserParticipants } = await supabase
+    .from('match_participants')
+    .select('match_id, result, games_won')
+    .eq('player_id', currentUserId);
+
+  // Get match details for all user's matches
+  const matchIds = allUserParticipants?.map((p) => p.match_id) || [];
+  const { data: allUserMatches } = await supabase
+    .from('matches')
+    .select('id, tournament_id')
+    .in('id', matchIds);
+
+  const matchesMap = new Map(allUserMatches?.map((m) => [m.id, m]) || []);
+
+  // Calculate casual wins (matches with tournament_id = null and result = 'win' or '1st')
+  const casualWins = (allUserParticipants || []).filter((p) => {
+    const match = matchesMap.get(p.match_id);
+    return (
+      match &&
+      match.tournament_id === null &&
+      (p.result === 'win' || p.result === '1st')
+    );
+  }).length;
+
+  // Calculate tournament stats
+  const tournamentParticipants = (allUserParticipants || []).filter((p) => {
+    const match = matchesMap.get(p.match_id);
+    return match && match.tournament_id !== null && p.result !== null;
+  });
+
+  const tournamentWins = tournamentParticipants.filter(
+    (p) => p.result === 'win'
+  ).length;
+  const tournamentLosses = tournamentParticipants.filter(
+    (p) => p.result === 'loss'
+  ).length;
+  const tournamentDraws = tournamentParticipants.filter(
+    (p) => p.result === 'draw'
+  ).length;
+  const tournamentTotalMatches = tournamentParticipants.length;
+
+  const tournamentWinRate =
+    tournamentTotalMatches > 0
+      ? ((tournamentWins / tournamentTotalMatches) * 100).toFixed(1)
+      : '0.0';
+
   // Fetch last 10 matches
   const { data: recentMatches } = await supabase
     .from('matches')
@@ -155,7 +203,13 @@ export default async function Home() {
           <p className="text-slate-400 text-sm">Your tournament companion</p>
         </div>
         
-        <MyStats wins={currentUser.wins || 0} />
+        <MyStats
+          casualWins={casualWins}
+          tournamentWins={tournamentWins}
+          tournamentLosses={tournamentLosses}
+          tournamentDraws={tournamentDraws}
+          tournamentWinRate={tournamentWinRate}
+        />
         
         <QuickActions />
         

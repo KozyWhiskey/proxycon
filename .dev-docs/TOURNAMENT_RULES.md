@@ -400,58 +400,51 @@ const pairings = new Swiss(standings); // ❌ Round 1 should use draft seats
 // Round 1 pairs players across the table, not next to each other
 ```
 
-## Points System & Standings Calculation
+## Points System & Standings Calculation (MTG 3-1-0)
 
 ### ✅ CORRECT
 ```typescript
-// Calculate standings with points (3 for win, 2 for draw, 1 for loss)
-const standingsMap = new Map<string, { 
-  wins: number; 
-  losses: number; 
-  draws: number;
-  points: number;
-}>();
+import {
+  calculateStandings,
+  sortStandings,
+  POINTS_WIN,   // 3
+  POINTS_DRAW,  // 1
+  POINTS_LOSS,  // 0
+} from '@/lib/swiss-pairing';
 
-allParticipants?.forEach((p) => {
-  if (!standingsMap.has(p.player_id)) {
-    standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0 });
-  }
+// Use the swiss-pairing module for proper MTG standings
+const standingsMap = calculateStandings(playerIds, matchHistory);
+const sortedStandings = sortStandings(Array.from(standingsMap.values()));
 
-  const standing = standingsMap.get(p.player_id)!;
-  if (p.result === 'win') {
-    standing.wins++;
-    standing.points += 3; // ✅ Win = 3 points
-  } else if (p.result === 'loss') {
-    standing.losses++;
-    standing.points += 1; // ✅ Loss = 1 point
-  } else if (p.result === 'draw') {
-    standing.draws++;
-    standing.points += 2; // ✅ Draw = 2 points
-  }
-});
+// MTG 3-1-0 Point System:
+// Win = 3 points
+// Draw = 1 point
+// Loss = 0 points
+// Bye = 3 points (counts as win)
 
-// Sort standings by points (primary), wins (secondary), losses (tertiary)
-const standings = Array.from(standingsMap.entries())
-  .map(([id, stats]) => ({ id, ...stats }))
-  .sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points; // Points descending
-    if (b.wins !== a.wins) return b.wins - a.wins; // Wins descending
-    return a.losses - b.losses; // Losses ascending
-  });
+// Tiebreakers (in order):
+// 1. Points (higher is better)
+// 2. OMW% - Opponent Match Win Percentage (higher is better)
+// 3. GW% - Game Win Percentage (higher is better)
+// 4. Head-to-head result
+// 5. Random
 ```
 
 ### ❌ WRONG
 ```typescript
-// DON'T: Use only wins/losses for standings
-const standings = calculateWinsLosses(participants); // ❌ Must include points
-
-// DON'T: Award same points for win and draw
-if (p.result === 'win') {
-  standing.points += 2; // ❌ Win should be 3 points
+// DON'T: Use old 3-2-1 point system
+if (p.result === 'draw') {
+  standing.points += 2; // ❌ Draw should be 1 point (MTG standard)
+}
+if (p.result === 'loss') {
+  standing.points += 1; // ❌ Loss should be 0 points (MTG standard)
 }
 
-// DON'T: Sort only by wins
-standings.sort((a, b) => b.wins - a.wins); // ❌ Must sort by points first
+// DON'T: Use games won as primary tiebreaker
+standings.sort((a, b) => b.totalGamesWon - a.totalGamesWon); // ❌ Use OMW% instead
+
+// DON'T: Sort only by wins/losses
+standings.sort((a, b) => b.wins - a.wins); // ❌ Must sort by points, then OMW%
 ```
 
 ## Round Timers & Time-Based Draws
@@ -597,27 +590,39 @@ status: 'active', // ❌ Should be 'pending' until Round 1 starts
 
 When working on tournament features, verify:
 
-- [ ] Using `Swiss` class, not `pair()` function
-- [ ] Pairings accessed as `pairing.player1` and `pairing.player2` (not array indices)
+### Swiss Pairing (MTG Standard)
+- [ ] Using `generateSwissPairings` from `@/lib/swiss-pairing` (not `tournament-pairings` library)
+- [ ] **Point system is 3-1-0** (Win=3, Draw=1, Loss=0) - NOT 3-2-1
+- [ ] **OMW% is primary tiebreaker** (not games won)
+- [ ] Match history is passed to prevent rematches
+- [ ] Bye rotation tracks which players have received byes
+
+### Pairings & Byes
+- [ ] Pairings accessed as `pairing.player1` and `pairing.player2`
+- [ ] Byes are detected with `!pairing.player2` (player2 is null)
+- [ ] Bye participants get `result: 'win'` and `games_won: 2`
+- [ ] **Bye players receive 3 points** (same as match win)
+- [ ] **Byes don't count as opponents for OMW%**
+
+### Tournament Workflow
+- [ ] Tournament created with 'pending' status (not 'active')
+- [ ] Status changes to 'active' when Round 1 matches are created
+- [ ] Draft seats assigned on seating page (not during creation)
+- [ ] Round 1 pairings use draft seat positions (across-table)
+- [ ] Max rounds is checked before generating next round
+- [ ] Tournament is marked 'completed' when max_rounds reached
+- [ ] Handle missing max_rounds gracefully (default to 3)
+
+### Match Reporting
 - [ ] Round completion checks ALL participants have results
+- [ ] Match reporting supports win/loss/draw
+- [ ] Game scores tracked for GW% tiebreaker
+
+### Technical
 - [ ] Redirect errors are re-thrown, not caught as failures
 - [ ] Database errors are checked and returned with messages
 - [ ] `tournament.format` is used, not hardcoded 'draft'
-- [ ] Byes are detected with `!pairing.player2`
-- [ ] Bye participants get `result: 'win'`
 - [ ] `revalidatePath()` is called before `redirect()`
-- [ ] Standings are calculated from all previous rounds for Round 2+
-- [ ] **Max rounds is checked before generating next round**
-- [ ] **Tournament is marked 'completed' when max_rounds reached**
-- [ ] **Handle missing max_rounds gracefully (default to 3)**
-- [ ] **Tournament created with 'pending' status (not 'active')**
-- [ ] **Status changes to 'active' when Round 1 matches are created**
-- [ ] **Draft seats assigned on seating page (not during creation)**
-- [ ] **Round 1 pairings use draft seat positions (across-table)**
-- [ ] **Standings calculated with points (3/2/1 for win/draw/loss)**
-- [ ] **Standings displayed on tournament page**
-- [ ] **Match reporting supports win/loss/draw with simplified UI**
-- [ ] **Round timer set when "Start Round" clicked (not automatically)**
 
 ## See Also
 

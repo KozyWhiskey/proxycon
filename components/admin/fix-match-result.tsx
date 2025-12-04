@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { fixMatchResult } from '@/app/admin/actions';
+import { fixMatchResultWithGames } from '@/app/admin/actions';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
+import { Minus, Plus } from 'lucide-react';
 
 interface Match {
   id: string;
@@ -18,6 +19,7 @@ interface Match {
   participants: Array<{
     player_id: string;
     result: string | null;
+    games_won: number;
     player: {
       id: string;
       name: string;
@@ -29,7 +31,8 @@ interface Match {
 export default function FixMatchResult() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
-  const [selectedWinnerId, setSelectedWinnerId] = useState<string>('');
+  const [player1Games, setPlayer1Games] = useState(0);
+  const [player2Games, setPlayer2Games] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,7 +55,7 @@ export default function FixMatchResult() {
         recentMatches.map(async (match) => {
           const { data: participants } = await supabase
             .from('match_participants')
-            .select('player_id, result')
+            .select('player_id, result, games_won')
             .eq('match_id', match.id);
 
           if (!participants) return null;
@@ -69,6 +72,7 @@ export default function FixMatchResult() {
             ...match,
             participants: participants.map((p) => ({
               ...p,
+              games_won: p.games_won || 0,
               player: playersMap.get(p.player_id),
             })),
           };
@@ -84,19 +88,59 @@ export default function FixMatchResult() {
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
 
+  // When a match is selected, initialize game scores from current values
+  useEffect(() => {
+    if (selectedMatch && selectedMatch.participants.length >= 2) {
+      setPlayer1Games(selectedMatch.participants[0]?.games_won || 0);
+      setPlayer2Games(selectedMatch.participants[1]?.games_won || 0);
+    } else {
+      setPlayer1Games(0);
+      setPlayer2Games(0);
+    }
+  }, [selectedMatch]);
+
+  // Determine result based on game scores
+  const getResultPreview = () => {
+    if (!selectedMatch || selectedMatch.participants.length < 2) return null;
+    
+    const player1 = selectedMatch.participants[0];
+    const player2 = selectedMatch.participants[1];
+    const player1Name = player1?.player?.nickname || player1?.player?.name || 'Player 1';
+    const player2Name = player2?.player?.nickname || player2?.player?.name || 'Player 2';
+
+    if (player1Games === player2Games) {
+      return { type: 'draw', text: `Draw ${player1Games}-${player2Games}` };
+    } else if (player1Games > player2Games) {
+      return { type: 'win', text: `${player1Name} wins ${player1Games}-${player2Games}` };
+    } else {
+      return { type: 'win', text: `${player2Name} wins ${player2Games}-${player1Games}` };
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!selectedMatchId || !selectedWinnerId) {
-      toast.error('Please select a match and new winner');
+    if (!selectedMatch || selectedMatch.participants.length < 2) {
+      toast.error('Please select a valid match');
       return;
     }
 
     setIsSubmitting(true);
-    const result = await fixMatchResult(selectedMatchId, selectedWinnerId);
+
+    const player1Id = selectedMatch.participants[0].player_id;
+    const player2Id = selectedMatch.participants[1].player_id;
+
+    const result = await fixMatchResultWithGames(
+      selectedMatchId,
+      player1Id,
+      player2Id,
+      player1Games,
+      player2Games
+    );
 
     if (result.success) {
       toast.success(result.message || 'Match result updated successfully');
       setSelectedMatchId('');
-      setSelectedWinnerId('');
+      setPlayer1Games(0);
+      setPlayer2Games(0);
       // Refresh matches
       window.location.reload();
     } else {
@@ -104,6 +148,8 @@ export default function FixMatchResult() {
       setIsSubmitting(false);
     }
   };
+
+  const resultPreview = getResultPreview();
 
   if (isLoading) {
     return (
@@ -120,7 +166,7 @@ export default function FixMatchResult() {
       <CardHeader>
         <CardTitle className="text-slate-100">Fix Match Result</CardTitle>
         <CardDescription className="text-slate-400">
-          Change the winner of a match and update player records
+          Change the result and game scores of a match
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -148,41 +194,106 @@ export default function FixMatchResult() {
           </Select>
         </div>
 
-        {selectedMatch && (
+        {selectedMatch && selectedMatch.participants.length >= 2 && (
           <>
+            {/* Current Results */}
             <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <p className="text-sm text-slate-400 mb-2">Current Participants:</p>
+              <p className="text-sm text-slate-400 mb-2">Current Results:</p>
               <div className="space-y-1">
                 {selectedMatch.participants.map((p) => (
-                  <div key={p.player_id} className="text-slate-100">
-                    {p.player?.nickname || p.player?.name || 'Unknown'} -{' '}
-                    <span className="text-slate-400">{p.result || 'No result'}</span>
+                  <div key={p.player_id} className="text-slate-100 flex justify-between">
+                    <span>{p.player?.nickname || p.player?.name || 'Unknown'}</span>
+                    <span className="text-slate-400">
+                      {p.result || 'pending'} ({p.games_won} games)
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-slate-100">New Winner</Label>
-              <Select value={selectedWinnerId} onValueChange={setSelectedWinnerId}>
-                <SelectTrigger className="w-full h-12 bg-slate-800 border-slate-700 text-slate-100">
-                  <SelectValue placeholder="Choose new winner..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedMatch.participants.map((p) => (
-                    <SelectItem key={p.player_id} value={p.player_id}>
-                      {p.player?.nickname || p.player?.name || 'Unknown'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Game Score Inputs */}
+            <div className="space-y-4">
+              <Label className="text-slate-100">New Game Scores</Label>
+              
+              {/* Player 1 */}
+              <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
+                <span className="text-slate-100 font-medium">
+                  {selectedMatch.participants[0]?.player?.nickname || 
+                   selectedMatch.participants[0]?.player?.name || 'Player 1'}
+                </span>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-2xl font-bold text-slate-100 w-8 text-center">
+                    {player1Games}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    onClick={() => setPlayer1Games(Math.min(2, player1Games + 1))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Player 2 */}
+              <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
+                <span className="text-slate-100 font-medium">
+                  {selectedMatch.participants[1]?.player?.nickname || 
+                   selectedMatch.participants[1]?.player?.name || 'Player 2'}
+                </span>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-2xl font-bold text-slate-100 w-8 text-center">
+                    {player2Games}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    onClick={() => setPlayer2Games(Math.min(2, player2Games + 1))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
+
+            {/* Result Preview */}
+            {resultPreview && (
+              <div className={`p-4 rounded-lg border text-center font-semibold ${
+                resultPreview.type === 'draw' 
+                  ? 'bg-amber-900/30 border-amber-700 text-amber-400'
+                  : 'bg-emerald-900/30 border-emerald-700 text-emerald-400'
+              }`}>
+                {resultPreview.text}
+              </div>
+            )}
           </>
         )}
 
         <Button
           onClick={handleSubmit}
-          disabled={!selectedMatchId || !selectedWinnerId || isSubmitting}
+          disabled={!selectedMatchId || !selectedMatch || selectedMatch.participants.length < 2 || isSubmitting}
           className="w-full h-12 bg-rose-500 hover:bg-rose-600 text-white font-semibold disabled:opacity-50"
         >
           {isSubmitting ? 'Updating...' : 'Update Match Result'}
@@ -191,4 +302,3 @@ export default function FixMatchResult() {
     </Card>
   );
 }
-

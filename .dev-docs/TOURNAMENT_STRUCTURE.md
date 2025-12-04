@@ -15,7 +15,7 @@ The ProxyCon tournament system uses **Swiss-style pairings** for tournament brac
 - **Tournament Prizes:** Configure 1st, 2nd, 3rd place prizes during tournament creation
 - **Draft Seat Selection:** Players select their seats on a visual seating page before the draft starts
 - **Round 1 Pairing:** Players face the person directly across from them (seat 1 vs seat 5 in 8-player draft)
-- **Points System:** Win = 3 points, Draw = 2 points, Loss = 1 point
+- **Points System:** Win = 3 points, Draw = 1 point, Loss = 0 points (MTG Standard 3-1-0)
 - **Game Win Tracking:** Track individual game wins for tiebreaker purposes (e.g., 2-1 match)
 - **Tiebreaker System:** Total games won used as secondary tiebreaker
 - **Standings Display:** Real-time standings with points, wins, losses, draws, and games won
@@ -175,16 +175,18 @@ The ProxyCon tournament system uses **Swiss-style pairings** for tournament brac
 5. If complete, automatically generate next round
 6. Revalidate tournament page and redirect
 
-**Points System:**
+**Points System (MTG Standard 3-1-0):**
 - **Win:** 3 points
-- **Draw:** 2 points
-- **Loss:** 1 point
+- **Draw:** 1 point
+- **Loss:** 0 points
+- **Bye:** 3 points (counts as 1-0-0 win)
 
-**Tiebreaker System:**
-1. **Primary:** Total points (wins × 3 + draws × 2 + losses × 1)
-2. **Secondary:** Total games won (sum of `games_won` across all matches) ⭐ NEW
-3. **Tertiary:** Round wins (more is better)
-4. **Quaternary:** Round losses (fewer is better)
+**Tiebreaker System (MTG Official):**
+1. **Primary:** Total points (wins × 3 + draws × 1)
+2. **Secondary:** OMW% - Opponent Match Win Percentage (average MWP of all opponents, excluding byes)
+3. **Tertiary:** GW% - Game Win Percentage (games won / games played, minimum 33%)
+4. **Quaternary:** Head-to-head result (if players faced each other)
+5. **Final:** Random
 
 **Round Completion Logic:**
 - Fetch all matches for the current round
@@ -239,14 +241,19 @@ When a tournament is completed (max_rounds reached):
 **Process:**
 1. Fetch tournament format, max_rounds, and round_duration_minutes
 2. **Check max_rounds limit:** If `currentRound >= max_rounds`, mark tournament as 'completed' and return (no new round)
-3. Calculate standings from all previous rounds:
+3. Calculate standings from all previous rounds using MTG Swiss rules:
    - Count wins, losses, draws for each player
-   - **Calculate points:** wins × 3 + draws × 2 + losses × 1
-   - **Calculate total games won** for tiebreaker ⭐ NEW
-   - Create standings array: `[{ id, wins, losses, draws, points, totalGamesWon }, ...]`
-   - Sort by: points (desc), totalGamesWon (desc), wins (desc), losses (asc)
-4. Generate pairings using `Swiss` constructor with standings (based on wins/losses/draws for Swiss algorithm)
-5. Create matches for next round (round_number = currentRound + 1) with `started_at` timestamp
+   - **Calculate points:** wins × 3 + draws × 1 (MTG 3-1-0 system)
+   - **Calculate OMW%** (Opponent Match Win Percentage) as primary tiebreaker
+   - **Track match history** to prevent rematches
+   - **Track bye history** to ensure fair bye distribution
+   - Sort by: points (desc), OMW% (desc), GW% (desc)
+4. Generate pairings using custom Swiss algorithm that:
+   - Groups players by points
+   - Pairs within groups avoiding rematches
+   - Assigns byes to players who haven't received one
+   - Floats unpaired players to lower point groups
+5. Create matches for next round (round_number = currentRound + 1)
 6. Create match_participants entries
 
 **Max Rounds Logic:**
@@ -255,87 +262,81 @@ When a tournament is completed (max_rounds reached):
 - If not reached: Generate next round as normal
 - Handles missing `max_rounds` gracefully (defaults to 3 for existing tournaments)
 
-**Standings Calculation with Games Won:**
-- Query all matches up to and including current round
-- Query all participants for those matches including `games_won`
-- Group by player_id and count results + sum games won
-- Convert to array format for Swiss pairing
+**Bye Rotation Logic:**
+- Before pairing, check which players have NOT received a bye
+- If there are players without byes, the lowest-ranked player without a bye gets it
+- If all players have had one bye, the lowest-ranked player overall gets a second bye
+- Bye player receives 3 points and 2-0 game score
 
 ---
 
-## Swiss Pairing Library Usage
+## Swiss Pairing Implementation
 
-### Import
+### Import (Custom MTG Swiss Module)
 ```typescript
-import { Swiss } from 'tournament-pairings';
+import {
+  generateSwissPairings,
+  calculateStandings,
+  sortStandings,
+  convertDbMatchToMatchResult,
+  POINTS_WIN,   // 3
+  POINTS_DRAW,  // 1
+  POINTS_LOSS,  // 0
+  BYE_GAMES_WON, // 2
+} from '@/lib/swiss-pairing';
 ```
 
-### Round 2+ (Based on Points & Records with Games Won Tiebreaker)
+### Round 2+ (MTG Swiss Format with OMW% Tiebreaker)
 ```typescript
-// Calculate standings with points from previous rounds
-const standingsMap = new Map<string, { 
-  wins: number; 
-  losses: number; 
-  draws: number; 
-  points: number;
-  totalGamesWon: number; // ⭐ NEW
-}>();
+// Get all player IDs
+const playerIds = tournamentParticipants.map((tp) => tp.player_id);
 
-allParticipants?.forEach((p) => {
-  if (!standingsMap.has(p.player_id)) {
-    standingsMap.set(p.player_id, { 
-      wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 
-    });
-  }
+// Build match history from database
+const matchHistory: MatchResult[] = matches.map((match) => 
+  convertDbMatchToMatchResult(match.id, match.round_number, participants)
+);
 
-  const standing = standingsMap.get(p.player_id)!;
-  standing.totalGamesWon += p.games_won || 0; // ⭐ Accumulate games won
-  
-  if (p.result === 'win') {
-    standing.wins++;
-    standing.points += 3;
-  } else if (p.result === 'loss') {
-    standing.losses++;
-    standing.points += 1;
-  } else if (p.result === 'draw') {
-    standing.draws++;
-    standing.points += 2;
-  }
-});
+// Generate Swiss pairings with:
+// - OMW% tiebreaker calculation
+// - Bye rotation (prioritize players without byes)
+// - Match history tracking (prevent rematches)
+const { pairings, warnings } = generateSwissPairings(playerIds, matchHistory);
 
-// Convert to array and sort by points, then games won as tiebreaker
-const standings = Array.from(standingsMap.entries())
-  .map(([id, stats]) => ({ 
-    id, 
-    wins: stats.wins, 
-    losses: stats.losses, 
-    draws: stats.draws,
-    totalGamesWon: stats.totalGamesWon // ⭐ NEW
-  }))
-  .sort((a, b) => {
-    const pointsA = a.wins * 3 + a.draws * 2 + a.losses * 1;
-    const pointsB = b.wins * 3 + b.draws * 2 + b.losses * 1;
-    if (pointsB !== pointsA) return pointsB - pointsA;
-    if (b.totalGamesWon !== a.totalGamesWon) return b.totalGamesWon - a.totalGamesWon; // ⭐ NEW
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    return a.losses - b.losses;
-  });
-
-const pairings = new Swiss(standings);
+// Log any warnings (rematches, multiple byes, etc.)
+if (warnings.length > 0) {
+  console.log('Swiss pairing warnings:', warnings);
+}
 ```
 
-### Handling Byes with Games Won
+### Handling Byes
 ```typescript
 if (!pairing.player2) {
   // This is a bye - single participant gets automatic win
   // Create match with one participant:
   // - result = 'win'
   // - games_won = 2 (standard bye score)
+  // - Bye player receives 3 points (same as match win)
 } else {
   // Normal match - two participants, both start with:
   // - result = null
   // - games_won = 0
 }
+```
+
+### OMW% Calculation
+```typescript
+// Opponent Match Win Percentage (OMW%)
+// For each player:
+// 1. Get list of all opponents faced (excluding byes)
+// 2. Calculate each opponent's Match Win Percentage (MWP)
+//    MWP = points / (matches_played * 3)
+//    Minimum MWP is 33% per MTG rules
+// 3. OMW% = average of all opponents' MWPs
+
+// Example:
+// Player A faced opponents with records: 2-1-0, 1-1-1, 0-2-0
+// Opponent MWPs: 66.67%, 44.44%, 0% (clamped to 33%)
+// Player A's OMW% = (66.67 + 44.44 + 33) / 3 = 48.04%
 ```
 
 ---
@@ -344,78 +345,84 @@ if (!pairing.player2) {
 
 ### ✅ DO's
 
-1. **Record game scores with match results**
+1. **Use MTG Standard 3-1-0 Point System**
    ```typescript
-   // ✅ New way - with game scores
-   await submitResultWithGames(matchId, winnerId, loserId, 2, 1, tournamentId);
-   // Records: winner.result='win', winner.games_won=2
-   //          loser.result='loss', loser.games_won=1
+   import { POINTS_WIN, POINTS_DRAW, POINTS_LOSS } from '@/lib/swiss-pairing';
+   // POINTS_WIN = 3, POINTS_DRAW = 1, POINTS_LOSS = 0
    ```
 
-2. **Include games_won in standings calculation**
+2. **Use OMW% as primary tiebreaker (not games won)**
    ```typescript
-   standing.totalGamesWon += p.games_won || 0; // ✅ For tiebreaker
+   import { calculateStandings, sortStandings } from '@/lib/swiss-pairing';
+   const standings = sortStandings(Array.from(calculateStandings(playerIds, matchHistory).values()));
+   // Sorts by: Points > OMW% > GW% (MTG official)
    ```
 
-3. **Set games_won = 2 for byes**
+3. **Track bye history for fair distribution**
+   ```typescript
+   // Swiss pairing module automatically:
+   // - Tracks which players have received byes
+   // - Prioritizes players without byes for the next bye
+   // - Only gives second bye when all players have had one
+   ```
+
+4. **Prevent rematches**
+   ```typescript
+   // Swiss pairing module automatically:
+   // - Tracks all opponents each player has faced
+   // - Avoids pairing players who have already played
+   // - Only allows rematch if no other option exists
+   ```
+
+5. **Set games_won = 2 for byes**
    ```typescript
    await supabase.from('match_participants').insert({
      match_id: match.id,
      player_id: byePlayerId,
      result: 'win',
-     games_won: 2  // ✅ Standard bye score
+     games_won: BYE_GAMES_WON  // ✅ Standard bye score (2-0)
    });
-   ```
-
-4. **Create tournaments with prizes (optional)**
-   ```typescript
-   await createTournament(
-     name, 
-     playerIds, 
-     format, 
-     maxRounds, 
-     roundDurationMinutes,
-     'Booster Box',      // 1st prize
-     '6 Boosters',       // 2nd prize  
-     '3 Boosters'        // 3rd prize
-   );
-   ```
-
-5. **Always use `await cookies()` in server actions**
-   ```typescript
-   const cookieStore = await cookies(); // Next.js 16 requirement
    ```
 
 ### ❌ DON'Ts
 
-1. **Don't use old submitResult without game scores**
+1. **Don't use old 3-2-1 point system**
    ```typescript
-   // ❌ Old way - no game tracking
-   await submitResult(matchId, winnerId, loserId, tournamentId);
+   // ❌ Old system - incorrect for MTG
+   standing.points += 2; // for draw (should be 1)
+   standing.points += 1; // for loss (should be 0)
    
-   // ✅ New way - with game scores
-   await submitResultWithGames(matchId, winnerId, loserId, 2, 1, tournamentId);
+   // ✅ MTG Standard 3-1-0
+   standing.points += POINTS_WIN;  // 3 for win
+   standing.points += POINTS_DRAW; // 1 for draw
+   standing.points += POINTS_LOSS; // 0 for loss
    ```
 
-2. **Don't ignore games_won when calculating standings**
+2. **Don't use games_won as primary tiebreaker**
    ```typescript
-   // ❌ Missing tiebreaker
-   .sort((a, b) => b.points - a.points);
+   // ❌ Non-standard tiebreaker
+   .sort((a, b) => b.totalGamesWon - a.totalGamesWon);
    
-   // ✅ Include games won tiebreaker
-   .sort((a, b) => {
-     if (b.points !== a.points) return b.points - a.points;
-     return b.totalGamesWon - a.totalGamesWon; // ✅ Tiebreaker
-   });
+   // ✅ Use OMW% (MTG official tiebreaker)
+   .sort((a, b) => b.opponentMatchWinPercentage - a.opponentMatchWinPercentage);
    ```
 
-3. **Don't forget to display games in standings**
+3. **Don't ignore match history for pairings**
    ```typescript
-   // ❌ Missing games column
-   <th>Pts</th><th>W</th><th>L</th><th>D</th>
+   // ❌ May cause rematches
+   const pairings = new Swiss(standings);
    
-   // ✅ Include games won
-   <th>Pts</th><th>W</th><th>L</th><th>D</th><th>Games</th>
+   // ✅ Use custom Swiss with rematch prevention
+   const { pairings } = generateSwissPairings(playerIds, matchHistory);
+   ```
+
+4. **Don't assign byes without checking history**
+   ```typescript
+   // ❌ May give same player multiple byes
+   const byePlayer = lowestRankedPlayer;
+   
+   // ✅ Check bye history first
+   // generateSwissPairings handles this automatically
    ```
 
 ---
@@ -471,51 +478,41 @@ for (let i = 0; i < playerIds.length; i++) {
 }
 ```
 
-### Calculating Standings with Games Won Tiebreaker
+### Calculating Standings with OMW% Tiebreaker
 ```typescript
-// 1. Get all participants with games_won
-const { data: participants } = await supabase
-  .from('match_participants')
-  .select('player_id, result, games_won')  // ⭐ Include games_won
-  .in('match_id', matchIds);
+import {
+  calculateStandings,
+  sortStandings,
+  convertDbMatchToMatchResult,
+  type MatchResult,
+} from '@/lib/swiss-pairing';
 
-// 2. Calculate standings with games won
-const standingsMap = new Map<string, { 
-  wins: number; losses: number; draws: number; points: number;
-  totalGamesWon: number;  // ⭐ NEW
-}>();
+// 1. Get all tournament participants
+const playerIds = tournamentParticipants.map((tp) => tp.player_id);
 
-participants.forEach(p => {
-  if (!standingsMap.has(p.player_id)) {
-    standingsMap.set(p.player_id, { 
-      wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 
-    });
-  }
-  
-  const standing = standingsMap.get(p.player_id)!;
-  standing.totalGamesWon += p.games_won || 0;  // ⭐ Accumulate
-  
-  if (p.result === 'win') {
-    standing.wins++;
-    standing.points += 3;
-  } else if (p.result === 'loss') {
-    standing.losses++;
-    standing.points += 1;
-  } else if (p.result === 'draw') {
-    standing.draws++;
-    standing.points += 2;
-  }
-});
+// 2. Build match history from database
+const matchHistory: MatchResult[] = [];
+for (const match of matches) {
+  const participants = getParticipantsForMatch(match.id);
+  matchHistory.push(
+    convertDbMatchToMatchResult(match.id, match.round_number, participants)
+  );
+}
 
-// 3. Sort with games won as tiebreaker
-const standings = Array.from(standingsMap.entries())
-  .map(([id, stats]) => ({ id, ...stats }))
-  .sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.totalGamesWon !== a.totalGamesWon) return b.totalGamesWon - a.totalGamesWon;  // ⭐ NEW
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    return a.losses - b.losses;
-  });
+// 3. Calculate standings with OMW% using MTG Swiss rules
+const standingsMap = calculateStandings(playerIds, matchHistory);
+
+// 4. Sort standings by MTG tiebreakers (Points > OMW% > GW%)
+const sortedStandings = sortStandings(Array.from(standingsMap.values()));
+
+// Each standing includes:
+// - points: Total points (3-1-0 system)
+// - matchWinPercentage: Player's own MWP (minimum 33%)
+// - opponentMatchWinPercentage: OMW% (average of opponents' MWP)
+// - gameWinPercentage: GW% (minimum 33%)
+// - receivedBye: Whether player has received a bye
+// - byeCount: Number of byes received
+// - opponents: List of opponents faced (for rematch checking)
 ```
 
 ---

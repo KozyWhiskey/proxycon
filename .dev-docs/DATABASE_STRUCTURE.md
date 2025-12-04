@@ -182,11 +182,16 @@ Tracks which players participated in each match, their results, and game wins.
 - `result` is NULL when match is pending
 - `games_won` tracks individual game wins within a match (e.g., 2-1 means winner has 2, loser has 1)
 - For byes in tournaments, the single participant gets `result = 'win'` and `games_won = 2` (standard bye score)
-- Points are calculated from results:
+- Points are calculated from results using MTG Standard 3-1-0:
   - Win = 3 points
-  - Draw = 2 points
-  - Loss = 1 point
-- Total games won is used as a tiebreaker when players have equal points
+  - Draw = 1 point
+  - Loss = 0 points
+  - Bye = 3 points (counts as win)
+- Tiebreakers (MTG official):
+  1. OMW% (Opponent Match Win Percentage) - excludes bye opponents
+  2. GW% (Game Win Percentage) - minimum 33%
+  3. Head-to-head result
+  4. Random
 
 ---
 
@@ -244,12 +249,15 @@ players (1) ──→ (N) match_participants
 ### Round Generation
 1. Next round is only generated when ALL matches in current round are complete
 2. Round generation checks `max_rounds` limit before creating new round
-3. Standings are calculated from all previous rounds using points:
+3. Standings are calculated from all previous rounds using MTG 3-1-0 points:
    - Win = 3 points
-   - Draw = 2 points
-   - Loss = 1 point
-4. Total games won is used as secondary tiebreaker
-5. Pairings for Round 2+ use Swiss algorithm based on standings
+   - Draw = 1 point
+   - Loss = 0 points
+4. OMW% (Opponent Match Win Percentage) is used as primary tiebreaker
+5. Pairings for Round 2+ use Swiss algorithm with:
+   - OMW% tiebreaker
+   - Bye rotation (prioritize players without byes)
+   - Match history tracking (prevent rematches)
 
 ### Tournament Status Workflow
 1. Tournament is created with status `'pending'` (not 'active')
@@ -263,25 +271,27 @@ players (1) ──→ (N) match_participants
 
 ### Tournament Completion
 1. Tournament is marked 'completed' when `max_rounds` is reached
-2. Winner is determined by highest point total
-3. Tiebreakers (in order):
-   - Total games won
-   - Round wins
-   - Round losses (fewer is better)
+2. Winner is determined by highest point total using MTG 3-1-0 system
+3. Tiebreakers (MTG official, in order):
+   - OMW% (Opponent Match Win Percentage)
+   - GW% (Game Win Percentage)
+   - Head-to-head result
+   - Random
 4. Completed tournaments display prizes if defined
 
 ---
 
 ## Query Patterns
 
-### Get Tournament Standings with Game Wins
+### Get Tournament Standings (MTG 3-1-0 Points)
 ```sql
+-- Note: OMW% calculation should be done in application code
+-- as it requires opponent lookup. This query gets basic standings.
 SELECT 
   p.id,
   p.name,
   COUNT(CASE WHEN mp.result = 'win' THEN 1 END) * 3 +
-  COUNT(CASE WHEN mp.result = 'draw' THEN 1 END) * 2 +
-  COUNT(CASE WHEN mp.result = 'loss' THEN 1 END) * 1 AS total_points,
+  COUNT(CASE WHEN mp.result = 'draw' THEN 1 END) * 1 AS total_points,
   SUM(COALESCE(mp.games_won, 0)) AS total_games_won,
   COUNT(CASE WHEN mp.result = 'win' THEN 1 END) AS wins,
   COUNT(CASE WHEN mp.result = 'loss' THEN 1 END) AS losses,
@@ -292,7 +302,8 @@ LEFT JOIN matches m ON m.tournament_id = tp.tournament_id
 LEFT JOIN match_participants mp ON mp.match_id = m.id AND mp.player_id = p.id
 WHERE tp.tournament_id = $1
 GROUP BY p.id, p.name
-ORDER BY total_points DESC, total_games_won DESC, wins DESC;
+ORDER BY total_points DESC, wins DESC;
+-- Full standings with OMW% tiebreaker calculated in lib/swiss-pairing.ts
 ```
 
 ### Get Current Round Matches with Scores

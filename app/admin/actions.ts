@@ -117,6 +117,130 @@ export async function fixMatchResult(
   }
 }
 
+export async function fixMatchResultWithGames(
+  matchId: string,
+  player1Id: string,
+  player2Id: string,
+  player1Games: number,
+  player2Games: number
+): Promise<AdminActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Step 1: Get current match participants
+    const { data: participants, error: participantsError } = await supabase
+      .from('match_participants')
+      .select('player_id, result')
+      .eq('match_id', matchId);
+
+    if (participantsError || !participants || participants.length < 2) {
+      return { success: false, message: 'Match not found or has insufficient participants' };
+    }
+
+    // Validate players are in the match
+    const participantIds = participants.map((p) => p.player_id);
+    if (!participantIds.includes(player1Id) || !participantIds.includes(player2Id)) {
+      return { success: false, message: 'Players must be participants in this match' };
+    }
+
+    // Get current winner for player wins adjustment
+    const currentWinner = participants.find((p) => p.result === 'win');
+
+    // Determine new result based on game scores
+    let player1Result: string;
+    let player2Result: string;
+
+    if (player1Games === player2Games) {
+      // Draw
+      player1Result = 'draw';
+      player2Result = 'draw';
+    } else if (player1Games > player2Games) {
+      // Player 1 wins
+      player1Result = 'win';
+      player2Result = 'loss';
+    } else {
+      // Player 2 wins
+      player1Result = 'loss';
+      player2Result = 'win';
+    }
+
+    // Step 2: Update match participants with results and games_won
+    const { error: player1Error } = await supabase
+      .from('match_participants')
+      .update({ result: player1Result, games_won: player1Games })
+      .eq('match_id', matchId)
+      .eq('player_id', player1Id);
+
+    if (player1Error) {
+      return { success: false, message: `Failed to update player 1: ${player1Error.message}` };
+    }
+
+    const { error: player2Error } = await supabase
+      .from('match_participants')
+      .update({ result: player2Result, games_won: player2Games })
+      .eq('match_id', matchId)
+      .eq('player_id', player2Id);
+
+    if (player2Error) {
+      return { success: false, message: `Failed to update player 2: ${player2Error.message}` };
+    }
+
+    // Step 3: Update player wins count
+    const newWinnerId = player1Result === 'win' ? player1Id : player2Result === 'win' ? player2Id : null;
+
+    // If there was a previous winner and it's different from the new winner, decrement old winner's wins
+    if (currentWinner && currentWinner.player_id !== newWinnerId) {
+      const { data: oldWinner } = await supabase
+        .from('players')
+        .select('wins')
+        .eq('id', currentWinner.player_id)
+        .single();
+
+      if (oldWinner && oldWinner.wins > 0) {
+        await supabase
+          .from('players')
+          .update({ wins: oldWinner.wins - 1 })
+          .eq('id', currentWinner.player_id);
+      }
+    }
+
+    // If there's a new winner (not a draw) and they weren't the previous winner, increment their wins
+    if (newWinnerId && (!currentWinner || currentWinner.player_id !== newWinnerId)) {
+      const { data: newWinner } = await supabase
+        .from('players')
+        .select('wins')
+        .eq('id', newWinnerId)
+        .single();
+
+      if (newWinner) {
+        await supabase
+          .from('players')
+          .update({ wins: (newWinner.wins || 0) + 1 })
+          .eq('id', newWinnerId);
+      }
+    }
+
+    // Generate result message
+    let resultMessage: string;
+    if (player1Games === player2Games) {
+      resultMessage = `Match updated: Draw ${player1Games}-${player2Games}`;
+    } else if (player1Games > player2Games) {
+      resultMessage = `Match updated: Player 1 wins ${player1Games}-${player2Games}`;
+    } else {
+      resultMessage = `Match updated: Player 2 wins ${player2Games}-${player1Games}`;
+    }
+
+    revalidatePath('/');
+    revalidatePath('/admin');
+    return { success: true, message: resultMessage };
+  } catch (error) {
+    console.error('Error in fixMatchResultWithGames:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
 export async function addPlayer(data: {
   name: string;
   nickname: string | null;

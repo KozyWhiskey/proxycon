@@ -3,7 +3,17 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { Swiss } from 'tournament-pairings';
+import {
+  generateSwissPairings,
+  calculateStandings,
+  sortStandings,
+  convertDbMatchToMatchResult,
+  POINTS_WIN,
+  POINTS_DRAW,
+  POINTS_LOSS,
+  BYE_GAMES_WON,
+  type MatchResult,
+} from '@/lib/swiss-pairing';
 
 interface CreateTournamentResult {
   success: boolean;
@@ -487,6 +497,15 @@ export async function submitResult(
   }
 }
 
+/**
+ * Generate the next round of Swiss pairings
+ * 
+ * Uses MTG tournament rules:
+ * - Point system: Win=3, Draw=1, Loss=0
+ * - OMW% as primary tiebreaker
+ * - Bye rotation (prioritize players without byes)
+ * - Match history tracking to prevent rematches
+ */
 async function generateNextRound(tournamentId: string, currentRound: number): Promise<void> {
   try {
     const supabase = await createClient();
@@ -516,10 +535,23 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
       return;
     }
 
-    // Step 1: Fetch standings for all players in this tournament
+    // Step 1: Get all tournament participants
+    const { data: tournamentParticipants } = await supabase
+      .from('tournament_participants')
+      .select('player_id')
+      .eq('tournament_id', tournamentId);
+
+    if (!tournamentParticipants || tournamentParticipants.length < 2) {
+      console.error('Not enough players for next round');
+      return;
+    }
+
+    const playerIds = tournamentParticipants.map((tp) => tp.player_id);
+
+    // Step 2: Fetch all completed matches with participants
     const { data: allMatches } = await supabase
       .from('matches')
-      .select('id')
+      .select('id, round_number')
       .eq('tournament_id', tournamentId)
       .lte('round_number', currentRound);
 
@@ -531,58 +563,51 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
     const matchIds = allMatches.map((m) => m.id);
     const { data: allParticipants } = await supabase
       .from('match_participants')
-      .select('player_id, result, games_won')
+      .select('match_id, player_id, result, games_won')
       .in('match_id', matchIds);
 
-    // Calculate standings with points and total games won
-    const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number; totalGamesWon: number }>();
-
+    // Step 3: Build match history for Swiss pairing
+    const matchHistory: MatchResult[] = [];
+    
+    // Group participants by match
+    const participantsByMatch = new Map<string, { playerId: string; result: 'win' | 'loss' | 'draw' | null; gamesWon: number }[]>();
     allParticipants?.forEach((p) => {
-      if (!standingsMap.has(p.player_id)) {
-        standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 });
+      if (!participantsByMatch.has(p.match_id)) {
+        participantsByMatch.set(p.match_id, []);
       }
-
-      const standing = standingsMap.get(p.player_id)!;
-      standing.totalGamesWon += p.games_won || 0;
-      
-      if (p.result === 'win') {
-        standing.wins++;
-        standing.points += 3;
-      } else if (p.result === 'loss') {
-        standing.losses++;
-        standing.points += 1;
-      } else if (p.result === 'draw') {
-        standing.draws++;
-        standing.points += 2;
-      }
+      participantsByMatch.get(p.match_id)!.push({
+        playerId: p.player_id,
+        result: p.result as 'win' | 'loss' | 'draw' | null,
+        gamesWon: p.games_won || 0,
+      });
     });
 
-    // Convert to array format for Swiss pairing
-    // Sort by points (primary), total games won (secondary), wins (tertiary), losses (quaternary)
-    const standings = Array.from(standingsMap.entries())
-      .map(([id, stats]) => ({ id, wins: stats.wins, losses: stats.losses, draws: stats.draws }))
-      .sort((a, b) => {
-        const pointsA = a.wins * 3 + a.draws * 2 + a.losses * 1;
-        const pointsB = b.wins * 3 + b.draws * 2 + b.losses * 1;
-        const gamesA = standingsMap.get(a.id)?.totalGamesWon || 0;
-        const gamesB = standingsMap.get(b.id)?.totalGamesWon || 0;
-        if (pointsB !== pointsA) return pointsB - pointsA;
-        if (gamesB !== gamesA) return gamesB - gamesA;
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return a.losses - b.losses;
-      });
-
-    if (standings.length < 2) {
-      console.error('Not enough players for next round');
-      return;
+    // Convert to MatchResult format
+    for (const match of allMatches) {
+      const participants = participantsByMatch.get(match.id) || [];
+      if (participants.length > 0) {
+        matchHistory.push(
+          convertDbMatchToMatchResult(
+            match.id,
+            match.round_number || 1,
+            participants.map((p) => ({ playerId: p.playerId, result: p.result }))
+          )
+        );
+      }
     }
 
-    // Step 2: Generate pairings for next round
-    const nextRound = currentRound + 1;
-    // @ts-expect-error - Swiss constructor type definition may be incorrect
-    const pairings = new Swiss(standings);
+    // Step 4: Generate Swiss pairings using the new algorithm
+    // This handles OMW% tiebreakers, bye rotation, and rematch prevention
+    const { pairings, warnings } = generateSwissPairings(playerIds, matchHistory);
 
-    // Step 3: Create matches and match_participants for next round
+    // Log any warnings (rematches, multiple byes, etc.)
+    if (warnings.length > 0) {
+      console.log('Swiss pairing warnings:', warnings);
+    }
+
+    // Step 5: Create matches and match_participants for next round
+    const nextRound = currentRound + 1;
+
     for (const pairing of pairings) {
       if (!pairing.player2) {
         // Bye - player gets automatic win with 2 game wins (standard bye score)
@@ -605,7 +630,7 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
           match_id: match.id,
           player_id: pairing.player1,
           result: 'win',
-          games_won: 2, // Standard bye score is 2-0
+          games_won: BYE_GAMES_WON, // Standard bye score is 2-0
         });
 
         if (participantError) {
@@ -912,6 +937,145 @@ export async function updateRoundDuration(
     return { success: true, updatedTimerData };
   } catch (error) {
     console.error('Error in updateRoundDuration:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+/**
+ * Submit match result with game scores - no redirect version for dashboard
+ * Same as submitResultWithGames but doesn't redirect, returns result instead
+ */
+export async function submitResultWithGamesNoRedirect(
+  matchId: string,
+  winnerId: string | null, // null for draw
+  loserId: string | null, // null for draw
+  player1Id: string,
+  player1Games: number,
+  player2Id: string,
+  player2Games: number,
+  tournamentId: string
+): Promise<SubmitResultResult> {
+  try {
+    const supabase = await createClient();
+    const isDraw = winnerId === null;
+
+    // Update match participants with results and games won
+    if (isDraw) {
+      // Both players get draw result
+      const { error: player1Error } = await supabase
+        .from('match_participants')
+        .update({ result: 'draw', games_won: player1Games })
+        .eq('match_id', matchId)
+        .eq('player_id', player1Id);
+
+      if (player1Error) {
+        console.error('Error updating player 1 draw:', player1Error);
+        return { success: false, message: `Failed to update result: ${player1Error.message}` };
+      }
+
+      const { error: player2Error } = await supabase
+        .from('match_participants')
+        .update({ result: 'draw', games_won: player2Games })
+        .eq('match_id', matchId)
+        .eq('player_id', player2Id);
+
+      if (player2Error) {
+        console.error('Error updating player 2 draw:', player2Error);
+        return { success: false, message: `Failed to update result: ${player2Error.message}` };
+      }
+    } else {
+      // Winner gets 'win', loser gets 'loss'
+      const winnerGames = winnerId === player1Id ? player1Games : player2Games;
+      const loserGames = winnerId === player1Id ? player2Games : player1Games;
+
+      const { error: winnerError } = await supabase
+        .from('match_participants')
+        .update({ result: 'win', games_won: winnerGames })
+        .eq('match_id', matchId)
+        .eq('player_id', winnerId);
+
+      if (winnerError) {
+        console.error('Error updating winner:', winnerError);
+        return { success: false, message: `Failed to update winner: ${winnerError.message}` };
+      }
+
+      const { error: loserError } = await supabase
+        .from('match_participants')
+        .update({ result: 'loss', games_won: loserGames })
+        .eq('match_id', matchId)
+        .eq('player_id', loserId);
+
+      if (loserError) {
+        console.error('Error updating loser:', loserError);
+        return { success: false, message: `Failed to update loser: ${loserError.message}` };
+      }
+    }
+
+    // Check if all matches in the current round are complete
+    const { data: match } = await supabase
+      .from('matches')
+      .select('round_number')
+      .eq('id', matchId)
+      .single();
+
+    if (!match) {
+      return { success: false, message: 'Match not found' };
+    }
+
+    // Get all matches for this round
+    const { data: roundMatches } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', match.round_number);
+
+    if (!roundMatches || roundMatches.length === 0) {
+      return { success: false, message: 'No matches found for this round' };
+    }
+
+    // Check if all matches have results
+    const matchIds = roundMatches.map((m) => m.id);
+    const { data: allParticipants } = await supabase
+      .from('match_participants')
+      .select('match_id, result')
+      .in('match_id', matchIds);
+
+    // Group participants by match
+    const participantsByMatch = new Map<string, { withResult: number; total: number }>();
+
+    allParticipants?.forEach((p) => {
+      if (!participantsByMatch.has(p.match_id)) {
+        participantsByMatch.set(p.match_id, { withResult: 0, total: 0 });
+      }
+      const matchData = participantsByMatch.get(p.match_id)!;
+      matchData.total++;
+      if (p.result !== null) {
+        matchData.withResult++;
+      }
+    });
+
+    // A match is complete if all its participants have results
+    const allMatchesComplete = roundMatches.every((m) => {
+      const matchData = participantsByMatch.get(m.id);
+      if (!matchData || matchData.total === 0) return false;
+      return matchData.withResult === matchData.total;
+    });
+
+    // Generate next round if all matches are complete
+    let nextRoundGenerated = false;
+    if (allMatchesComplete) {
+      await generateNextRound(tournamentId, match.round_number);
+      nextRoundGenerated = true;
+    }
+
+    // Revalidate paths but don't redirect
+    revalidatePath(`/tournament/${tournamentId}`);
+    revalidatePath(`/tournament/${tournamentId}/dashboard`);
+
+    return { success: true, nextRoundGenerated };
+  } catch (error) {
+    console.error('Error in submitResultWithGamesNoRedirect:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return { success: false, message: errorMessage };
   }

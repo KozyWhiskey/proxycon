@@ -27,7 +27,7 @@ export default function BottomNav() {
     {
       href: '/tournaments',
       icon: Menu,
-      label: 'Menu',
+      label: 'Tournaments',
     },
   ];
 

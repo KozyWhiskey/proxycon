@@ -6,6 +6,14 @@ import Link from 'next/link';
 import RoundGeneratedToast from '@/components/tournament/round-generated-toast';
 import RoundTimer from '@/components/tournament/round-timer';
 import PageHeader from '@/components/ui/page-header';
+import { Monitor } from 'lucide-react';
+import {
+  calculateStandings,
+  sortStandings,
+  convertDbMatchToMatchResult,
+  formatOMWPercentage,
+  type MatchResult,
+} from '@/lib/swiss-pairing';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -66,70 +74,83 @@ export default async function TournamentPage({ params }: PageProps) {
     .limit(1)
     .maybeSingle();
 
-  // Calculate standings with points and total games won
-  const matchIds = matches.map((m) => m.id);
-  const { data: allParticipants } = await supabase
-    .from('match_participants')
-    .select('player_id, result, games_won')
-    .in('match_id', matchIds);
-
   // Get all tournament participants
   const { data: tournamentParticipants } = await supabase
     .from('tournament_participants')
     .select('player_id')
     .eq('tournament_id', id);
 
-  const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number; totalGamesWon: number }>();
+  const playerIds = tournamentParticipants?.map((tp) => tp.player_id) || [];
 
+  // Fetch all match participants for standings calculation
+  const matchIds = matches.map((m) => m.id);
+  const { data: allParticipants } = await supabase
+    .from('match_participants')
+    .select('match_id, player_id, result, games_won')
+    .in('match_id', matchIds);
+
+  // Build match history for Swiss standings calculation
+  const participantsByMatch = new Map<string, { playerId: string; result: 'win' | 'loss' | 'draw' | null; gamesWon: number }[]>();
   allParticipants?.forEach((p) => {
-    if (!standingsMap.has(p.player_id)) {
-      standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 });
+    if (!participantsByMatch.has(p.match_id)) {
+      participantsByMatch.set(p.match_id, []);
     }
-
-    const standing = standingsMap.get(p.player_id)!;
-    standing.totalGamesWon += p.games_won || 0;
-    
-    if (p.result === 'win') {
-      standing.wins++;
-      standing.points += 3;
-    } else if (p.result === 'loss') {
-      standing.losses++;
-      standing.points += 1;
-    } else if (p.result === 'draw') {
-      standing.draws++;
-      standing.points += 2;
-    }
+    participantsByMatch.get(p.match_id)!.push({
+      playerId: p.player_id,
+      result: p.result as 'win' | 'loss' | 'draw' | null,
+      gamesWon: p.games_won || 0,
+    });
   });
 
-  // Ensure all tournament participants are in standings (even with 0 points)
-  tournamentParticipants?.forEach((tp) => {
-    if (!standingsMap.has(tp.player_id)) {
-      standingsMap.set(tp.player_id, { wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 });
+  // Convert to MatchResult format for Swiss standings
+  const matchHistory: MatchResult[] = [];
+  for (const match of matches) {
+    const participants = participantsByMatch.get(match.id) || [];
+    if (participants.length > 0) {
+      matchHistory.push(
+        convertDbMatchToMatchResult(
+          match.id,
+          match.round_number || 1,
+          participants.map((p) => ({ playerId: p.playerId, result: p.result }))
+        )
+      );
     }
+  }
+
+  // Calculate standings using MTG Swiss rules (3-1-0 point system, OMW% tiebreaker)
+  const standingsMap = calculateStandings(playerIds, matchHistory);
+  
+  // Also track games won from the database for display
+  const gamesWonMap = new Map<string, number>();
+  allParticipants?.forEach((p) => {
+    const current = gamesWonMap.get(p.player_id) || 0;
+    gamesWonMap.set(p.player_id, current + (p.games_won || 0));
   });
 
   // Fetch player details for standings
-  const playerIdsForStandings = Array.from(standingsMap.keys());
   const { data: standingsPlayers } = await supabase
     .from('players')
     .select('id, name, nickname')
-    .in('id', playerIdsForStandings);
+    .in('id', playerIds);
 
   const playersMap = new Map(standingsPlayers?.map((p) => [p.id, p]) || []);
 
-  // Convert to array and sort by points (primary), total games won (secondary), wins (tertiary), losses (quaternary)
-  const standings = Array.from(standingsMap.entries())
-    .map(([id, stats]) => ({
-      id,
-      ...stats,
-      player: playersMap.get(id),
-    }))
-    .sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.totalGamesWon !== a.totalGamesWon) return b.totalGamesWon - a.totalGamesWon;
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      return a.losses - b.losses;
-    });
+  // Convert to sorted array using MTG tiebreakers (Points > OMW% > GW%)
+  const sortedStandings = sortStandings(Array.from(standingsMap.values()));
+  
+  const standings = sortedStandings.map((standing) => ({
+    id: standing.playerId,
+    wins: standing.matchWins,
+    losses: standing.matchLosses,
+    draws: standing.matchDraws,
+    points: standing.points,
+    totalGamesWon: gamesWonMap.get(standing.playerId) || 0,
+    omwPercentage: standing.opponentMatchWinPercentage,
+    mwPercentage: standing.matchWinPercentage,
+    gwPercentage: standing.gameWinPercentage,
+    receivedBye: standing.receivedBye,
+    player: playersMap.get(standing.playerId),
+  }));
 
   // Fetch participants for current round matches
   const matchDetails = await Promise.all(
@@ -231,6 +252,18 @@ export default async function TournamentPage({ params }: PageProps) {
       />
       <RoundGeneratedToast />
       <div className="max-w-2xl mx-auto p-4 space-y-6">
+        {/* Dashboard Link */}
+        <Button
+          asChild
+          variant="outline"
+          className="w-full h-12 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300"
+        >
+          <Link href={`/tournament/${id}/dashboard`}>
+            <Monitor className="w-5 h-5 mr-2" />
+            Open Shared Screen Dashboard
+          </Link>
+        </Button>
+
         {/* Round Timer */}
         {tournament.status === 'active' && (
           <RoundTimer
@@ -248,7 +281,10 @@ export default async function TournamentPage({ params }: PageProps) {
         {/* Standings */}
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
-            <CardTitle className="text-slate-100">Standings</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-slate-100">Standings</CardTitle>
+              <span className="text-xs text-slate-500">MTG Swiss (3-1-0)</span>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -261,34 +297,41 @@ export default async function TournamentPage({ params }: PageProps) {
                     <span className="text-slate-400 font-bold w-6 text-center">
                       {index + 1}
                     </span>
-                    <span className="text-slate-100 font-medium">
-                      {standing.player?.nickname || standing.player?.name || 'Unknown Player'}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-100 font-medium">
+                        {standing.player?.nickname || standing.player?.name || 'Unknown Player'}
+                      </span>
+                      {standing.receivedBye && (
+                        <span className="text-xs text-yellow-600">Has bye</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-sm">
                     <div className="text-center min-w-[36px]">
                       <div className="text-yellow-500 font-bold">{standing.points}</div>
                       <div className="text-slate-400 text-xs">pts</div>
                     </div>
-                    <div className="text-center min-w-[32px]">
-                      <div className="text-purple-400 font-bold">{standing.totalGamesWon}</div>
-                      <div className="text-slate-400 text-xs">GW</div>
+                    <div className="text-center min-w-[44px]">
+                      <div className="text-cyan-400 font-medium text-xs">
+                        {formatOMWPercentage(standing.omwPercentage)}
+                      </div>
+                      <div className="text-slate-400 text-xs">OMW%</div>
                     </div>
-                    <div className="text-center min-w-[24px]">
-                      <div className="text-green-500">{standing.wins}</div>
-                      <div className="text-slate-400 text-xs">W</div>
-                    </div>
-                    <div className="text-center min-w-[24px]">
-                      <div className="text-blue-500">{standing.draws}</div>
-                      <div className="text-slate-400 text-xs">D</div>
-                    </div>
-                    <div className="text-center min-w-[24px]">
-                      <div className="text-red-500">{standing.losses}</div>
-                      <div className="text-slate-400 text-xs">L</div>
+                    <div className="text-center min-w-[60px]">
+                      <div className="text-slate-300 font-medium">
+                        {standing.wins}-{standing.losses}-{standing.draws}
+                      </div>
+                      <div className="text-slate-400 text-xs">W-L-D</div>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+            {/* Point system legend */}
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 text-center">
+                Win = 3pts • Draw = 1pt • Loss = 0pts • OMW% = Opponent Match Win %
+              </p>
             </div>
           </CardContent>
         </Card>
