@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus, Play, ShoppingBag, Receipt, Trophy } from 'lucide-react';
+import { Plus, Play, Trophy } from 'lucide-react';
 
 export default function QuickActions() {
   return (
@@ -31,36 +31,14 @@ export default function QuickActions() {
             Log Casual Game
           </Link>
         </Button>
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            asChild
-            variant="outline"
-            className="h-12 border-slate-700 text-slate-300 hover:bg-slate-800"
-          >
-            <Link href="/tournaments">
-              <Trophy className="w-4 h-4 mr-2" />
-              Manage
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-12 border-slate-700 text-slate-300 hover:bg-slate-800"
-          >
-            <Link href="/shop">
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Prize Wall
-            </Link>
-          </Button>
-        </div>
         <Button
           asChild
           variant="outline"
           className="w-full h-12 border-slate-700 text-slate-300 hover:bg-slate-800"
         >
-          <Link href="/ledger">
-            <Receipt className="w-4 h-4 mr-2" />
-            Ledger
+          <Link href="/tournaments">
+            <Trophy className="w-4 h-4 mr-2" />
+            Manage
           </Link>
         </Button>
       </CardContent>

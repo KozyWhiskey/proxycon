@@ -155,7 +155,7 @@ export default async function Home() {
           <p className="text-slate-400 text-sm">Your tournament companion</p>
         </div>
         
-        <MyStats tickets={currentUser.tickets || 0} wins={currentUser.wins || 0} />
+        <MyStats wins={currentUser.wins || 0} />
         
         <QuickActions />
         

@@ -16,7 +16,10 @@ export async function createTournament(
   playerIds: string[],
   format: string = 'draft',
   maxRounds: number = 3,
-  roundDurationMinutes: number = 50
+  roundDurationMinutes: number = 50,
+  prize1st?: string,
+  prize2nd?: string,
+  prize3rd?: string
 ): Promise<CreateTournamentResult> {
   try {
     if (!name || name.trim().length === 0) {
@@ -48,6 +51,9 @@ export async function createTournament(
         status: 'pending', // Will become 'active' when draft starts
         max_rounds: maxRounds,
         round_duration_minutes: roundDurationMinutes,
+        prize_1st: prize1st || null,
+        prize_2nd: prize2nd || null,
+        prize_3rd: prize3rd || null,
       })
       .select()
       .single();
@@ -113,6 +119,156 @@ interface SubmitResultResult {
   success: boolean;
   message?: string;
   nextRoundGenerated?: boolean;
+}
+
+/**
+ * Submit match result with game scores for tiebreaker tracking
+ * This is the primary action for reporting match results
+ */
+export async function submitResultWithGames(
+  matchId: string,
+  winnerId: string | null, // null for draw
+  loserId: string | null, // null for draw
+  player1Id: string,
+  player1Games: number,
+  player2Id: string,
+  player2Games: number,
+  tournamentId: string
+): Promise<SubmitResultResult> {
+  try {
+    const supabase = await createClient();
+    const isDraw = winnerId === null;
+
+    // Update match participants with results and games won
+    if (isDraw) {
+      // Both players get draw result
+      const { error: player1Error } = await supabase
+        .from('match_participants')
+        .update({ result: 'draw', games_won: player1Games })
+        .eq('match_id', matchId)
+        .eq('player_id', player1Id);
+
+      if (player1Error) {
+        console.error('Error updating player 1 draw:', player1Error);
+        return { success: false, message: `Failed to update result: ${player1Error.message}` };
+      }
+
+      const { error: player2Error } = await supabase
+        .from('match_participants')
+        .update({ result: 'draw', games_won: player2Games })
+        .eq('match_id', matchId)
+        .eq('player_id', player2Id);
+
+      if (player2Error) {
+        console.error('Error updating player 2 draw:', player2Error);
+        return { success: false, message: `Failed to update result: ${player2Error.message}` };
+      }
+    } else {
+      // Winner gets 'win', loser gets 'loss'
+      const winnerGames = winnerId === player1Id ? player1Games : player2Games;
+      const loserGames = winnerId === player1Id ? player2Games : player1Games;
+
+      const { error: winnerError } = await supabase
+        .from('match_participants')
+        .update({ result: 'win', games_won: winnerGames })
+        .eq('match_id', matchId)
+        .eq('player_id', winnerId);
+
+      if (winnerError) {
+        console.error('Error updating winner:', winnerError);
+        return { success: false, message: `Failed to update winner: ${winnerError.message}` };
+      }
+
+      const { error: loserError } = await supabase
+        .from('match_participants')
+        .update({ result: 'loss', games_won: loserGames })
+        .eq('match_id', matchId)
+        .eq('player_id', loserId);
+
+      if (loserError) {
+        console.error('Error updating loser:', loserError);
+        return { success: false, message: `Failed to update loser: ${loserError.message}` };
+      }
+    }
+
+    // Check if all matches in the current round are complete
+    const { data: match } = await supabase
+      .from('matches')
+      .select('round_number')
+      .eq('id', matchId)
+      .single();
+
+    if (!match) {
+      return { success: false, message: 'Match not found' };
+    }
+
+    // Get all matches for this round
+    const { data: roundMatches } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', match.round_number);
+
+    if (!roundMatches || roundMatches.length === 0) {
+      return { success: false, message: 'No matches found for this round' };
+    }
+
+    // Check if all matches have results
+    const matchIds = roundMatches.map((m) => m.id);
+    const { data: allParticipants } = await supabase
+      .from('match_participants')
+      .select('match_id, result')
+      .in('match_id', matchIds);
+
+    // Group participants by match
+    const participantsByMatch = new Map<string, { withResult: number; total: number }>();
+
+    allParticipants?.forEach((p) => {
+      if (!participantsByMatch.has(p.match_id)) {
+        participantsByMatch.set(p.match_id, { withResult: 0, total: 0 });
+      }
+      const matchData = participantsByMatch.get(p.match_id)!;
+      matchData.total++;
+      if (p.result !== null) {
+        matchData.withResult++;
+      }
+    });
+
+    // A match is complete if all its participants have results
+    const allMatchesComplete = roundMatches.every((m) => {
+      const matchData = participantsByMatch.get(m.id);
+      if (!matchData || matchData.total === 0) return false;
+      return matchData.withResult === matchData.total;
+    });
+
+    // Generate next round if all matches are complete
+    let nextRoundGenerated = false;
+    if (allMatchesComplete) {
+      await generateNextRound(tournamentId, match.round_number);
+      nextRoundGenerated = true;
+    }
+
+    // Revalidate the tournament page and redirect
+    revalidatePath(`/tournament/${tournamentId}`);
+
+    const redirectUrl = nextRoundGenerated
+      ? `/tournament/${tournamentId}?roundGenerated=true`
+      : `/tournament/${tournamentId}`;
+
+    redirect(redirectUrl);
+  } catch (error) {
+    // Re-throw redirect errors
+    if (error && typeof error === 'object' && 'digest' in error) {
+      const digest = (error as { digest?: string }).digest;
+      if (digest?.startsWith('NEXT_REDIRECT')) {
+        throw error;
+      }
+    }
+
+    console.error('Error in submitResultWithGames:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
 }
 
 export async function submitDraw(
@@ -375,18 +531,20 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
     const matchIds = allMatches.map((m) => m.id);
     const { data: allParticipants } = await supabase
       .from('match_participants')
-      .select('player_id, result')
+      .select('player_id, result, games_won')
       .in('match_id', matchIds);
 
-    // Calculate standings with points
-    const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number }>();
+    // Calculate standings with points and total games won
+    const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number; totalGamesWon: number }>();
 
     allParticipants?.forEach((p) => {
       if (!standingsMap.has(p.player_id)) {
-        standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0 });
+        standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 });
       }
 
       const standing = standingsMap.get(p.player_id)!;
+      standing.totalGamesWon += p.games_won || 0;
+      
       if (p.result === 'win') {
         standing.wins++;
         standing.points += 3;
@@ -400,13 +558,16 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
     });
 
     // Convert to array format for Swiss pairing
-    // Sort by points (primary), wins (secondary), losses (tertiary)
+    // Sort by points (primary), total games won (secondary), wins (tertiary), losses (quaternary)
     const standings = Array.from(standingsMap.entries())
       .map(([id, stats]) => ({ id, wins: stats.wins, losses: stats.losses, draws: stats.draws }))
       .sort((a, b) => {
         const pointsA = a.wins * 3 + a.draws * 2 + a.losses * 1;
         const pointsB = b.wins * 3 + b.draws * 2 + b.losses * 1;
+        const gamesA = standingsMap.get(a.id)?.totalGamesWon || 0;
+        const gamesB = standingsMap.get(b.id)?.totalGamesWon || 0;
         if (pointsB !== pointsA) return pointsB - pointsA;
+        if (gamesB !== gamesA) return gamesB - gamesA;
         if (b.wins !== a.wins) return b.wins - a.wins;
         return a.losses - b.losses;
       });
@@ -424,7 +585,7 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
     // Step 3: Create matches and match_participants for next round
     for (const pairing of pairings) {
       if (!pairing.player2) {
-        // Bye
+        // Bye - player gets automatic win with 2 game wins (standard bye score)
         const { data: match, error: matchError } = await supabase
           .from('matches')
           .insert({
@@ -444,6 +605,7 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
           match_id: match.id,
           player_id: pairing.player1,
           result: 'win',
+          games_won: 2, // Standard bye score is 2-0
         });
 
         if (participantError) {
@@ -490,10 +652,46 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
   }
 }
 
-interface TimerControlResult {
-  success: boolean;
-  message?: string;
+// A helper function to fetch the combined timer data
+async function getTimerData(
+  supabase: ReturnType<typeof createClient>,
+  tournamentId: string,
+  roundNumber: number
+): Promise<TimerData | null> {
+  const { data: tournamentData, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('round_duration_minutes')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError || !tournamentData) {
+    console.error('getTimerData: Error fetching tournament', tournamentError);
+    return null;
+  }
+
+  const { data: matchData, error: matchError } = await supabase
+    .from('matches')
+    .select('started_at, paused_at, total_paused_seconds')
+    .eq('tournament_id', tournamentId)
+    .eq('round_number', roundNumber)
+    .limit(1)
+    .maybeSingle(); // Use maybeSingle to handle case where no match exists yet
+
+  if (matchError) {
+    console.error('getTimerData: Error fetching match', matchError);
+    return null;
+  }
+
+  return {
+    roundDurationMinutes: tournamentData.round_duration_minutes,
+    startedAt: matchData?.started_at || null,
+    pausedAt: matchData?.paused_at || null,
+    totalPausedSeconds: matchData?.total_paused_seconds || 0,
+  };
 }
+
+
+import { TimerData, TimerControlResult } from '@/lib/types';
 
 export async function startRoundTimer(
   tournamentId: string,
@@ -502,7 +700,6 @@ export async function startRoundTimer(
   try {
     const supabase = await createClient();
 
-    // Get all matches for this round
     const { data: matches } = await supabase
       .from('matches')
       .select('id')
@@ -514,8 +711,6 @@ export async function startRoundTimer(
     }
 
     const now = new Date().toISOString();
-
-    // Update all matches in the round with started_at
     const { error } = await supabase
       .from('matches')
       .update({
@@ -531,8 +726,12 @@ export async function startRoundTimer(
       return { success: false, message: error.message };
     }
 
-    revalidatePath(`/tournament/${tournamentId}`);
-    return { success: true };
+    const updatedTimerData = await getTimerData(supabase, tournamentId, roundNumber);
+    if (!updatedTimerData) {
+      return { success: false, message: 'Failed to fetch updated timer data.' };
+    }
+
+    return { success: true, updatedTimerData };
   } catch (error) {
     console.error('Error in startRoundTimer:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -547,10 +746,9 @@ export async function pauseRoundTimer(
   try {
     const supabase = await createClient();
 
-    // Get current timer state
     const { data: match } = await supabase
       .from('matches')
-      .select('started_at, paused_at, total_paused_seconds')
+      .select('started_at, paused_at')
       .eq('tournament_id', tournamentId)
       .eq('round_number', roundNumber)
       .limit(1)
@@ -565,8 +763,6 @@ export async function pauseRoundTimer(
     }
 
     const now = new Date().toISOString();
-
-    // Set paused_at on all matches in the round
     const { error } = await supabase
       .from('matches')
       .update({ paused_at: now })
@@ -578,8 +774,12 @@ export async function pauseRoundTimer(
       return { success: false, message: error.message };
     }
 
-    revalidatePath(`/tournament/${tournamentId}`);
-    return { success: true };
+    const updatedTimerData = await getTimerData(supabase, tournamentId, roundNumber);
+     if (!updatedTimerData) {
+      return { success: false, message: 'Failed to fetch updated timer data.' };
+    }
+
+    return { success: true, updatedTimerData };
   } catch (error) {
     console.error('Error in pauseRoundTimer:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -594,7 +794,6 @@ export async function resumeRoundTimer(
   try {
     const supabase = await createClient();
 
-    // Get current timer state
     const { data: match } = await supabase
       .from('matches')
       .select('started_at, paused_at, total_paused_seconds')
@@ -607,18 +806,15 @@ export async function resumeRoundTimer(
     if (!match || !match.started_at) {
       return { success: false, message: 'Timer not started' };
     }
-
     if (!match.paused_at) {
       return { success: false, message: 'Timer not paused' };
     }
 
-    // Calculate how long timer was paused (time between pause and resume)
     const now = new Date().getTime();
     const pausedTime = new Date(match.paused_at).getTime();
     const pausedDuration = Math.floor((now - pausedTime) / 1000);
     const newTotalPaused = (match.total_paused_seconds || 0) + pausedDuration;
 
-    // Clear paused_at and update total_paused_seconds
     const { error } = await supabase
       .from('matches')
       .update({
@@ -633,8 +829,12 @@ export async function resumeRoundTimer(
       return { success: false, message: error.message };
     }
 
-    revalidatePath(`/tournament/${tournamentId}`);
-    return { success: true };
+    const updatedTimerData = await getTimerData(supabase, tournamentId, roundNumber);
+     if (!updatedTimerData) {
+      return { success: false, message: 'Failed to fetch updated timer data.' };
+    }
+
+    return { success: true, updatedTimerData };
   } catch (error) {
     console.error('Error in resumeRoundTimer:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -649,24 +849,67 @@ export async function updateRoundDuration(
   try {
     const supabase = await createClient();
 
-    // Validate duration
     if (newDurationMinutes < 1 || newDurationMinutes > 300) {
       return { success: false, message: 'Duration must be between 1 and 300 minutes' };
     }
 
-    // Update tournament
-    const { error } = await supabase
+    // Step 1: Update the tournament's duration
+    const { error: tournamentError } = await supabase
       .from('tournaments')
       .update({ round_duration_minutes: newDurationMinutes })
       .eq('id', tournamentId);
 
-    if (error) {
-      console.error('Error updating round duration:', error);
-      return { success: false, message: error.message };
+    if (tournamentError) {
+      console.error('Error updating round duration:', tournamentError);
+      return { success: false, message: tournamentError.message };
     }
 
-    revalidatePath(`/tournament/${tournamentId}`);
-    return { success: true };
+    // Step 2: Find the current round number
+    const { data: activeRoundData } = await supabase
+      .from('matches')
+      .select('round_number')
+      .eq('tournament_id', tournamentId)
+      .order('round_number', { ascending: false })
+      .limit(1)
+      .single();
+
+    // If there are no rounds/matches yet, there's nothing to reset.
+    if (!activeRoundData) {
+      return { 
+        success: true, 
+        updatedTimerData: { 
+          roundDurationMinutes: newDurationMinutes,
+          startedAt: null,
+          pausedAt: null,
+          totalPausedSeconds: 0
+        } 
+      };
+    }
+    const currentRound = activeRoundData.round_number;
+
+    // Step 3: Reset the timer state for all matches in the current round
+    const { error: matchesError } = await supabase
+      .from('matches')
+      .update({
+        started_at: null,
+        paused_at: null,
+        total_paused_seconds: 0,
+      })
+      .eq('tournament_id', tournamentId)
+      .eq('round_number', currentRound);
+
+    if (matchesError) {
+      console.error('Error resetting round timer state:', matchesError);
+      return { success: false, message: 'Failed to reset timer state after duration update.' };
+    }
+    
+    // Step 4: Fetch and return the fresh, reset timer data
+    const updatedTimerData = await getTimerData(supabase, tournamentId, currentRound);
+    if (!updatedTimerData) {
+      return { success: false, message: 'Failed to fetch updated timer data after duration update.' };
+    }
+
+    return { success: true, updatedTimerData };
   } catch (error) {
     console.error('Error in updateRoundDuration:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -877,7 +1120,7 @@ export async function startDraft(tournamentId: string): Promise<StartDraftResult
     // Create matches for Round 1
     for (const pairing of pairings) {
       if (!pairing.player2) {
-        // Bye match
+        // Bye match - player gets automatic win with 2 game wins (standard bye score)
         const { data: match, error: matchError } = await supabase
           .from('matches')
           .insert({
@@ -897,6 +1140,7 @@ export async function startDraft(tournamentId: string): Promise<StartDraftResult
           match_id: match.id,
           player_id: pairing.player1,
           result: 'win', // Bye is an automatic win
+          games_won: 2, // Standard bye score is 2-0
         });
 
         if (participantError) {

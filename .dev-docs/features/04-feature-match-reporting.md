@@ -1,57 +1,119 @@
 # Feature: Match Reporting
 
+**Status:** ✅ **IMPLEMENTED** (Game Score Based)
+
 ## Objective
-Build the UI and logic for users to report the results of their matches. This includes a dedicated page for reporting, a server action to process the result, and logic to trigger the generation of the next round if all matches in the current round are complete.
+Build the UI and logic for users to report the results of their matches using game scores. This includes a dedicated page for reporting with game score inputs, server actions to process the result with games won tracking, and logic to trigger the generation of the next round if all matches in the current round are complete.
 
 ## Implementation Steps
 
-1.  **Create Match Reporting Page (`app/match/[id]/page.tsx`):**
+1.  **Create Match Reporting Page (`app/tournament/[id]/match/[matchId]/page.tsx`):**
     -   This is a dynamic route that will display the reporting UI for a specific match.
-    -   It's a Server Component that fetches the details for `params.id`, including the two participants.
-    -   The UI should be simple and thumb-friendly. Instead of small radio buttons, use two large, clickable `Card` components, one for each player.
-    -   The page should have a clear header, e.g., "Who Won? - Dave vs. Steve".
+    -   It's a Server Component that fetches the details for the match, including the two participants.
+    -   Uses the `MatchReportingForm` client component for interactive input.
 
-2.  **Create `submitResult` Server Action (`app/tournament/actions.ts`):**
-    -   This action will be called when a user clicks on a player's card to declare them the winner.
-    -   It will accept `matchId`, `winnerId`, and `loserId`.
-    -   **Step 1 (DB Update):** Update the `match_participants` table. Set `result` to 'win' for the `winnerId` and 'loss' for the `loserId` for the given `matchId`.
-    -   **Step 2 (Check for Round Completion):** After updating the result, query the database to see if all matches for the current round of the tournament are now complete.
-    -   **Step 3 (Trigger Next Round):** If all matches are complete, call a new server action, `generateNextRound(tournamentId)`.
+2.  **Create Match Reporting Form (`components/tournament/match-reporting-form.tsx`):**
+    -   **Game Score Inputs:** +/- buttons for each player to set their game wins (0, 1, 2)
+    -   **Result Preview:** Shows "Player A wins X-Y" or "Draw X-X" based on scores
+    -   **Submit Button:** Submits the result with game scores
+    -   The UI should be simple and thumb-friendly with large tap targets.
 
-3.  **Create `generateNextRound` Server Action (`app/tournament/actions.ts`):**
-    -   This action takes a `tournamentId`.
-    -   **Step 1 (Fetch Standings):** Fetch all players and their current win/loss records for the tournament.
-    -   **Step 2 (Pairing):** Use the `tournament-pairings` library to generate the next round's pairings based on the current standings.
-    -   **Step 3 (DB Create):** Just like in the `createTournament` action, create the new `matches` and `match_participants` entries for the new round.
-    -   **Step 4 (Notifications):** (Optional Polish) Use `sonner` to show a toast notification that the next round has been generated.
+3.  **Create Server Actions (`app/tournament/actions.ts`):**
+    -   **`submitResultWithGames(matchId, winnerId, loserId, winnerGames, loserGames, tournamentId)`**
+        -   Updates `match_participants` with 'win'/'loss' results AND `games_won` for each player
+        -   Checks for round completion
+        -   Triggers next round generation if all matches complete
+    -   **`submitDrawWithGames(matchId, playerIds, gamesWon, tournamentId)`**
+        -   Updates all participants with 'draw' result AND their respective `games_won`
+        -   Checks for round completion
+        -   Triggers next round generation if all matches complete
 
-4.  **Integrate with UI:**
-    -   The `PlayerCard` components on the match reporting page will call the `submitResult` action `onClick`.
-    -   After the action completes, it should `revalidatePath` for the tournament bracket page and then `redirect` the user back to `/tournament/[id]` to see the updated bracket.
+4.  **`generateNextRound` Server Action Updates:**
+    -   Fetches standings including `games_won` from all previous matches
+    -   Uses total games won as a tiebreaker in standings calculation
+    -   Creates new matches for the next round
+    -   For byes, sets `games_won = 2` automatically
+
+## Match Result Logic
+
+### Determining Result from Scores
+```typescript
+// If scores are equal → Draw
+if (player1Games === player2Games) {
+  await submitDrawWithGames(matchId, [player1Id, player2Id], [player1Games, player2Games], tournamentId);
+}
+// If player1 has more games → Player 1 wins
+else if (player1Games > player2Games) {
+  await submitResultWithGames(matchId, player1Id, player2Id, player1Games, player2Games, tournamentId);
+}
+// Otherwise → Player 2 wins
+else {
+  await submitResultWithGames(matchId, player2Id, player1Id, player2Games, player1Games, tournamentId);
+}
+```
+
+### Common Scenarios
+| Player 1 Games | Player 2 Games | Result |
+|----------------|----------------|--------|
+| 2 | 0 | Player 1 wins 2-0 |
+| 2 | 1 | Player 1 wins 2-1 |
+| 1 | 2 | Player 2 wins 2-1 |
+| 0 | 2 | Player 2 wins 2-0 |
+| 1 | 1 | Draw 1-1 |
+| 0 | 0 | Draw 0-0 |
 
 ## Testing Plan
 
 1.  **Test Match Reporting UI:**
     -   Start a tournament and navigate to the bracket page.
     -   Click the "Report Result" button for a specific match.
-    -   **Expected Outcome:** You should be taken to the `app/match/[id]` page, which displays two large clickable cards for the participating players.
+    -   **Expected Outcome:** You should be taken to the match reporting page with game score inputs for each player.
 
-2.  **Test `submitResult` Action:**
-    -   On the match reporting page, click on one of the players to declare them the winner.
+2.  **Test Game Score Input:**
+    -   Use +/- buttons to adjust scores for each player.
     -   **Expected Outcome:**
-        -   The `submitResult` action is called.
-        -   You are redirected back to the tournament bracket page.
-        -   The match you just reported should now show the result (e.g., "Dave Won").
-        -   In the database, the `match_participants` table should be updated with 'win' and 'loss' for the respective players.
+        -   Scores should increment/decrement correctly (0-2 range)
+        -   Result preview should update dynamically
 
-3.  **Test Next Round Generation:**
-    -   Report results for all but one of the matches in the current round. The next round should not be generated yet.
-    -   Report the result for the final match of the round.
+3.  **Test `submitResultWithGames` Action:**
+    -   Set scores to 2-1 and submit.
+    -   **Expected Outcome:**
+        -   The winner has `result = 'win'` and `games_won = 2`
+        -   The loser has `result = 'loss'` and `games_won = 1`
+        -   You are redirected back to the tournament bracket page
+        -   The match shows "Won 2-1"
+
+4.  **Test `submitDrawWithGames` Action:**
+    -   Set scores to 1-1 and submit.
+    -   **Expected Outcome:**
+        -   Both players have `result = 'draw'` and `games_won = 1`
+        -   You are redirected back to the tournament bracket page
+        -   The match shows "Draw 1-1"
+
+5.  **Test Next Round Generation:**
+    -   Report results for all matches in the current round.
     -   **Expected Outcome:**
         -   The `generateNextRound` action should be triggered automatically.
-        -   The bracket page, upon reloading, should now display the pairings for Round 2.
-        -   Verify the new `matches` have been created in the database for the new round number.
+        -   Next round pairings should appear on the bracket page.
+        -   Standings should reflect `totalGamesWon` for tiebreaker purposes.
 
-4.  **Test Final Round:**
-    -   Complete all matches for the final round of a tournament.
-    -   **Expected Outcome:** The system should not try to generate a next round. The tournament can be marked as 'completed' in the database.
+6.  **Test Tiebreaker:**
+    -   Create a scenario where two players have equal points but different games won.
+    -   **Expected Outcome:** The player with more total games won ranks higher.
+
+7.  **Test Bye Handling:**
+    -   Create a tournament with odd number of players.
+    -   **Expected Outcome:** Bye player gets `result = 'win'` and `games_won = 2`.
+
+## Points System
+
+- **Win:** 3 points
+- **Draw:** 2 points
+- **Loss:** 1 point
+
+## Tiebreaker System (in order)
+
+1. Total points (wins × 3 + draws × 2 + losses × 1)
+2. Total games won (sum of `games_won` across all matches)
+3. Round wins (more is better)
+4. Round losses (fewer is better)

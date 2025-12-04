@@ -1,13 +1,15 @@
 # Database Structure
 
-**Last Updated:** Based on Tournament Status Workflow & Management implementation  
+**Last Updated:** December 2024 - Streaming Dashboard Simplification  
 **Database:** Supabase (PostgreSQL)
 
 ---
 
 ## Overview
 
-This document outlines the complete database schema for the ProxyCon 2025 companion application. The schema supports tournament management, match reporting, player tracking, and the prize economy system.
+This document outlines the complete database schema for the ProxyCon 2025 companion application. The schema supports tournament management, match reporting with game win tracking, player tracking, and tournament prizes.
+
+**Note:** The prize wall, ledger, and ticket currency features have been removed to simplify the application into a streaming dashboard focused on drafts and tournaments.
 
 ---
 
@@ -24,7 +26,6 @@ Stores player information and statistics.
 | `nickname` | TEXT | NULLABLE | Player's nickname/display name |
 | `avatar_url` | TEXT | NULLABLE | URL to player's avatar image |
 | `wins` | INTEGER | DEFAULT 0 | Total weekend wins (casual + tournament) |
-| `tickets` | INTEGER | DEFAULT 0 | Current ticket currency balance |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
 | `updated_at` | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
@@ -32,11 +33,14 @@ Stores player information and statistics.
 - Primary key on `id`
 - Index on `name` for quick lookups
 
+**Notes:**
+- The `tickets` column has been removed (no longer used)
+
 ---
 
 ### 2. `tournaments`
 
-Stores tournament information and configuration.
+Stores tournament information, configuration, and prizes.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -46,6 +50,9 @@ Stores tournament information and configuration.
 | `status` | TEXT | NOT NULL | Tournament status ('pending', 'active', 'completed') |
 | `max_rounds` | INTEGER | DEFAULT 3 | Maximum number of rounds (1-10) |
 | `round_duration_minutes` | INTEGER | DEFAULT 50 | Duration of each round in minutes |
+| `prize_1st` | TEXT | NULLABLE | 1st place prize description |
+| `prize_2nd` | TEXT | NULLABLE | 2nd place prize description |
+| `prize_3rd` | TEXT | NULLABLE | 3rd place prize description |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Tournament creation timestamp |
 | `updated_at` | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
@@ -67,6 +74,7 @@ Stores tournament information and configuration.
 - Tournaments are created with status `'pending'` and become `'active'` when Round 1 matches are created (when "Start Draft" is clicked)
 - Only tournaments with status `'active'` appear on the dashboard
 - Pending tournaments can be managed or deleted from the tournament management page
+- Prize columns are optional and displayed when tournament is completed
 
 ---
 
@@ -144,7 +152,7 @@ Stores individual match records for tournaments and casual play.
 
 ### 5. `match_participants`
 
-Tracks which players participated in each match and their results.
+Tracks which players participated in each match, their results, and game wins.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -152,6 +160,7 @@ Tracks which players participated in each match and their results.
 | `match_id` | UUID | NOT NULL, FK → matches.id | Match this participant belongs to |
 | `player_id` | UUID | NOT NULL, FK → players.id | Player participating |
 | `result` | TEXT | NULLABLE | Match result ('win', 'loss', 'draw', or null for pending) |
+| `games_won` | INTEGER | DEFAULT 0 | Number of games won in this match (for tiebreaker) |
 | `deck_archetype` | TEXT | NULLABLE | Player's deck archetype (optional) |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
 | `updated_at` | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
@@ -164,64 +173,32 @@ Tracks which players participated in each match and their results.
 
 **Constraints:**
 - `result` must be one of: 'win', 'loss', 'draw', or NULL
+- `games_won` must be non-negative (>= 0)
 - Unique constraint on `(match_id, player_id)` - a player can only participate once per match
 - Tournament matches typically have 1-2 participants (2 for normal, 1 for bye)
 - Casual matches can have 2-4 participants
 
 **Notes:**
 - `result` is NULL when match is pending
-- For byes in tournaments, the single participant gets `result = 'win'` automatically
+- `games_won` tracks individual game wins within a match (e.g., 2-1 means winner has 2, loser has 1)
+- For byes in tournaments, the single participant gets `result = 'win'` and `games_won = 2` (standard bye score)
 - Points are calculated from results:
   - Win = 3 points
   - Draw = 2 points
   - Loss = 1 point
+- Total games won is used as a tiebreaker when players have equal points
 
 ---
 
-### 6. `prize_wall`
+## Removed Tables
 
-Stores available prizes that can be purchased with tickets.
+The following tables have been removed in the streaming dashboard simplification:
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PRIMARY KEY | Unique prize identifier |
-| `name` | TEXT | NOT NULL | Prize name |
-| `cost` | INTEGER | NOT NULL | Ticket cost to purchase |
-| `stock` | INTEGER | DEFAULT 0 | Available quantity |
-| `image_url` | TEXT | NULLABLE | URL to prize image |
-| `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
-| `updated_at` | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
+### ~~`prize_wall`~~ (REMOVED)
+Previously stored prizes for purchase with tickets. Replaced by tournament-level prizes (`prize_1st`, `prize_2nd`, `prize_3rd` columns).
 
-**Indexes:**
-- Primary key on `id`
-- Index on `stock` for filtering available prizes
-
-**Constraints:**
-- `cost` must be positive (>= 1)
-- `stock` must be non-negative (>= 0)
-
----
-
-### 7. `ledger`
-
-Tracks shared expenses and payments for the weekend.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PRIMARY KEY | Unique ledger entry identifier |
-| `payer_id` | UUID | NOT NULL, FK → players.id | Player who made the payment |
-| `amount` | NUMERIC(10, 2) | NOT NULL | Payment amount (in dollars) |
-| `description` | TEXT | NOT NULL | Description of what was paid for |
-| `created_at` | TIMESTAMP | DEFAULT NOW() | Payment timestamp |
-
-**Indexes:**
-- Primary key on `id`
-- Index on `payer_id` for player payment history
-- Index on `created_at` for chronological sorting
-
-**Constraints:**
-- `amount` must be positive (> 0)
-- `description` cannot be empty
+### ~~`ledger`~~ (REMOVED)
+Previously tracked shared expenses. This feature has been removed entirely.
 
 ---
 
@@ -261,7 +238,8 @@ players (1) ──→ (N) match_participants
 1. Tournament matches must have 1-2 participants
 2. Casual matches can have 2-4 participants
 3. All participants must have a result before a match is considered complete
-4. Bye matches have 1 participant with `result = 'win'`
+4. Bye matches have 1 participant with `result = 'win'` and `games_won = 2`
+5. Game scores are recorded for each participant (e.g., 2-1 win)
 
 ### Round Generation
 1. Next round is only generated when ALL matches in current round are complete
@@ -270,7 +248,8 @@ players (1) ──→ (N) match_participants
    - Win = 3 points
    - Draw = 2 points
    - Loss = 1 point
-4. Pairings for Round 2+ use Swiss algorithm based on point totals
+4. Total games won is used as secondary tiebreaker
+5. Pairings for Round 2+ use Swiss algorithm based on standings
 
 ### Tournament Status Workflow
 1. Tournament is created with status `'pending'` (not 'active')
@@ -285,14 +264,17 @@ players (1) ──→ (N) match_participants
 ### Tournament Completion
 1. Tournament is marked 'completed' when `max_rounds` is reached
 2. Winner is determined by highest point total
-3. Tiebreakers: head-to-head record, then opponent match win percentage
-4. Completed tournaments can still be viewed but no further rounds are generated
+3. Tiebreakers (in order):
+   - Total games won
+   - Round wins
+   - Round losses (fewer is better)
+4. Completed tournaments display prizes if defined
 
 ---
 
 ## Query Patterns
 
-### Get Tournament Standings
+### Get Tournament Standings with Game Wins
 ```sql
 SELECT 
   p.id,
@@ -300,6 +282,7 @@ SELECT
   COUNT(CASE WHEN mp.result = 'win' THEN 1 END) * 3 +
   COUNT(CASE WHEN mp.result = 'draw' THEN 1 END) * 2 +
   COUNT(CASE WHEN mp.result = 'loss' THEN 1 END) * 1 AS total_points,
+  SUM(COALESCE(mp.games_won, 0)) AS total_games_won,
   COUNT(CASE WHEN mp.result = 'win' THEN 1 END) AS wins,
   COUNT(CASE WHEN mp.result = 'loss' THEN 1 END) AS losses,
   COUNT(CASE WHEN mp.result = 'draw' THEN 1 END) AS draws
@@ -309,12 +292,12 @@ LEFT JOIN matches m ON m.tournament_id = tp.tournament_id
 LEFT JOIN match_participants mp ON mp.match_id = m.id AND mp.player_id = p.id
 WHERE tp.tournament_id = $1
 GROUP BY p.id, p.name
-ORDER BY total_points DESC, wins DESC;
+ORDER BY total_points DESC, total_games_won DESC, wins DESC;
 ```
 
-### Get Current Round Matches
+### Get Current Round Matches with Scores
 ```sql
-SELECT m.*, mp.player_id, mp.result
+SELECT m.*, mp.player_id, mp.result, mp.games_won
 FROM matches m
 LEFT JOIN match_participants mp ON mp.match_id = m.id
 WHERE m.tournament_id = $1
@@ -324,28 +307,6 @@ WHERE m.tournament_id = $1
     WHERE tournament_id = $1
   )
 ORDER BY m.created_at;
-```
-
-### Get Draft Seat Pairings for Round 1
-```sql
--- For 8-player draft: seat N pairs with seat (N + 4) mod 8
--- This pairs seats 1-4 with seats 5-8 across the table
-SELECT 
-  tp1.player_id AS player1_id,
-  tp2.player_id AS player2_id,
-  tp1.draft_seat AS seat1,
-  tp2.draft_seat AS seat2
-FROM tournament_participants tp1
-JOIN tournament_participants tp2 ON (
-  tp2.tournament_id = tp1.tournament_id
-  AND tp2.draft_seat = CASE 
-    WHEN tp1.draft_seat <= 4 THEN tp1.draft_seat + 4
-    ELSE tp1.draft_seat - 4
-  END
-)
-WHERE tp1.tournament_id = $1
-  AND tp1.draft_seat <= 4  -- Only get each pair once
-ORDER BY tp1.draft_seat;
 ```
 
 ---
@@ -375,10 +336,8 @@ ORDER BY tp1.draft_seat;
 
 ### Migration: Add Timestamps & Fixes
 - Added `updated_at` columns to `players`, `tournaments`, `matches` tables
-- Added `created_at` and `updated_at` to `match_participants` and `prize_wall` tables
+- Added `created_at` and `updated_at` to `match_participants` tables
 - Added `created_at` to `players` table
-- Fixed `prize_wall.stock` default from 1 to 0
-- Fixed `ledger.payer_id` to be NOT NULL
 - Created automatic `updated_at` triggers for all tables
 - See: `.dev-docs/DATABASE_MIGRATION_add_timestamps.md`
 
@@ -388,16 +347,13 @@ ORDER BY tp1.draft_seat;
 - Seats are assigned on the seating page before Round 1 starts
 - See: `.dev-docs/DATABASE_MIGRATION_make_draft_seat_nullable.md`
 
----
-
-## Future Considerations
-
-### Potential Enhancements
-1. **Tournament History:** Archive completed tournaments
-2. **Player Statistics:** Aggregate stats across all tournaments
-3. **Achievement System:** Track special achievements (first blood, eliminations, etc.)
-4. **Prize Purchase History:** Track what prizes each player has purchased
-5. **Round Timer Notifications:** Push notifications when round time is running low
+### Migration: Simplify for Streaming Dashboard ⭐ NEW
+- **Dropped** `prize_wall` table
+- **Dropped** `ledger` table
+- **Removed** `tickets` column from `players` table
+- **Added** `prize_1st`, `prize_2nd`, `prize_3rd` columns to `tournaments` table
+- **Added** `games_won` column to `match_participants` table
+- See: `.dev-docs/DATABASE_MIGRATION_simplify_streaming_dashboard.md`
 
 ---
 
@@ -407,4 +363,3 @@ ORDER BY tp1.draft_seat;
 - **Tournament Structure:** `.dev-docs/TOURNAMENT_STRUCTURE.md`
 - **Tournament Rules:** `.dev-docs/TOURNAMENT_RULES.md`
 - **Migration Scripts:** `.dev-docs/DATABASE_MIGRATION_*.md`
-

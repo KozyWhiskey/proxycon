@@ -1,88 +1,98 @@
-# Gemini Project: Proxycon 2025 Companion App
+# Gemini Project: ProxyCon 2025 Companion App
 
-This document provides essential context for interacting with the Proxycon 2025 codebase. It outlines the project's architecture, key commands, and critical development conventions.
+This document provides a comprehensive overview of the ProxyCon 2025 Companion App project, designed to be used as instructional context for Gemini.
 
 ## 1. Project Overview
 
-Proxycon 2025 is a mobile-first web application built to serve as a companion app for a 10-person Magic: The Gathering weekend. The app's core purpose is to manage tournament brackets, track casual games, handle a digital "Prize Wall" currency, and track shared expenses.
+**ProxyCon 2025** is a mobile-first companion web application for a 3-day Magic: The Gathering tournament. The app is built for a small, casual group with a strong emphasis on "one-thumb" usability, zero-friction interactions, and instant feedback. It manages tournament brackets, match reporting, player stats, and more, all within a dark-mode, basement aesthetic.
 
-The user experience is paramount, with a "One-Thumb Drunk" design philosophy: big buttons, frictionless interactions, and a default dark mode aesthetic.
+### Core Features
 
-**Key Technologies:**
+-   **Zero-Friction Auth**: Passwordless login using a player selection grid.
+-   **Tournament Engine**: Swiss-style tournament management with draft seating, automatic round generation, and real-time standings.
+-   **Match Reporting**: Simplified, thumb-friendly interface for reporting wins, losses, and draws.
+-   **Dashboard**: A central hub for personal stats, active tournament information, and a live feed of recent matches.
+-   **AI Commentary**: AI-generated "roasts" for match results, powered by the Vercel AI SDK and Google Gemini.
+-   **Casual Mode**: Tracking for non-tournament games.
+-   **Prize Wall & Ledger**: Planned features for managing ticket-based prizes and shared expenses.
 
-*   **Framework:** Next.js 16 (App Router)
-*   **Language:** TypeScript
-*   **Database:** Supabase (Cloud Instance)
-*   **Styling:** Tailwind CSS with Shadcn UI
-*   **Authentication:** Custom "No-Auth" system using a simple cookie to identify the user from a pre-defined list.
-*   **AI:** Vercel AI SDK (Google Gemini provider) for generating sarcastic match commentary.
-*   **Core Logic:** `tournament-pairings` for Swiss brackets, `zod` for validation.
+### Tech Stack & Architecture
+
+-   **Framework**: Next.js 16 (App Router)
+-   **Language**: TypeScript
+-   **Database**: Supabase (Cloud PostgreSQL) with Row Level Security.
+-   **Authentication**: Custom cookie-based session management (no passwords).
+-   **Styling**: Tailwind CSS with Shadcn UI (Slate dark theme).
+-   **AI**: Vercel AI SDK with Google Gemini.
+-   **Key Libraries**: `tournament-pairings` for Swiss logic, `zod` for validation, `sonner` for toast notifications.
 
 ## 2. Building and Running
 
-All necessary commands are defined in `package.json`.
+### Prerequisites
 
-*   **Run the development server:**
+-   Node.js 18+ and npm
+-   A Supabase project
+-   A `.env.local` file with Supabase and Google AI credentials.
+
+### Key Commands
+
+-   **Install Dependencies**:
+    ```bash
+    npm install
+    ```
+-   **Run Development Server**:
     ```bash
     npm run dev
     ```
+    The application will be available at `http://localhost:3000`.
 
-*   **Create a production build:**
+-   **Build for Production**:
     ```bash
     npm run build
     ```
-
-*   **Run the production server:**
+-   **Start Production Server**:
     ```bash
-    npm run start
+    npm start
     ```
-
-*   **Run the linter:**
+-   **Lint Code**:
     ```bash
     npm run lint
+    ```
+-   **Seed Database** (Optional):
+    ```bash
+    npm run seed
     ```
 
 ## 3. Development Conventions
 
-Adhering to these conventions is critical for maintaining the project's stability and intended architecture.
+This project follows strict development patterns to ensure stability and consistency.
 
-### Supabase & Authentication (CRITICAL)
+-   **Next.js 16 Async Cookies**: Server components **must** use `await cookies()` to access the cookie store. Direct calls like `cookies().get()` will fail.
+-   **Supabase SSR**: All server-side database operations must use the `createServerClient` from `@supabase/ssr` to handle cookie-based authentication correctly. Do not use the standard `createClient`.
+-   **Server Actions**: All server actions should be wrapped in `try/catch` blocks and return a `{ success: boolean, message: string }` object to provide clear feedback to the client for toast notifications.
+-   **Styling**: Adhere to the "Dark Basement Aesthetic" using Tailwind CSS classes and pre-configured Shadcn UI components. Touch targets must be at least 48px (`h-12`).
+-   **State Management**: Favor server-side state and URL-based state management where possible. Client-side state is managed with React hooks (`useState`, `useReducer`).
 
-This project uses a modern and specific pattern for Supabase Server-Side Rendering (SSR) with Next.js 16. **Failure to follow this will break authentication and data fetching.**
+## 4. Key Files and Directories
 
-1.  **Async Cookies (`/utils/supabase/server.ts`):** When creating the Supabase server client for use in Server Components, you **MUST** `await` the `cookies()` function from `next/headers`.
-
-    ```typescript
-    // ✅ CORRECT
-    import { cookies } from 'next/headers'
-    
-    export async function createClient() {
-      const cookieStore = await cookies() // Must use await!
-      // ...
-    }
-    ```
-
-2.  **Proxy Middleware (`/proxy.ts`):** All requests are routed through this file. It uses the `updateSession` function from `/utils/supabase/middleware.ts` to refresh the user's auth state on every navigation, ensuring the session is always fresh.
-
-3.  **Client Types:**
-    *   Use the **server client** (`/utils/supabase/server.ts`) inside `async` Server Components for data fetching.
-    *   Use the **browser client** (`/utils/supabase/client.ts`) inside Client Components (marked with `'use client'`) for interactive logic.
-
-### "No-Auth" Login
-
-The authentication system is intentionally insecure. It relies on a user selecting their name from a list, which sets a `proxycon_user_id` cookie. All subsequent operations are based on this cookie. The `proxy.ts` middleware redirects to `/login` if this cookie is not present.
-
-### UI/UX: The "Dark Basement Aesthetic"
-
-*   **Dark Mode Only:** The app is designed exclusively for dark mode.
-*   **One-Thumb Usability:** All interactive elements must have a minimum height of `h-12` (48px) to be easily tappable on mobile.
-*   **Frictionless Feedback:** Actions should provide immediate feedback using `sonner` toasts and, where appropriate, `canvas-confetti`.
-
-### Database Schema
-
-The canonical database schema is documented in `.dev-docs/PROJECT_SUMMARY.md`. Refer to it before creating or modifying queries to understand table structures and relationships.
-
-### Server Actions & Error Handling
-
-*   Business logic should be encapsulated in Next.js Server Actions.
-*   Server Actions that can fail should be wrapped in a `try/catch` block and return a consistent object shape to the client for handling toasts: `{ success: boolean, message: string }`.
+-   `app/`: The core of the Next.js application using the App Router.
+    -   `app/page.tsx`: The main dashboard page.
+    -   `app/login/page.tsx`: The player selection screen for authentication.
+    -   `app/tournament/`: Contains pages for creating, managing, and viewing tournaments.
+        -   `app/tournament/[id]/seating/page.tsx`: The visual draft seating selection page.
+        -   `app/tournament/[id]/match/[matchId]/page.tsx`: The match reporting interface.
+    -   `app/play/casual/page.tsx`: The interface for logging non-tournament games.
+-   `components/`: Reusable React components, organized by feature (dashboard, tournament, shop).
+    -   `components/ui/`: Core Shadcn UI components.
+-   `utils/supabase/`: Supabase client configuration.
+    -   `client.ts`: Client-side (browser) Supabase client.
+    -   `server.ts`: Server-side Supabase client with async cookie handling.
+    -   `middleware.ts`: Middleware for refreshing user sessions.
+-   `app/tournament/actions.ts`: Server Actions related to tournament management (creating tournaments, submitting results, etc.).
+-   `.dev-docs/`: Contains extensive project documentation.
+    -   `PROJECT_SUMMARY.md`: The complete project specification.
+    -   `DATABASE_STRUCTURE.md`: Detailed database schema.
+    -   `TOURNAMENT_RULES.md`: Critical development rules and patterns.
+-   `proxy.ts`: A workaround for Next.js 16 to replace the traditional `middleware.ts` for session management.
+-   `package.json`: Project dependencies and scripts.
+-   `README.md`: High-level project overview and setup instructions.

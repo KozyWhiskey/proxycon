@@ -18,7 +18,7 @@ export default async function TournamentPage({ params }: PageProps) {
   // Fetch tournament
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
-    .select('id, name, format, status, max_rounds, round_duration_minutes')
+    .select('id, name, format, status, max_rounds, round_duration_minutes, prize_1st, prize_2nd, prize_3rd')
     .eq('id', id)
     .single();
 
@@ -66,11 +66,11 @@ export default async function TournamentPage({ params }: PageProps) {
     .limit(1)
     .maybeSingle();
 
-  // Calculate standings with points
+  // Calculate standings with points and total games won
   const matchIds = matches.map((m) => m.id);
   const { data: allParticipants } = await supabase
     .from('match_participants')
-    .select('player_id, result')
+    .select('player_id, result, games_won')
     .in('match_id', matchIds);
 
   // Get all tournament participants
@@ -79,14 +79,16 @@ export default async function TournamentPage({ params }: PageProps) {
     .select('player_id')
     .eq('tournament_id', id);
 
-  const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number }>();
+  const standingsMap = new Map<string, { wins: number; losses: number; draws: number; points: number; totalGamesWon: number }>();
 
   allParticipants?.forEach((p) => {
     if (!standingsMap.has(p.player_id)) {
-      standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0 });
+      standingsMap.set(p.player_id, { wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 });
     }
 
     const standing = standingsMap.get(p.player_id)!;
+    standing.totalGamesWon += p.games_won || 0;
+    
     if (p.result === 'win') {
       standing.wins++;
       standing.points += 3;
@@ -102,7 +104,7 @@ export default async function TournamentPage({ params }: PageProps) {
   // Ensure all tournament participants are in standings (even with 0 points)
   tournamentParticipants?.forEach((tp) => {
     if (!standingsMap.has(tp.player_id)) {
-      standingsMap.set(tp.player_id, { wins: 0, losses: 0, draws: 0, points: 0 });
+      standingsMap.set(tp.player_id, { wins: 0, losses: 0, draws: 0, points: 0, totalGamesWon: 0 });
     }
   });
 
@@ -115,7 +117,7 @@ export default async function TournamentPage({ params }: PageProps) {
 
   const playersMap = new Map(standingsPlayers?.map((p) => [p.id, p]) || []);
 
-  // Convert to array and sort by points (primary), wins (secondary), losses (tertiary)
+  // Convert to array and sort by points (primary), total games won (secondary), wins (tertiary), losses (quaternary)
   const standings = Array.from(standingsMap.entries())
     .map(([id, stats]) => ({
       id,
@@ -124,6 +126,7 @@ export default async function TournamentPage({ params }: PageProps) {
     }))
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
+      if (b.totalGamesWon !== a.totalGamesWon) return b.totalGamesWon - a.totalGamesWon;
       if (b.wins !== a.wins) return b.wins - a.wins;
       return a.losses - b.losses;
     });
@@ -133,7 +136,7 @@ export default async function TournamentPage({ params }: PageProps) {
     currentRoundMatches.map(async (match) => {
       const { data: participants } = await supabase
         .from('match_participants')
-        .select('id, player_id, result')
+        .select('id, player_id, result, games_won')
         .eq('match_id', match.id);
 
       if (!participants || participants.length === 0) {
@@ -163,6 +166,7 @@ export default async function TournamentPage({ params }: PageProps) {
     id: string;
     player_id: string;
     result: string | null;
+    games_won: number | null;
     player?: {
       id: string;
       name: string;
@@ -177,6 +181,24 @@ export default async function TournamentPage({ params }: PageProps) {
 
     if (!hasResult) {
       return 'Waiting for Result';
+    }
+
+    // Show game score if available
+    if (participants.length === 2) {
+      const p1Games = participants[0].games_won || 0;
+      const p2Games = participants[1].games_won || 0;
+      const hasGameScore = p1Games > 0 || p2Games > 0;
+
+      if (hasDraw && hasGameScore) {
+        return `Draw (${p1Games}-${p2Games})`;
+      }
+
+      if (winner && winner.player && hasGameScore) {
+        const winnerGames = winner.games_won || 0;
+        const loser = participants.find((p) => p.result === 'loss');
+        const loserGames = loser?.games_won || 0;
+        return `${winner.player.nickname || winner.player.name} Won (${winnerGames}-${loserGames})`;
+      }
     }
 
     if (hasDraw) {
@@ -214,10 +236,12 @@ export default async function TournamentPage({ params }: PageProps) {
           <RoundTimer
             tournamentId={id}
             roundNumber={currentRound}
-            roundDurationMinutes={tournament.round_duration_minutes || 50}
-            startedAt={timerMatch?.started_at || null}
-            pausedAt={timerMatch?.paused_at || null}
-            totalPausedSeconds={timerMatch?.total_paused_seconds || 0}
+            initialTimerData={{
+              roundDurationMinutes: tournament.round_duration_minutes || 50,
+              startedAt: timerMatch?.started_at || null,
+              pausedAt: timerMatch?.paused_at || null,
+              totalPausedSeconds: timerMatch?.total_paused_seconds || 0,
+            }}
           />
         )}
 
@@ -241,20 +265,24 @@ export default async function TournamentPage({ params }: PageProps) {
                       {standing.player?.nickname || standing.player?.name || 'Unknown Player'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="text-center">
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="text-center min-w-[36px]">
                       <div className="text-yellow-500 font-bold">{standing.points}</div>
                       <div className="text-slate-400 text-xs">pts</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-[32px]">
+                      <div className="text-purple-400 font-bold">{standing.totalGamesWon}</div>
+                      <div className="text-slate-400 text-xs">GW</div>
+                    </div>
+                    <div className="text-center min-w-[24px]">
                       <div className="text-green-500">{standing.wins}</div>
                       <div className="text-slate-400 text-xs">W</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-[24px]">
                       <div className="text-blue-500">{standing.draws}</div>
                       <div className="text-slate-400 text-xs">D</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-[24px]">
                       <div className="text-red-500">{standing.losses}</div>
                       <div className="text-slate-400 text-xs">L</div>
                     </div>
@@ -264,6 +292,53 @@ export default async function TournamentPage({ params }: PageProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Tournament Prizes - Show when tournament is completed and has prizes */}
+        {tournament.status === 'completed' && (tournament.prize_1st || tournament.prize_2nd || tournament.prize_3rd) && (
+          <Card className="bg-slate-900 border-yellow-500/30">
+            <CardHeader>
+              <CardTitle className="text-yellow-500 flex items-center gap-2">
+                <span className="text-2xl">🏆</span>
+                Tournament Prizes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {tournament.prize_1st && standings[0] && (
+                <div className="flex items-center gap-3 p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                  <span className="text-3xl">🥇</span>
+                  <div className="flex-1">
+                    <p className="text-slate-100 font-semibold text-lg">
+                      {standings[0].player?.nickname || standings[0].player?.name || 'Unknown'}
+                    </p>
+                    <p className="text-yellow-500 font-medium">{tournament.prize_1st}</p>
+                  </div>
+                </div>
+              )}
+              {tournament.prize_2nd && standings[1] && (
+                <div className="flex items-center gap-3 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                  <span className="text-3xl">🥈</span>
+                  <div className="flex-1">
+                    <p className="text-slate-100 font-semibold text-lg">
+                      {standings[1].player?.nickname || standings[1].player?.name || 'Unknown'}
+                    </p>
+                    <p className="text-slate-300">{tournament.prize_2nd}</p>
+                  </div>
+                </div>
+              )}
+              {tournament.prize_3rd && standings[2] && (
+                <div className="flex items-center gap-3 p-4 bg-amber-900/20 rounded-lg border border-amber-700/30">
+                  <span className="text-3xl">🥉</span>
+                  <div className="flex-1">
+                    <p className="text-slate-100 font-semibold text-lg">
+                      {standings[2].player?.nickname || standings[2].player?.name || 'Unknown'}
+                    </p>
+                    <p className="text-amber-500">{tournament.prize_3rd}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="space-y-4">
           {matchDetails.map(({ match, participants }) => {

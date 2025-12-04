@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import {
   DndContext,
@@ -82,14 +81,12 @@ function SortablePlayerItem({
 }
 
 export default function CasualPlayPage() {
-  const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [gameType, setGameType] = useState<'commander' | 'board_game'>('commander');
   const [outcomeType, setOutcomeType] = useState<'simple' | 'ranked'>('simple');
   const [simpleWinner, setSimpleWinner] = useState<string | null>(null);
   const [rankedPlayers, setRankedPlayers] = useState<RankedPlayer[]>([]);
-  const [achievements, setAchievements] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -223,7 +220,6 @@ export default function CasualPlayPage() {
         playerIds: selectedPlayers,
         outcomeType,
         results,
-        achievements: gameType === 'commander' ? achievements : undefined,
       });
 
       if (!result.success) {
@@ -277,9 +273,6 @@ export default function CasualPlayPage() {
                 value={gameType}
                 onValueChange={(value: 'commander' | 'board_game') => {
                   setGameType(value);
-                  if (value === 'board_game') {
-                    setAchievements([]);
-                  }
                 }}
               >
                 <SelectTrigger className="w-full h-12 bg-slate-800 border-slate-700 text-slate-100">
@@ -414,71 +407,6 @@ export default function CasualPlayPage() {
               </div>
             )}
 
-            {/* Achievements (Commander only) */}
-            {gameType === 'commander' &&
-              selectedPlayers.length >= 2 &&
-              (outcomeType === 'simple' ? simpleWinner : rankedPlayers.length > 0) && (
-                <div className="space-y-3">
-                  <Label className="text-slate-100 text-base">Achievements (Optional)</Label>
-                  <div className="space-y-2">
-                    {[
-                      { id: 'first_blood', label: 'First Blood (+1 Ticket)' },
-                      { id: 'eliminated_player', label: 'Eliminated Player (+1 Ticket)' },
-                      { id: 'salt_penalty', label: 'Salt Penalty (-1 Ticket)' },
-                    ].map((achievement) => {
-                      const isChecked = achievements.includes(achievement.id);
-                      return (
-                        <button
-                          key={achievement.id}
-                          onClick={() => {
-                            if (isChecked) {
-                              setAchievements(
-                                achievements.filter((a) => a !== achievement.id)
-                              );
-                            } else {
-                              setAchievements([...achievements, achievement.id]);
-                            }
-                          }}
-                          disabled={isSubmitting}
-                          className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                            isChecked
-                              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500'
-                              : 'bg-slate-800 border-slate-700 text-slate-100 hover:border-emerald-500/50'
-                          } disabled:opacity-50`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                isChecked
-                                  ? 'bg-emerald-500 border-emerald-500'
-                                  : 'border-slate-600'
-                              }`}
-                            >
-                              {isChecked && (
-                                <svg
-                                  className="w-3 h-3 text-slate-950"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            <span className="font-medium">{achievement.label}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
             {/* Submit Button */}
             {selectedPlayers.length >= 2 &&
               ((outcomeType === 'simple' && simpleWinner) ||
@@ -498,4 +426,3 @@ export default function CasualPlayPage() {
     </main>
   );
 }
-

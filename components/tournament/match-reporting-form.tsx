@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { submitResult, submitDraw } from '@/app/tournament/actions';
-import { Card, CardContent } from '@/components/ui/card';
+import { submitResultWithGames } from '@/app/tournament/actions';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Minus, Plus } from 'lucide-react';
 
 interface Player {
   id: string;
@@ -30,8 +30,8 @@ export default function MatchReportingForm({
   matchId,
   participants,
 }: MatchReportingFormProps) {
-  const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
-  const [selectedDraw, setSelectedDraw] = useState(false);
+  const [player1Games, setPlayer1Games] = useState(0);
+  const [player2Games, setPlayer2Games] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const player1 = participants[0];
@@ -41,41 +41,53 @@ export default function MatchReportingForm({
     return <p className="text-slate-400">Invalid match participants</p>;
   }
 
-  const handlePlayerClick = (playerId: string) => {
-    setSelectedWinner(playerId);
-    setSelectedDraw(false);
+  const player1Name = player1.player?.nickname || player1.player?.name || 'Player 1';
+  const player2Name = player2.player?.nickname || player2.player?.name || 'Player 2';
+
+  // Determine result from game scores
+  const getResultPreview = () => {
+    if (player1Games === player2Games) {
+      if (player1Games === 0) {
+        return { text: 'Enter game scores', color: 'text-slate-400', type: 'none' };
+      }
+      return { text: `Draw (${player1Games}-${player2Games})`, color: 'text-blue-400', type: 'draw' };
+    }
+    if (player1Games > player2Games) {
+      return { text: `${player1Name} wins ${player1Games}-${player2Games}`, color: 'text-green-400', type: 'player1' };
+    }
+    return { text: `${player2Name} wins ${player2Games}-${player1Games}`, color: 'text-green-400', type: 'player2' };
   };
 
-  const handleDrawClick = () => {
-    setSelectedDraw(true);
-    setSelectedWinner(null);
-  };
+  const result = getResultPreview();
+  const canSubmit = player1Games > 0 || player2Games > 0;
 
   const handleSubmit = async () => {
+    if (!canSubmit) {
+      toast.error('Please enter at least one game win');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      if (selectedDraw) {
-        const result = await submitDraw(
-          matchId,
-          [player1.player_id, player2.player_id],
-          tournamentId
-        );
-        
-        if (!result.success) {
-          toast.error(result.message || 'Failed to submit draw');
-          setIsSubmitting(false);
-        }
-      } else if (selectedWinner) {
-        const winner = selectedWinner === player1.player_id ? player1 : player2;
-        const loser = selectedWinner === player1.player_id ? player2 : player1;
+      const isDraw = player1Games === player2Games;
+      const winnerId = player1Games > player2Games ? player1.player_id : player2.player_id;
+      const loserId = player1Games > player2Games ? player2.player_id : player1.player_id;
 
-        const result = await submitResult(matchId, winner.player_id, loser.player_id, tournamentId);
-        
-        if (!result.success) {
-          toast.error(result.message || 'Failed to submit result');
-          setIsSubmitting(false);
-        }
+      const response = await submitResultWithGames(
+        matchId,
+        isDraw ? null : winnerId,
+        isDraw ? null : loserId,
+        player1.player_id,
+        player1Games,
+        player2.player_id,
+        player2Games,
+        tournamentId
+      );
+
+      if (!response.success) {
+        toast.error(response.message || 'Failed to submit result');
+        setIsSubmitting(false);
       }
       // If successful, the server action will redirect
     } catch (error) {
@@ -87,71 +99,93 @@ export default function MatchReportingForm({
           return;
         }
       }
-      
+
       console.error('Error submitting result:', error);
       toast.error('An unexpected error occurred');
       setIsSubmitting(false);
     }
   };
 
-  const hasSelection = selectedWinner !== null || selectedDraw;
-
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <p className="text-2xl text-slate-100 mb-2">
-          {player1.player?.nickname || player1.player?.name || 'Player 1'} vs.{' '}
-          {player2.player?.nickname || player2.player?.name || 'Player 2'}
-        </p>
-        <p className="text-slate-400">Select the winner</p>
+    <div className="space-y-8">
+      {/* Game Score Entry */}
+      <div className="grid grid-cols-3 gap-4 items-center">
+        {/* Player 1 */}
+        <div className="text-center space-y-3">
+          <p className="text-slate-100 font-semibold text-lg truncate px-2">
+            {player1Name}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              type="button"
+              onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
+              disabled={isSubmitting || player1Games === 0}
+              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 disabled:opacity-30"
+            >
+              <Minus className="w-5 h-5" />
+            </Button>
+            <span className="text-5xl font-bold text-yellow-500 w-16 text-center tabular-nums">
+              {player1Games}
+            </span>
+            <Button
+              type="button"
+              onClick={() => setPlayer1Games(player1Games + 1)}
+              disabled={isSubmitting}
+              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500">Games Won</p>
+        </div>
+
+        {/* VS Divider */}
+        <div className="text-center">
+          <span className="text-3xl font-bold text-slate-600">vs</span>
+        </div>
+
+        {/* Player 2 */}
+        <div className="text-center space-y-3">
+          <p className="text-slate-100 font-semibold text-lg truncate px-2">
+            {player2Name}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              type="button"
+              onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
+              disabled={isSubmitting || player2Games === 0}
+              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 disabled:opacity-30"
+            >
+              <Minus className="w-5 h-5" />
+            </Button>
+            <span className="text-5xl font-bold text-yellow-500 w-16 text-center tabular-nums">
+              {player2Games}
+            </span>
+            <Button
+              type="button"
+              onClick={() => setPlayer2Games(player2Games + 1)}
+              disabled={isSubmitting}
+              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500">Games Won</p>
+        </div>
       </div>
 
-      {/* Player Selection */}
-      <div className="grid grid-cols-1 gap-4">
-        <Button
-          onClick={() => handlePlayerClick(player1.player_id)}
-          disabled={isSubmitting}
-          className={`w-full h-16 border-2 font-semibold disabled:opacity-50 text-xl ${
-            selectedWinner === player1.player_id
-              ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500'
-              : 'bg-slate-900 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800 text-slate-100'
-          }`}
-        >
-          {player1.player?.nickname || player1.player?.name || 'Player 1'}
-        </Button>
-
-        <Button
-          onClick={() => handlePlayerClick(player2.player_id)}
-          disabled={isSubmitting}
-          className={`w-full h-16 border-2 font-semibold disabled:opacity-50 text-xl ${
-            selectedWinner === player2.player_id
-              ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500'
-              : 'bg-slate-900 border-slate-800 hover:border-yellow-500/50 hover:bg-slate-800 text-slate-100'
-          }`}
-        >
-          {player2.player?.nickname || player2.player?.name || 'Player 2'}
-        </Button>
-
-        <Button
-          onClick={handleDrawClick}
-          disabled={isSubmitting}
-          className={`w-full h-16 border-2 font-semibold disabled:opacity-50 text-xl mt-4 ${
-            selectedDraw
-              ? 'bg-blue-500/20 border-blue-500 text-blue-500'
-              : 'bg-slate-900 border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 text-slate-100'
-          }`}
-        >
-          Draw
-        </Button>
+      {/* Result Preview */}
+      <div className={`text-center p-4 bg-slate-800/50 rounded-lg border border-slate-700 ${result.color}`}>
+        <p className="text-lg font-medium">{result.text}</p>
       </div>
 
-      {/* Submit Button - Only show when selection is made */}
-      {hasSelection && (
+      {/* Submit Button */}
+      {canSubmit && (
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className={`w-full h-12 font-semibold disabled:opacity-50 ${
-            selectedDraw
+          className={`w-full h-14 font-semibold text-lg disabled:opacity-50 ${
+            result.type === 'draw'
               ? 'bg-blue-500 hover:bg-blue-600 text-white'
               : 'bg-yellow-500 hover:bg-yellow-600 text-slate-950'
           }`}
@@ -161,10 +195,14 @@ export default function MatchReportingForm({
       )}
 
       {/* Points Information */}
-      <p className="text-xs text-slate-500 text-center mt-4">
-        Win: 3 points • Draw: 2 points each • Loss: 1 point
-      </p>
+      <div className="text-center space-y-1">
+        <p className="text-xs text-slate-500">
+          Win: 3 points • Draw: 2 points each • Loss: 1 point
+        </p>
+        <p className="text-xs text-slate-600">
+          Game wins are used as a tiebreaker
+        </p>
+      </div>
     </div>
   );
 }
-

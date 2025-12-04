@@ -6,15 +6,15 @@ Senior Full-Stack Engineer and Lead UX Designer.
 
 ## Goal
 
-Build a complete, mobile-first companion web application for a 3-day Magic: The Gathering weekend.
+Build a complete, mobile-first streaming dashboard web application for a 3-day Magic: The Gathering weekend, focused on draft tournaments and match tracking.
 
 ## Target Audience
 
-10 slightly intoxicated nerds in a rental house.
+10 slightly intoxicated nerds in a rental house, plus viewers watching the tournament stream.
 
 ## Critical Constraint
 
-The app must be "One-Thumb" usable. Interactions must be frictionless (no passwords, big buttons, instant feedback).
+The app must be "One-Thumb" usable. Interactions must be frictionless (no passwords, big buttons, instant feedback). The UI should also look great on a stream display.
 
 ---
 
@@ -38,7 +38,7 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 
 -   `tournament-pairings`: For Swiss bracket logic.
 -   `zod`: For form validation.
--   `canvas-confetti`: For "Prize Won" visual feedback.
+-   `canvas-confetti`: For visual feedback.
 -   `sonner`: For toast notifications (success/error).
 
 ---
@@ -53,21 +53,20 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 -   **Color Coding:**
     -   **Tournament Mode:** Gold/Yellow accents (`text-yellow-500`, `border-yellow-500`).
     -   **Casual Mode:** Green/Emerald accents.
-    -   **Errors/Debt:** Red/Rose.
+    -   **Errors:** Red/Rose.
 
 ### B. Navigation Structure
 
--   **Mobile Bottom Bar:** Sticky footer with 4 icons:
+-   **Mobile Bottom Bar:** Sticky footer with 3 icons:
     -   Home: Dashboard & Live Feed.
     -   Play: Match Reporter (FAB - Floating Action Button style).
-    -   Shop: Prize Wall.
-    -   Menu: Ledger, Settings, User Switch.
+    -   Menu: Settings, User Switch.
 
 ### C. "One-Thumb" Interactions
 
 -   **Inputs:** Avoid typing where possible. Use `<Select>` or `<RadioGroup>` cards.
--   **Match Reporting:** Don't use small checkboxes. Use full-width "Player Cards" that toggle state when tapped.
--   **Feedback:** Every action (Score Report, Purchase) triggers a toast notification and haptic feedback (if possible) or visual confetti.
+-   **Match Reporting:** Use game score inputs (+/-) for intuitive score entry.
+-   **Feedback:** Every action (Score Report) triggers a toast notification and visual feedback.
 
 ---
 
@@ -75,13 +74,15 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 
 ### Tables:
 
--   **`players`**: `id` (UUID), `name` (Text), `nickname` (Text), `avatar_url` (Text), `wins` (Int), `tickets` (Int - Currency).
--   **`tournaments`**: `id` (UUID), `name` (Text), `format` (Text), `status` (Text - 'pending', 'active', 'completed'), `max_rounds` (Int), `round_duration_minutes` (Int).
+-   **`players`**: `id` (UUID), `name` (Text), `nickname` (Text), `avatar_url` (Text), `wins` (Int).
+-   **`tournaments`**: `id` (UUID), `name` (Text), `format` (Text), `status` (Text - 'pending', 'active', 'completed'), `max_rounds` (Int), `round_duration_minutes` (Int), `prize_1st` (Text), `prize_2nd` (Text), `prize_3rd` (Text).
 -   **`tournament_participants`**: `id` (UUID), `tournament_id` (UUID), `player_id` (UUID), `draft_seat` (Int, nullable).
--   **`matches`**: `id` (UUID), `tournament_id` (UUID - Nullable), `round_number` (Int), `game_type` (Text), `notes` (Text), `created_at` (Timestamp).
--   **`match_participants`**: `id` (UUID), `match_id` (UUID), `player_id` (UUID), `result` (Text), `deck_archetype` (Text).
--   **`prize_wall`**: `id` (UUID), `name` (Text), `cost` (Int), `stock` (Int), `image_url` (Text).
--   **`ledger`**: `id` (UUID), `payer_id` (UUID), `amount` (Numeric), `description` (Text), `created_at` (Timestamp).
+-   **`matches`**: `id` (UUID), `tournament_id` (UUID - Nullable), `round_number` (Int), `game_type` (Text), `started_at` (Timestamp), `paused_at` (Timestamp), `total_paused_seconds` (Int), `notes` (Text), `created_at` (Timestamp).
+-   **`match_participants`**: `id` (UUID), `match_id` (UUID), `player_id` (UUID), `result` (Text), `games_won` (Int), `deck_archetype` (Text).
+
+### Removed Tables (Streaming Dashboard Simplification):
+- ~~`prize_wall`~~ - Replaced by tournament-level prizes
+- ~~`ledger`~~ - Feature removed
 
 ---
 
@@ -97,7 +98,7 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 ### Feature B: The Dashboard (Home)
 
 -   **Layout:** Single column scrollable.
--   **Section 1: "My Stats":** Card showing Current Tickets (Large Font) and Weekend Wins.
+-   **Section 1: "My Stats":** Card showing Weekend Wins.
 -   **Section 2: "Active Tournaments":** Shows all active tournaments (status = 'active'). Each tournament card shows current round pairing for the logged-in user. Cards are clickable to view tournament bracket. Button: "Enter Result" for pending matches.
 -   **Section 3: "The Feed":** List of last 10 matches.
 -   **AI Integration:** Use Gemini to generate a 1-sentence "Roast" of the loser for each match item. Display this text in italicized `text-muted-foreground`.
@@ -114,16 +115,17 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
     -   **Seating Page:** Visual table representation where players select seats clockwise around table
     -   **Bracket Page:** 
         -   **Header:** Round X of N
-        -   **Standings:** Points, wins, losses, draws for each player
-        -   **Bracket:** List of Match Cards. Each card shows Player A vs Player B.
-        -   **Status:** "Waiting for Result" vs "Player A Won" vs "Draw"
-    -   **Match Reporting:** Simplified single-click interface (Player 1, Player 2, or Draw buttons)
+        -   **Standings:** Points, wins, losses, draws, games won for each player
+        -   **Bracket:** List of Match Cards. Each card shows Player A vs Player B with scores.
+        -   **Status:** "Waiting for Result" vs "Player A Won 2-1" vs "Draw 1-1"
+        -   **Prizes:** Display 1st/2nd/3rd prizes when tournament is completed
+    -   **Match Reporting:** Game score inputs (+/-) for each player with result preview
 -   **Logic (Server Actions):**
-    -   `createTournament(name, playerIds, format, maxRounds, roundDurationMinutes)`: Creates tournament with 'pending' status, redirects to seating page
+    -   `createTournament(name, playerIds, format, maxRounds, roundDurationMinutes, prize1st, prize2nd, prize3rd)`: Creates tournament with 'pending' status, redirects to seating page
     -   `selectSeat(tournamentId, playerId, seatNumber)`: Assigns player to seat (any user can assign)
     -   `startDraft(tournamentId)`: Creates Round 1 matches based on draft seats, updates status to 'active'
-    -   `submitResult(matchId, winnerId, loserId, tournamentId)`: Updates match with win/loss
-    -   `submitDraw(matchId, playerIds, tournamentId)`: Updates match with draw
+    -   `submitResultWithGames(matchId, winnerId, loserId, winnerGames, loserGames, tournamentId)`: Updates match with game scores
+    -   `submitDrawWithGames(matchId, playerIds, gamesWon, tournamentId)`: Updates match with draw and game scores
     -   `generateNextRound(tournamentId, currentRound)`: Uses `tournament-pairings` to calculate Swiss pairs based on points
     -   `deleteTournament(tournamentId)`: Deletes tournament and related records
 -   **Tournament Status:**
@@ -134,7 +136,10 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
     -   Win = 3 points
     -   Draw = 2 points each
     -   Loss = 1 point
-    -   Standings sorted by: points (descending), wins (descending), losses (ascending)
+-   **Tiebreaker System:**
+    -   Primary: Total points
+    -   Secondary: Total games won (sum of individual game wins across all matches)
+    -   Tertiary: Round wins, then round losses (fewer is better)
 
 ### Feature D: Casual Mode (Commander)
 
@@ -144,30 +149,7 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
     -   **Outcome:**
         -   Simple: Click Winner.
         -   Ranked: Drag and drop to order 1st -> 4th.
-    -   **Achievements (Toggles):**
-        -   "First Blood (+1 Ticket)"
-        -   "Eliminated Player (+1 Ticket)"
-        -   "Salt Penalty (-1 Ticket)"
--   **Action:** `logCasualMatch(data)` updates `matches` and increments `players.tickets`.
-
-### Feature E: The Prize Wall
-
--   **Route:** `/shop`
--   **UI:** Masonry or Grid layout of Prize Cards.
-    -   **Card:** Image (top), Name, Cost (Badge).
-    -   **State:** If `stock === 0`, dim card and show "SOLD OUT". If `user.tickets < cost`, disable "Buy" button.
--   **Interaction:** Click "Buy" -> Confirm Modal -> Update DB -> Fire Confetti -> Toast "Purchase Successful".
-
-### Feature F: The Ledger
-
--   **Route:** `/ledger`
--   **Input:** "I Paid..." `[Amount]` "For..." `[Description]`.
--   **Display:**
-    -   **Total Pot:** Sum of all amount.
-    -   **My Share:** Total / UserCount.
-    -   **My Balance:** MyPaidTotal - MyShare.
-    -   Render Green (+$20) if positive.
-    -   Render Red (-$15) if negative.
+-   **Action:** `logCasualMatch(data)` updates `matches` and increments `players.wins`.
 
 ---
 
@@ -197,7 +179,7 @@ The app must be "One-Thumb" usable. Interactions must be frictionless (no passwo
 
 ### Step 5: Polish (The Suit)
 
--   **Prompt:** "Refine the mobile styling. Ensure the bottom navigation bar is sticky and uses `lucide-react` icons. Add `framer-motion` entry animations to the Prize Wall cards."
+-   **Prompt:** "Refine the mobile styling. Ensure the bottom navigation bar is sticky and uses `lucide-react` icons."
 
 ---
 

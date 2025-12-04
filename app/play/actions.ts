@@ -17,45 +17,6 @@ interface CasualMatchData {
     playerId: string;
     result: 'win' | 'loss' | '1st' | '2nd' | '3rd' | '4th';
   }[];
-  achievements?: string[]; // Array of achievement names (e.g., 'first_blood', 'eliminated_player', 'salt_penalty')
-}
-
-/**
- * Calculates ticket rewards based on outcome and achievements
- */
-function calculateTickets(
-  result: 'win' | 'loss' | '1st' | '2nd' | '3rd' | '4th',
-  achievements: string[] = []
-): number {
-  let tickets = 0;
-
-  // Base tickets from outcome
-  if (result === 'win') {
-    tickets = 3;
-  } else if (result === 'loss') {
-    tickets = 0;
-  } else if (result === '1st') {
-    tickets = 5;
-  } else if (result === '2nd') {
-    tickets = 3;
-  } else if (result === '3rd') {
-    tickets = 2;
-  } else if (result === '4th') {
-    tickets = 1;
-  }
-
-  // Achievement bonuses
-  achievements.forEach((achievement) => {
-    if (achievement === 'first_blood') {
-      tickets += 1;
-    } else if (achievement === 'eliminated_player') {
-      tickets += 1;
-    } else if (achievement === 'salt_penalty') {
-      tickets -= 1;
-    }
-  });
-
-  return tickets;
 }
 
 export async function logCasualMatch(
@@ -119,43 +80,7 @@ export async function logCasualMatch(
       return { success: false, message: 'Failed to create match participants' };
     }
 
-    // Step 3: Update tickets for each player
-    // Only winners (1st place in ranked, or win in simple) get achievements applied
-    for (const result of data.results) {
-      const isWinner = result.result === 'win' || result.result === '1st';
-      const achievementsToApply = isWinner ? (data.achievements || []) : [];
-
-      const ticketChange = calculateTickets(result.result, achievementsToApply);
-
-      if (ticketChange !== 0) {
-        // Use RPC or update with increment
-        // For now, we'll fetch current tickets and update
-        const { data: player } = await supabase
-          .from('players')
-          .select('tickets')
-          .eq('id', result.playerId)
-          .single();
-
-        if (player) {
-          const newTickets = Math.max(0, (player.tickets || 0) + ticketChange);
-
-          const { error: updateError } = await supabase
-            .from('players')
-            .update({ tickets: newTickets })
-            .eq('id', result.playerId);
-
-          if (updateError) {
-            console.error(
-              `Error updating tickets for player ${result.playerId}:`,
-              updateError
-            );
-            // Continue with other players even if one fails
-          }
-        }
-      }
-    }
-
-    // Step 4: Update wins for winners
+    // Step 3: Update wins for winners
     for (const result of data.results) {
       if (result.result === 'win' || result.result === '1st') {
         const { data: player } = await supabase
@@ -175,7 +100,7 @@ export async function logCasualMatch(
       }
     }
 
-    // Step 5: Revalidate and redirect
+    // Step 4: Revalidate and redirect
     revalidatePath('/');
     redirect('/');
   } catch (error) {
@@ -193,4 +118,3 @@ export async function logCasualMatch(
     return { success: false, message: errorMessage };
   }
 }
-

@@ -33,9 +33,6 @@ export async function fixMatchResult(
 
     // Step 2: Get current winner (if any)
     const currentWinner = participants.find((p) => p.result === 'win' || p.result === '1st');
-    const currentLosers = participants.filter(
-      (p) => p.result === 'loss' || p.result === '2nd' || p.result === '3rd' || p.result === '4th'
-    );
 
     // Step 3: Update match participants
     // Set new winner
@@ -120,89 +117,6 @@ export async function fixMatchResult(
   }
 }
 
-export async function adjustTickets(
-  playerId: string,
-  amount: number
-): Promise<AdminActionResult> {
-  try {
-    const supabase = await createClient();
-
-    // Get current tickets
-    const { data: player, error: playerError } = await supabase
-      .from('players')
-      .select('tickets, name')
-      .eq('id', playerId)
-      .single();
-
-    if (playerError || !player) {
-      return { success: false, message: 'Player not found' };
-    }
-
-    const newTickets = Math.max(0, (player.tickets || 0) + amount);
-
-    const { error: updateError } = await supabase
-      .from('players')
-      .update({ tickets: newTickets })
-      .eq('id', playerId);
-
-    if (updateError) {
-      return { success: false, message: `Failed to update tickets: ${updateError.message}` };
-    }
-
-    revalidatePath('/');
-    revalidatePath('/admin');
-    return {
-      success: true,
-      message: `Updated ${player.name}'s tickets by ${amount > 0 ? '+' : ''}${amount}. New total: ${newTickets}`,
-    };
-  } catch (error) {
-    console.error('Error in adjustTickets:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unexpected error occurred';
-    return { success: false, message: errorMessage };
-  }
-}
-
-export async function deleteLastExpense(): Promise<AdminActionResult> {
-  try {
-    const supabase = await createClient();
-
-    // Get the most recent ledger entry
-    const { data: lastEntry, error: fetchError } = await supabase
-      .from('ledger')
-      .select('id, description, amount')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (fetchError || !lastEntry) {
-      return { success: false, message: 'No ledger entries found' };
-    }
-
-    // Delete it
-    const { error: deleteError } = await supabase
-      .from('ledger')
-      .delete()
-      .eq('id', lastEntry.id);
-
-    if (deleteError) {
-      return { success: false, message: `Failed to delete entry: ${deleteError.message}` };
-    }
-
-    revalidatePath('/ledger');
-    revalidatePath('/admin');
-    return {
-      success: true,
-      message: `Deleted last expense: ${lastEntry.description} ($${lastEntry.amount})`,
-    };
-  } catch (error) {
-    console.error('Error in deleteLastExpense:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unexpected error occurred';
-    return { success: false, message: errorMessage };
-  }
-}
-
 export async function addPlayer(data: {
   name: string;
   nickname: string | null;
@@ -220,7 +134,6 @@ export async function addPlayer(data: {
       nickname: data.nickname?.trim() || null,
       avatar_url: data.avatar_url?.trim() || null,
       wins: 0,
-      tickets: 0,
     });
 
     if (error) {
@@ -324,4 +237,3 @@ export async function deletePlayer(playerId: string): Promise<AdminActionResult>
     return { success: false, message: errorMessage };
   }
 }
-

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PlayerSelector from './player-selector';
 import { toast } from 'sonner';
+import { Trophy } from 'lucide-react';
 
 interface Player {
   id: string;
@@ -26,6 +27,9 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
   const [maxRounds, setMaxRounds] = useState('3');
   const [roundDuration, setRoundDuration] = useState('50');
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [prize1st, setPrize1st] = useState('');
+  const [prize2nd, setPrize2nd] = useState('');
+  const [prize3rd, setPrize3rd] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +53,10 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
         selectedPlayers, 
         format, 
         parseInt(maxRounds, 10),
-        parseInt(roundDuration, 10)
+        parseInt(roundDuration, 10),
+        prize1st.trim() || undefined,
+        prize2nd.trim() || undefined,
+        prize3rd.trim() || undefined
       );
       
       if (!result.success) {
@@ -147,6 +154,52 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
             />
           </div>
 
+          {/* Tournament Prizes Section */}
+          <div className="space-y-4 pt-4 border-t border-slate-800">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              <Label className="text-slate-100 text-base">Tournament Prizes (Optional)</Label>
+            </div>
+            <p className="text-sm text-slate-400">
+              Define prizes for the top 3 finishers. Leave blank if no prizes.
+            </p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🥇</span>
+                <Input
+                  type="text"
+                  value={prize1st}
+                  onChange={(e) => setPrize1st(e.target.value)}
+                  placeholder="1st Place Prize (e.g., Booster Box)"
+                  className="h-12 bg-slate-800 border-slate-700 text-slate-100 flex-1"
+                />
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🥈</span>
+                <Input
+                  type="text"
+                  value={prize2nd}
+                  onChange={(e) => setPrize2nd(e.target.value)}
+                  placeholder="2nd Place Prize"
+                  className="h-12 bg-slate-800 border-slate-700 text-slate-100 flex-1"
+                />
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🥉</span>
+                <Input
+                  type="text"
+                  value={prize3rd}
+                  onChange={(e) => setPrize3rd(e.target.value)}
+                  placeholder="3rd Place Prize"
+                  className="h-12 bg-slate-800 border-slate-700 text-slate-100 flex-1"
+                />
+              </div>
+            </div>
+          </div>
+
           <PlayerSelector
             players={players}
             selectedPlayers={selectedPlayers}
@@ -165,4 +218,3 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
     </Card>
   );
 }
-

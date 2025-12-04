@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Play, ShoppingBag, Menu } from 'lucide-react';
+import { Home, Play, Trophy, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function BottomNav() {
@@ -20,9 +20,9 @@ export default function BottomNav() {
       label: 'Play',
     },
     {
-      href: '/shop',
-      icon: ShoppingBag,
-      label: 'Shop',
+      href: '/tournament/new',
+      icon: Trophy,
+      label: 'Draft',
     },
     {
       href: '/tournaments',
@@ -60,4 +60,3 @@ export default function BottomNav() {
     </nav>
   );
 }
-
