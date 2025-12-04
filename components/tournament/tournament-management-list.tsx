@@ -1,11 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { deleteTournament } from '@/app/tournament/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import Link from 'next/link';
 import { Trophy, Users, Calendar } from 'lucide-react';
 
@@ -37,33 +33,6 @@ export default function TournamentManagementList({
   activeTournaments,
   completedTournaments,
 }: TournamentManagementListProps) {
-  const router = useRouter();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const handleDelete = async (tournamentId: string, tournamentName: string) => {
-    if (!confirm(`Are you sure you want to delete "${tournamentName}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    setDeletingId(tournamentId);
-
-    try {
-      const result = await deleteTournament(tournamentId);
-
-      if (!result.success) {
-        toast.error(result.message || 'Failed to delete tournament');
-        setDeletingId(null);
-        return;
-      }
-
-      toast.success('Tournament deleted successfully');
-      router.refresh();
-    } catch (error) {
-      console.error('Error deleting tournament:', error);
-      toast.error('An unexpected error occurred');
-      setDeletingId(null);
-    }
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -103,8 +72,6 @@ export default function TournamentManagementList({
   };
 
   const renderTournamentCard = (tournament: Tournament) => {
-    const isDeleting = deletingId === tournament.id;
-
     return (
       <Card key={tournament.id} className="bg-slate-900 border-slate-800 hover:border-slate-700 transition-colors">
         <CardHeader>
@@ -208,19 +175,11 @@ export default function TournamentManagementList({
                 variant="outline"
                 className="flex-1 border-slate-700 text-slate-100 hover:bg-slate-800"
               >
-                <Link href={`/tournament/${tournament.id}`}>
+                <Link href={`/tournament/${tournament.id}/dashboard`}>
                   View Tournament
                 </Link>
               </Button>
             )}
-            <Button
-              onClick={() => handleDelete(tournament.id, tournament.name)}
-              disabled={isDeleting}
-              variant="outline"
-              className="border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-red-500 disabled:opacity-50"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
           </div>
         </CardContent>
       </Card>

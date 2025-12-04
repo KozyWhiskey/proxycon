@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Play, Trophy, Menu } from 'lucide-react';
+import { Home, Play, Trophy, Menu, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function BottomNav() {
@@ -29,12 +29,17 @@ export default function BottomNav() {
       icon: Menu,
       label: 'Tournaments',
     },
+    {
+      href: '/weekend-summary',
+      icon: BarChart3,
+      label: 'Summary',
+    },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800">
       <div className="max-w-2xl mx-auto">
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-5 h-16">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
