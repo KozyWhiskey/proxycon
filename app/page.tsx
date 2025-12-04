@@ -5,6 +5,11 @@ import ActiveTournament from '@/components/dashboard/active-tournament';
 import Feed from '@/components/dashboard/feed';
 import UserHeader from '@/components/dashboard/user-header';
 import QuickActions from '@/components/dashboard/quick-actions';
+import {
+  calculateStandings,
+  sortStandings,
+  convertDbMatchToMatchResult,
+} from '@/lib/swiss-pairing';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -100,44 +105,183 @@ export default async function Home() {
 
   const matchesMap = new Map(allUserMatches?.map((m) => [m.id, m]) || []);
 
-  // Calculate casual wins (matches with tournament_id = null and result = 'win' or '1st')
-  const casualWins = (allUserParticipants || []).filter((p) => {
-    const match = matchesMap.get(p.match_id);
-    return (
-      match &&
-      match.tournament_id === null &&
-      (p.result === 'win' || p.result === '1st')
-    );
-  }).length;
+  // Calculate casual wins with details (matches with tournament_id = null and result = 'win' or '1st')
+  const casualWinMatches = (allUserParticipants || [])
+    .filter((p) => {
+      const match = matchesMap.get(p.match_id);
+      return (
+        match &&
+        match.tournament_id === null &&
+        (p.result === 'win' || p.result === '1st')
+      );
+    })
+    .map((p) => matchesMap.get(p.match_id))
+    .filter((m): m is NonNullable<typeof m> => m !== undefined);
 
-  // Calculate tournament stats
-  const tournamentParticipants = (allUserParticipants || []).filter((p) => {
-    const match = matchesMap.get(p.match_id);
-    return match && match.tournament_id !== null && p.result !== null;
-  });
+  const casualWins = casualWinMatches.length;
+  let casualWinDetails: Array<{ gameType: string; createdAt: string }> = [];
 
-  const tournamentWins = tournamentParticipants.filter(
-    (p) => p.result === 'win'
-  ).length;
-  const tournamentLosses = tournamentParticipants.filter(
-    (p) => p.result === 'loss'
-  ).length;
-  const tournamentDraws = tournamentParticipants.filter(
-    (p) => p.result === 'draw'
-  ).length;
-  const tournamentTotalMatches = tournamentParticipants.length;
+  // Fetch game_type for casual wins if any exist
+  if (casualWins > 0) {
+    const casualWinMatchIds = casualWinMatches.map((m) => m.id);
+    const { data: casualMatches } = await supabase
+      .from('matches')
+      .select('id, game_type, created_at')
+      .in('id', casualWinMatchIds)
+      .order('created_at', { ascending: false });
 
+    casualWinDetails =
+      casualMatches?.map((m) => ({
+        gameType: m.game_type || 'casual',
+        createdAt: m.created_at,
+      })) || [];
+  }
+
+  // Calculate tournament placement stats (1st, 2nd, 3rd)
+  // Get all completed tournaments the user participated in
+  const { data: userTournamentParticipants } = await supabase
+    .from('tournament_participants')
+    .select('tournament_id')
+    .eq('player_id', currentUserId);
+
+  const userTournamentIds =
+    userTournamentParticipants?.map((p) => p.tournament_id) || [];
+
+  let tournamentFirstPlace = 0;
+  let tournamentSecondPlace = 0;
+  let tournamentThirdPlace = 0;
+  let tournamentLosses = 0;
+  let tournamentDraws = 0;
+  let tournamentTotalMatches = 0;
+
+  if (userTournamentIds.length > 0) {
+    // Get all completed tournaments
+    const { data: completedTournaments } = await supabase
+      .from('tournaments')
+      .select('id')
+      .in('id', userTournamentIds)
+      .eq('status', 'completed');
+
+    // Calculate standings for each completed tournament
+    for (const tournament of completedTournaments || []) {
+      // Get all participants
+      const { data: participants } = await supabase
+        .from('tournament_participants')
+        .select('player_id')
+        .eq('tournament_id', tournament.id);
+
+      const playerIds = participants?.map((p) => p.player_id) || [];
+
+      // Get all matches for this tournament
+      const { data: matches } = await supabase
+        .from('matches')
+        .select('id, round_number')
+        .eq('tournament_id', tournament.id)
+        .order('round_number', { ascending: true });
+
+      if (!matches || matches.length === 0) continue;
+
+      // Get all match participants
+      const matchIds = matches.map((m) => m.id);
+      const { data: allMatchParticipants } = await supabase
+        .from('match_participants')
+        .select('match_id, player_id, result, games_won')
+        .in('match_id', matchIds);
+
+      // Build match history
+      const participantsByMatch = new Map<
+        string,
+        Array<{ playerId: string; result: 'win' | 'loss' | 'draw' | null }>
+      >();
+      allMatchParticipants?.forEach((p) => {
+        if (!participantsByMatch.has(p.match_id)) {
+          participantsByMatch.set(p.match_id, []);
+        }
+        participantsByMatch.get(p.match_id)!.push({
+          playerId: p.player_id,
+          result: p.result as 'win' | 'loss' | 'draw' | null,
+        });
+      });
+
+      // Convert to MatchResult format
+      const matchHistory = [];
+      for (const match of matches) {
+        const matchParticipants = participantsByMatch.get(match.id) || [];
+        if (matchParticipants.length > 0) {
+          matchHistory.push(
+            convertDbMatchToMatchResult(
+              match.id,
+              match.round_number || 1,
+              matchParticipants.map((p) => ({
+                playerId: p.playerId,
+                result: p.result,
+              }))
+            )
+          );
+        }
+      }
+
+      // Calculate standings
+      const standingsMap = calculateStandings(playerIds, matchHistory);
+      const sortedStandings = sortStandings(
+        Array.from(standingsMap.values())
+      );
+
+      // Find user's rank
+      const userRank =
+        sortedStandings.findIndex((s) => s.playerId === currentUserId) + 1;
+
+      if (userRank === 1) {
+        tournamentFirstPlace++;
+      } else if (userRank === 2) {
+        tournamentSecondPlace++;
+      } else if (userRank === 3) {
+        tournamentThirdPlace++;
+      }
+    }
+
+    // Calculate tournament match record (wins, losses, draws)
+    const tournamentParticipants = (allUserParticipants || []).filter((p) => {
+      const match = matchesMap.get(p.match_id);
+      return match && match.tournament_id !== null && p.result !== null;
+    });
+
+    tournamentLosses = tournamentParticipants.filter(
+      (p) => p.result === 'loss'
+    ).length;
+    tournamentDraws = tournamentParticipants.filter(
+      (p) => p.result === 'draw'
+    ).length;
+    tournamentTotalMatches = tournamentParticipants.length;
+  }
+
+  const tournamentWins = tournamentTotalMatches - tournamentLosses - tournamentDraws;
   const tournamentWinRate =
     tournamentTotalMatches > 0
       ? ((tournamentWins / tournamentTotalMatches) * 100).toFixed(1)
       : '0.0';
 
-  // Fetch last 10 matches
-  const { data: recentMatches } = await supabase
-    .from('matches')
-    .select('id, tournament_id, round_number, game_type, created_at')
-    .order('created_at', { ascending: false })
-    .limit(10);
+  // Fetch matches where the current user participated
+  // First, get all match IDs where the user is a participant
+  const { data: userMatchParticipants } = await supabase
+    .from('match_participants')
+    .select('match_id')
+    .eq('player_id', currentUserId);
+
+  const userMatchIds =
+    userMatchParticipants?.map((p) => p.match_id) || [];
+
+  // Fetch the last 10 matches where the user participated
+  let recentMatches = [];
+  if (userMatchIds.length > 0) {
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('id, tournament_id, round_number, game_type, created_at')
+      .in('id', userMatchIds)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    recentMatches = matches || [];
+  }
 
   // Fetch participants for each match and join with player data
   const formattedMatches = await Promise.all(
@@ -205,6 +349,10 @@ export default async function Home() {
         
         <MyStats
           casualWins={casualWins}
+          casualWinDetails={casualWinDetails}
+          tournamentFirstPlace={tournamentFirstPlace}
+          tournamentSecondPlace={tournamentSecondPlace}
+          tournamentThirdPlace={tournamentThirdPlace}
           tournamentWins={tournamentWins}
           tournamentLosses={tournamentLosses}
           tournamentDraws={tournamentDraws}

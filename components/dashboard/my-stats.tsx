@@ -2,8 +2,17 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+interface CasualWinDetail {
+  gameType: string;
+  createdAt: string;
+}
+
 interface MyStatsProps {
   casualWins: number;
+  casualWinDetails: CasualWinDetail[];
+  tournamentFirstPlace: number;
+  tournamentSecondPlace: number;
+  tournamentThirdPlace: number;
   tournamentWins: number;
   tournamentLosses: number;
   tournamentDraws: number;
@@ -12,6 +21,10 @@ interface MyStatsProps {
 
 export default function MyStats({
   casualWins,
+  casualWinDetails,
+  tournamentFirstPlace,
+  tournamentSecondPlace,
+  tournamentThirdPlace,
   tournamentWins,
   tournamentLosses,
   tournamentDraws,
@@ -20,46 +33,116 @@ export default function MyStats({
   const tournamentTotalMatches =
     tournamentWins + tournamentLosses + tournamentDraws;
 
+  const formatGameType = (gameType: string | null): string => {
+    if (!gameType) return 'Casual';
+    return gameType
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
         <CardTitle className="text-slate-100">My Stats</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Tournament Wins and Casual Wins - Side by Side */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Tournament Wins</p>
-            <p className="text-4xl font-bold text-yellow-500">{tournamentWins}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Casual Wins</p>
-            <p className="text-4xl font-bold text-green-500">{casualWins}</p>
-          </div>
-        </div>
-
-        {/* Tournament Record */}
-        {tournamentTotalMatches > 0 ? (
-          <div className="pt-4 border-t border-slate-800">
-            <p className="text-sm text-slate-400 mb-3">Tournament Record</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-300">Record</span>
-                <span className="text-xl font-bold text-slate-100">
-                  {tournamentWins}-{tournamentLosses}-{tournamentDraws}
-                </span>
+        {/* Tournament Placements - Major Focus */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+            Tournament Victories
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            {/* 1st Place */}
+            <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-lg p-4 text-center">
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
+                1st Place
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-300">Win Rate</span>
-                <span className="text-lg font-semibold text-yellow-500">
-                  {tournamentWinRate}%
-                </span>
+              <div className="text-5xl font-bold text-yellow-500 leading-none">
+                {tournamentFirstPlace}
+              </div>
+            </div>
+            {/* 2nd Place */}
+            <div className="bg-gradient-to-br from-slate-700/20 to-slate-600/10 border border-slate-600/30 rounded-lg p-4 text-center">
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
+                2nd Place
+              </div>
+              <div className="text-5xl font-bold text-slate-300 leading-none">
+                {tournamentSecondPlace}
+              </div>
+            </div>
+            {/* 3rd Place */}
+            <div className="bg-gradient-to-br from-amber-700/20 to-amber-800/10 border border-amber-700/30 rounded-lg p-4 text-center">
+              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
+                3rd Place
+              </div>
+              <div className="text-5xl font-bold text-amber-600 leading-none">
+                {tournamentThirdPlace}
               </div>
             </div>
           </div>
-        ) : (
+        </div>
+
+        {/* Tournament Record - Secondary Focus */}
+        {tournamentTotalMatches > 0 && (
           <div className="pt-4 border-t border-slate-800">
-            <p className="text-sm text-slate-500">No tournament matches yet</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                  Tournament Record
+                </p>
+                <p className="text-2xl font-bold text-slate-100">
+                  {tournamentWins}-{tournamentLosses}-{tournamentDraws}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                  Win Rate
+                </p>
+                <p className="text-2xl font-bold text-yellow-500">
+                  {tournamentWinRate}%
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Casual Wins - List View */}
+        {casualWins > 0 && (
+          <div className="pt-4 border-t border-slate-800">
+            <p className="text-xs text-slate-400 uppercase tracking-wide mb-3">
+              Casual Wins ({casualWins})
+            </p>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {casualWinDetails.map((win, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between py-2 px-3 bg-slate-800/50 rounded-md border border-slate-700/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-sm text-slate-200">
+                      {formatGameType(win.gameType)}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-500">
+                    {formatDate(win.createdAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
