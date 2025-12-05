@@ -11,6 +11,7 @@ interface LogCasualMatchResult {
 
 interface CasualMatchData {
   gameType: 'commander' | 'board_game';
+  boardGameName?: string;
   playerIds: string[];
   outcomeType: 'simple' | 'ranked';
   results: {
@@ -29,6 +30,8 @@ export async function logCasualMatch(
     if (data.playerIds.length < 2 || data.playerIds.length > 4) {
       return { success: false, message: 'Must have between 2 and 4 players' };
     }
+
+    const boardGameName = data.boardGameName?.trim() || null;
 
     if (data.results.length !== data.playerIds.length) {
       return { success: false, message: 'Results must match number of players' };
@@ -55,6 +58,7 @@ export async function logCasualMatch(
         tournament_id: null,
         round_number: null,
         game_type: data.gameType,
+        notes: data.gameType === 'board_game' ? boardGameName : null,
       })
       .select()
       .single();

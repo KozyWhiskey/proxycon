@@ -1,4 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
+import Image from 'next/image';
+import badgeImg from '@/public/proxycon_badge.png';
 import PlayerSelectionGrid from './PlayerSelectionGrid';
 import { Sparkles } from 'lucide-react';
 
@@ -43,12 +45,15 @@ export default async function LoginPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 mb-6">
-            <Sparkles className="w-10 h-10 text-yellow-500" />
+          <div className="flex justify-center">
+            <Image
+              src={badgeImg}
+              alt="ProxyCon 2025 crest"
+              priority
+              sizes="(max-width: 640px) 240px, (max-width: 1024px) 304px, 360px"
+              className="w-60 sm:w-72 md:w-80 h-auto drop-shadow-[0_24px_48px_rgba(0,0,0,0.35)]"
+            />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3 text-slate-100">
-            ProxyCon 2025
-          </h1>
           <p className="text-xl text-slate-400 mb-2">Who Are You?</p>
           <p className="text-sm text-slate-500">Select your name to get started</p>
         </div>

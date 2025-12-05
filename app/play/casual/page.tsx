@@ -6,6 +6,7 @@ import { logCasualMatch } from '../actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
@@ -84,6 +85,7 @@ export default function CasualPlayPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [gameType, setGameType] = useState<'commander' | 'board_game'>('commander');
+  const [boardGameName, setBoardGameName] = useState('');
   const [outcomeType, setOutcomeType] = useState<'simple' | 'ranked'>('simple');
   const [simpleWinner, setSimpleWinner] = useState<string | null>(null);
   const [rankedPlayers, setRankedPlayers] = useState<RankedPlayer[]>([]);
@@ -133,6 +135,12 @@ export default function CasualPlayPage() {
       setRankedPlayers([]);
     }
   }, [selectedPlayers, outcomeType, players]);
+
+  useEffect(() => {
+    if (gameType === 'commander' && boardGameName) {
+      setBoardGameName('');
+    }
+  }, [gameType, boardGameName]);
 
   const handlePlayerToggle = (playerId: string) => {
     if (selectedPlayers.includes(playerId)) {
@@ -217,6 +225,10 @@ export default function CasualPlayPage() {
 
       const result = await logCasualMatch({
         gameType,
+        boardGameName:
+          gameType === 'board_game' && boardGameName.trim()
+            ? boardGameName.trim()
+            : undefined,
         playerIds: selectedPlayers,
         outcomeType,
         results,
@@ -284,6 +296,22 @@ export default function CasualPlayPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {gameType === 'board_game' && (
+              <div className="space-y-2">
+                <Label className="text-slate-100 text-base">Board Game Name (optional)</Label>
+                <Input
+                  value={boardGameName}
+                  onChange={(e) => setBoardGameName(e.target.value)}
+                  placeholder="Enter the board game played"
+                  disabled={isSubmitting}
+                  className="h-12 bg-slate-800 border-slate-700 text-slate-100"
+                />
+                <p className="text-sm text-slate-400">
+                  Helps track which board game was played (optional).
+                </p>
+              </div>
+            )}
 
             {/* Player Selection */}
             <div className="space-y-3">

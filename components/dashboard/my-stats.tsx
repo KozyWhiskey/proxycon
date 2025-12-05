@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface CasualWinDetail {
   gameType: string;
   createdAt: string;
+  boardGameName?: string | null;
+  opponents?: string[];
 }
 
 interface MyStatsProps {
@@ -43,14 +45,24 @@ export default function MyStats({
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const day = date.getDate();
+    const suffix =
+      day % 10 === 1 && day !== 11
+        ? 'st'
+        : day % 10 === 2 && day !== 12
+        ? 'nd'
+        : day % 10 === 3 && day !== 13
+        ? 'rd'
+        : 'th';
+
+    const base = date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    // Insert suffix (e.g., "Dec 5" -> "Dec 5th")
+    return base.replace(`${day}`, `${day}${suffix}`);
   };
 
   return (
@@ -66,7 +78,7 @@ export default function MyStats({
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {/* 1st Place */}
-            <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-lg p-4 text-center">
+            <div className="bg-linear-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-lg p-4 text-center">
               <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
                 1st Place
               </div>
@@ -75,7 +87,7 @@ export default function MyStats({
               </div>
             </div>
             {/* 2nd Place */}
-            <div className="bg-gradient-to-br from-slate-700/20 to-slate-600/10 border border-slate-600/30 rounded-lg p-4 text-center">
+            <div className="bg-linear-to-br from-slate-700/20 to-slate-600/10 border border-slate-600/30 rounded-lg p-4 text-center">
               <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
                 2nd Place
               </div>
@@ -84,7 +96,7 @@ export default function MyStats({
               </div>
             </div>
             {/* 3rd Place */}
-            <div className="bg-gradient-to-br from-amber-700/20 to-amber-800/10 border border-amber-700/30 rounded-lg p-4 text-center">
+            <div className="bg-linear-to-br from-amber-700/20 to-amber-800/10 border border-amber-700/30 rounded-lg p-4 text-center">
               <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
                 3rd Place
               </div>
@@ -126,22 +138,43 @@ export default function MyStats({
               Casual Wins ({casualWins})
             </p>
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {casualWinDetails.map((win, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between py-2 px-3 bg-slate-800/50 rounded-md border border-slate-700/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-sm text-slate-200">
-                      {formatGameType(win.gameType)}
+              {casualWinDetails.map((win, index) => {
+                const showOpponents =
+                  win.gameType === 'commander' &&
+                  Array.isArray(win.opponents) &&
+                  win.opponents.length > 0;
+                const showBoardGameName =
+                  win.gameType === 'board_game' &&
+                  win.boardGameName &&
+                  win.boardGameName.trim().length > 0;
+
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2 px-3 bg-slate-800/50 rounded-md border border-slate-700/50"
+                  >
+                    <div className="flex items-center gap-2 flex-wrap text-slate-200">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm font-semibold">
+                        {formatGameType(win.gameType)}
+                      </span>
+                      {showOpponents && (
+                        <span className="text-sm text-slate-400">
+                          vs {win.opponents?.join(', ')}
+                        </span>
+                      )}
+                      {showBoardGameName && (
+                        <span className="text-sm text-slate-400">
+                          {win.boardGameName}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-500">
+                      {formatDate(win.createdAt)}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-500">
-                    {formatDate(win.createdAt)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

@@ -119,22 +119,68 @@ export default async function Home() {
     .filter((m): m is NonNullable<typeof m> => m !== undefined);
 
   const casualWins = casualWinMatches.length;
-  let casualWinDetails: Array<{ gameType: string; createdAt: string }> = [];
+  let casualWinDetails: Array<{
+    gameType: string;
+    createdAt: string;
+    boardGameName?: string | null;
+    opponents?: string[];
+  }> = [];
 
   // Fetch game_type for casual wins if any exist
   if (casualWins > 0) {
     const casualWinMatchIds = casualWinMatches.map((m) => m.id);
     const { data: casualMatches } = await supabase
       .from('matches')
-      .select('id, game_type, created_at')
+      .select('id, game_type, created_at, notes')
       .in('id', casualWinMatchIds)
       .order('created_at', { ascending: false });
 
+    const { data: casualParticipants } = await supabase
+      .from('match_participants')
+      .select('match_id, player_id')
+      .in('match_id', casualWinMatchIds);
+
+    const participantPlayerIds = Array.from(
+      new Set((casualParticipants || []).map((p) => p.player_id))
+    );
+
+    const { data: casualPlayers } = participantPlayerIds.length
+      ? await supabase
+          .from('players')
+          .select('id, name, nickname')
+          .in('id', participantPlayerIds)
+      : { data: [] };
+
+    const playersById = new Map(
+      (casualPlayers || []).map((p) => [p.id, p])
+    );
+
+    const participantsByMatch = new Map<string, typeof casualParticipants>();
+    (casualParticipants || []).forEach((p) => {
+      const arr = participantsByMatch.get(p.match_id) || [];
+      arr.push(p);
+      participantsByMatch.set(p.match_id, arr);
+    });
+
     casualWinDetails =
-      casualMatches?.map((m) => ({
-        gameType: m.game_type || 'casual',
-        createdAt: m.created_at,
-      })) || [];
+      casualMatches?.map((m) => {
+        const participantsForMatch = participantsByMatch.get(m.id) || [];
+        const opponents =
+          participantsForMatch
+            .filter((p) => p.player_id !== currentUserId)
+            .map((p) => {
+              const player = playersById.get(p.player_id);
+              return player?.nickname || player?.name || 'Unknown';
+            }) || [];
+
+        return {
+          gameType: m.game_type || 'casual',
+          createdAt: m.created_at,
+          boardGameName:
+            m.game_type === 'board_game' ? (m.notes || null) : null,
+          opponents,
+        };
+      }) || [];
   }
 
   // Calculate tournament placement stats (1st, 2nd, 3rd)
