@@ -598,6 +598,15 @@ export default function TournamentDashboard({ params }: PageProps) {
     setIsLoading(false);
   }, [tournamentId]);
 
+  // Fix timezone: database stores timestamp without timezone, treat as UTC
+  const ensureUTC = (timestamp: string | null): string | null => {
+    if (!timestamp) return null;
+    if (!timestamp.endsWith('Z') && !timestamp.match(/[+-]\d{2}:\d{2}$/)) {
+      return timestamp + 'Z';
+    }
+    return timestamp;
+  };
+
   const updateTimerDisplay = (
     timerMatch: Match,
     roundDurationMinutes: number
@@ -621,7 +630,8 @@ export default function TournamentDashboard({ params }: PageProps) {
     }
 
     // State 3: Timer is running - calculate from startedAt and remaining_seconds
-    const startTime = new Date(timerMatch.started_at).getTime();
+    const startedAtFixed = ensureUTC(timerMatch.started_at)!;
+    const startTime = new Date(startedAtFixed).getTime();
     const now = Date.now();
     const elapsedSecs = Math.floor((now - startTime) / 1000);
     const remaining = Math.max(0, (timerMatch.remaining_seconds ?? 0) - elapsedSecs);
