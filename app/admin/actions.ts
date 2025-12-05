@@ -270,16 +270,14 @@ export async function addPlayer(data: {
     const { error } = await supabase.from('players').insert(insertData);
 
     if (error) {
-      // If error is about missing color column, try without it
       if (error.message.includes('column') && error.message.includes('color')) {
-        delete insertData.color;
-        const { error: retryError } = await supabase.from('players').insert(insertData);
-        if (retryError) {
-          return { success: false, message: `Failed to add player: ${retryError.message}` };
-        }
-      } else {
-        return { success: false, message: `Failed to add player: ${error.message}` };
+        return {
+          success: false,
+          message:
+            'Player color column is missing. Run .dev-docs/DATABASE_MIGRATION_add_player_color.md in Supabase, then try again.',
+        };
       }
+      return { success: false, message: `Failed to add player: ${error.message}` };
     }
 
     revalidatePath('/');
@@ -310,17 +308,13 @@ export async function updatePlayer(
       return { success: false, message: 'Player name is required' };
     }
 
-    // Build update object, conditionally include color
+    // Build update object - always include color so admins can clear it
     const updateData: any = {
       name: data.name.trim(),
       nickname: data.nickname?.trim() || null,
       avatar_url: data.avatar_url?.trim() || null,
+      color: data.color?.trim() || null,
     };
-
-    // Only include color if it's provided (column might not exist yet)
-    if (data.color !== null && data.color !== undefined) {
-      updateData.color = data.color.trim() || null;
-    }
 
     const { error } = await supabase
       .from('players')
@@ -328,19 +322,14 @@ export async function updatePlayer(
       .eq('id', playerId);
 
     if (error) {
-      // If error is about missing color column, try without it
       if (error.message.includes('column') && error.message.includes('color')) {
-        delete updateData.color;
-        const { error: retryError } = await supabase
-          .from('players')
-          .update(updateData)
-          .eq('id', playerId);
-        if (retryError) {
-          return { success: false, message: `Failed to update player: ${retryError.message}` };
-        }
-      } else {
-        return { success: false, message: `Failed to update player: ${error.message}` };
+        return {
+          success: false,
+          message:
+            'Player color column is missing. Run .dev-docs/DATABASE_MIGRATION_add_player_color.md in Supabase, then try again.',
+        };
       }
+      return { success: false, message: `Failed to update player: ${error.message}` };
     }
 
     revalidatePath('/');

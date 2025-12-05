@@ -41,19 +41,15 @@ export async function updateMyProfile(data: {
       .eq('id', userId);
 
     if (error) {
-      // If error is about missing color column, try without it
+      // Surface a clear error if the color column is missing so the user knows to run the migration
       if (error.message.includes('column') && error.message.includes('color')) {
-        delete updateData.color;
-        const { error: retryError } = await supabase
-          .from('players')
-          .update(updateData)
-          .eq('id', userId);
-        if (retryError) {
-          return { success: false, message: `Failed to update profile: ${retryError.message}` };
-        }
-      } else {
-        return { success: false, message: `Failed to update profile: ${error.message}` };
+        return {
+          success: false,
+          message:
+            'Player color column is missing. Run .dev-docs/DATABASE_MIGRATION_add_player_color.md in Supabase, then try again.',
+        };
       }
+      return { success: false, message: `Failed to update profile: ${error.message}` };
     }
 
     revalidatePath('/');
