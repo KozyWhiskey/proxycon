@@ -245,6 +245,7 @@ export async function addPlayer(data: {
   name: string;
   nickname: string | null;
   avatar_url: string | null;
+  color: string | null;
 }): Promise<AdminActionResult> {
   try {
     const supabase = await createClient();
@@ -253,15 +254,32 @@ export async function addPlayer(data: {
       return { success: false, message: 'Player name is required' };
     }
 
-    const { error } = await supabase.from('players').insert({
+    // Build insert object, conditionally include color if it's provided
+    const insertData: any = {
       name: data.name.trim(),
       nickname: data.nickname?.trim() || null,
       avatar_url: data.avatar_url?.trim() || null,
       wins: 0,
-    });
+    };
+
+    // Only include color if it's provided (column might not exist yet)
+    if (data.color?.trim()) {
+      insertData.color = data.color.trim();
+    }
+
+    const { error } = await supabase.from('players').insert(insertData);
 
     if (error) {
-      return { success: false, message: `Failed to add player: ${error.message}` };
+      // If error is about missing color column, try without it
+      if (error.message.includes('column') && error.message.includes('color')) {
+        delete insertData.color;
+        const { error: retryError } = await supabase.from('players').insert(insertData);
+        if (retryError) {
+          return { success: false, message: `Failed to add player: ${retryError.message}` };
+        }
+      } else {
+        return { success: false, message: `Failed to add player: ${error.message}` };
+      }
     }
 
     revalidatePath('/');
@@ -282,6 +300,7 @@ export async function updatePlayer(
     name: string;
     nickname: string | null;
     avatar_url: string | null;
+    color: string | null;
   }
 ): Promise<AdminActionResult> {
   try {
@@ -291,17 +310,37 @@ export async function updatePlayer(
       return { success: false, message: 'Player name is required' };
     }
 
+    // Build update object, conditionally include color
+    const updateData: any = {
+      name: data.name.trim(),
+      nickname: data.nickname?.trim() || null,
+      avatar_url: data.avatar_url?.trim() || null,
+    };
+
+    // Only include color if it's provided (column might not exist yet)
+    if (data.color !== null && data.color !== undefined) {
+      updateData.color = data.color.trim() || null;
+    }
+
     const { error } = await supabase
       .from('players')
-      .update({
-        name: data.name.trim(),
-        nickname: data.nickname?.trim() || null,
-        avatar_url: data.avatar_url?.trim() || null,
-      })
+      .update(updateData)
       .eq('id', playerId);
 
     if (error) {
-      return { success: false, message: `Failed to update player: ${error.message}` };
+      // If error is about missing color column, try without it
+      if (error.message.includes('column') && error.message.includes('color')) {
+        delete updateData.color;
+        const { error: retryError } = await supabase
+          .from('players')
+          .update(updateData)
+          .eq('id', playerId);
+        if (retryError) {
+          return { success: false, message: `Failed to update player: ${retryError.message}` };
+        }
+      } else {
+        return { success: false, message: `Failed to update player: ${error.message}` };
+      }
     }
 
     revalidatePath('/');

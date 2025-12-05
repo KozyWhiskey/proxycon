@@ -344,6 +344,8 @@ export default async function Home() {
         <UserHeader
           userName={currentUser.name}
           userNickname={currentUser.nickname}
+          userColor={currentUser.color}
+          userAvatarUrl={currentUser.avatar_url}
         />
       </div>
 

@@ -24,14 +24,20 @@ import { addPlayer, updatePlayer, deletePlayer } from '@/app/admin/actions';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { 
+  AVAILABLE_COLORS, 
+  COLOR_DISPLAY_NAMES, 
+  getColorClass,
+  isGuild 
+} from '@/lib/player-colors';
 
 interface Player {
   id: string;
   name: string;
   nickname: string | null;
   avatar_url: string | null;
+  color: string | null;
   wins: number;
-  tickets: number;
 }
 
 export default function ManagePlayers() {
@@ -47,6 +53,7 @@ export default function ManagePlayers() {
     name: '',
     nickname: '',
     avatar_url: '',
+    color: undefined as string | undefined,
   });
 
   useEffect(() => {
@@ -54,33 +61,61 @@ export default function ManagePlayers() {
   }, []);
 
   async function fetchPlayers() {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('players')
-      .select('id, name, nickname, avatar_url, wins, tickets')
-      .order('name', { ascending: true });
+    try {
+      const supabase = createClient();
+      // Try to fetch with color column, but handle gracefully if it doesn't exist
+      const { data, error } = await supabase
+        .from('players')
+        .select('id, name, nickname, avatar_url, color, wins')
+        .order('name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching players:', error);
+      if (error) {
+        // If error is about missing column, try without it
+        if (error.message.includes('column') && error.message.includes('color')) {
+          console.warn('Color column not found, fetching without it');
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('players')
+            .select('id, name, nickname, avatar_url, wins')
+            .order('name', { ascending: true });
+          
+          if (fallbackError) {
+            console.error('Error fetching players:', fallbackError);
+            toast.error('Failed to load players');
+            setPlayers([]);
+          } else {
+            // Add null color to each player
+            setPlayers((fallbackData || []).map(p => ({ ...p, color: null })));
+          }
+        } else {
+          console.error('Error fetching players:', error);
+          toast.error('Failed to load players');
+          setPlayers([]);
+        }
+      } else {
+        setPlayers(data || []);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching players:', err);
       toast.error('Failed to load players');
-    } else {
-      setPlayers(data || []);
+      setPlayers([]);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   const handleAdd = () => {
     setEditingPlayer(null);
-    setFormData({ name: '', nickname: '', avatar_url: '' });
+    setFormData({ name: '', nickname: '', avatar_url: '', color: undefined });
     setIsDialogOpen(true);
   };
 
   const handleEdit = (player: Player) => {
     setEditingPlayer(player);
     setFormData({
-      name: player.name,
+      name: player.name || '',
       nickname: player.nickname || '',
       avatar_url: player.avatar_url || '',
+      color: player.color || undefined,
     });
     setIsDialogOpen(true);
   };
@@ -104,12 +139,14 @@ export default function ManagePlayers() {
         name: formData.name.trim(),
         nickname: formData.nickname.trim() || null,
         avatar_url: formData.avatar_url.trim() || null,
+        color: formData.color?.trim() || null,
       });
     } else {
       result = await addPlayer({
         name: formData.name.trim(),
         nickname: formData.nickname.trim() || null,
         avatar_url: formData.avatar_url.trim() || null,
+        color: formData.color?.trim() || null,
       });
     }
 
@@ -181,18 +218,23 @@ export default function ManagePlayers() {
                   className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-100 font-semibold truncate">
-                      {player.nickname || player.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-slate-100 font-semibold truncate">
+                        {player.nickname || player.name}
+                      </p>
+                      {player.color && (
+                        <div
+                          className={`w-5 h-5 rounded-full ${getColorClass(player.color) || ''}`}
+                          title={COLOR_DISPLAY_NAMES[player.color] || player.color}
+                        />
+                      )}
+                    </div>
                     <p className="text-sm text-slate-400 truncate">
                       {player.nickname && player.name !== player.nickname && player.name}
                     </p>
                     <div className="flex items-center gap-4 mt-1">
                       <span className="text-xs text-slate-500">
                         {player.wins || 0} wins
-                      </span>
-                      <span className="text-xs text-yellow-500">
-                        {player.tickets || 0} tickets
                       </span>
                     </div>
                   </div>
@@ -222,7 +264,17 @@ export default function ManagePlayers() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            // Reset form when dialog closes
+            setEditingPlayer(null);
+            setFormData({ name: '', nickname: '', avatar_url: '', color: undefined });
+          }
+        }}
+      >
         <DialogContent className="bg-slate-900 border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-slate-100">
@@ -261,6 +313,70 @@ export default function ManagePlayers() {
                 placeholder="https://example.com/avatar.jpg (optional)"
                 className="h-12 bg-slate-800 border-slate-700 text-slate-100"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-100">Color Theme</Label>
+              <Select
+                value={formData.color ?? 'auto'}
+                onValueChange={(value) => {
+                  setFormData({ ...formData, color: value === 'auto' ? undefined : value });
+                }}
+              >
+                <SelectTrigger className="h-12 bg-slate-800 border-slate-700 text-slate-100">
+                  <SelectValue placeholder="Auto (based on name)" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700 max-h-[400px]">
+                  <SelectItem value="auto" className="text-slate-100 focus:bg-slate-700">
+                    Auto (based on name)
+                  </SelectItem>
+                  
+                  {/* Single Colors Section */}
+                  <div className="px-2 py-1.5">
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                      Single Colors
+                    </div>
+                    {AVAILABLE_COLORS.filter((color) => !isGuild(color)).map((color) => (
+                      <SelectItem
+                        key={color}
+                        value={color}
+                        className="text-slate-100 focus:bg-slate-700"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`w-5 h-5 rounded-full ${getColorClass(color) || ''} shrink-0`}
+                          />
+                          <span>{COLOR_DISPLAY_NAMES[color]}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </div>
+
+                  {/* Guilds Section */}
+                  <div className="px-2 py-1.5 border-t border-slate-700 mt-1">
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                      Guilds (Two-Color)
+                    </div>
+                    {AVAILABLE_COLORS.filter((color) => isGuild(color)).map((color) => (
+                      <SelectItem
+                        key={color}
+                        value={color}
+                        className="text-slate-100 focus:bg-slate-700"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`w-5 h-5 rounded-full ${getColorClass(color) || ''} shrink-0`}
+                          />
+                          <span>{COLOR_DISPLAY_NAMES[color]}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500">
+                Choose a color theme for the player's avatar. Leave as "Auto" to use automatic
+                assignment based on name.
+              </p>
             </div>
           </div>
           <DialogFooter>

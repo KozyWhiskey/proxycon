@@ -25,6 +25,7 @@ Stores player information and statistics.
 | `name` | TEXT | NOT NULL | Player's full name |
 | `nickname` | TEXT | NULLABLE | Player's nickname/display name |
 | `avatar_url` | TEXT | NULLABLE | URL to player's avatar image |
+| `color` | TEXT | NULLABLE | Player color theme: MTG single colors (white, blue, black, red, green) or guilds (azorius, dimir, rakdos, gruul, selesnya, orzhov, izzet, golgari, boros, simic) |
 | `wins` | INTEGER | DEFAULT 0 | Total weekend wins (casual + tournament) |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
 | `updated_at` | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
@@ -35,6 +36,11 @@ Stores player information and statistics.
 
 **Notes:**
 - The `tickets` column has been removed (no longer used)
+- The `color` column stores the player's assigned color theme for avatar display
+- If `color` is NULL, the application uses a hash-based color assignment based on the player's name (backward compatible)
+- **Single Colors:** `'white'`, `'blue'`, `'black'`, `'red'`, `'green'` (Magic: The Gathering colors)
+- **Guilds (Two-Color):** `'azorius'` (W/U), `'dimir'` (U/B), `'rakdos'` (B/R), `'gruul'` (R/G), `'selesnya'` (G/W), `'orzhov'` (W/B), `'izzet'` (U/R), `'golgari'` (B/G), `'boros'` (R/W), `'simic'` (G/U)
+- Guilds display as gradients combining their two colors
 
 ---
 
@@ -365,6 +371,12 @@ ORDER BY m.created_at;
 - **Added** `prize_1st`, `prize_2nd`, `prize_3rd` columns to `tournaments` table
 - **Added** `games_won` column to `match_participants` table
 - See: `.dev-docs/DATABASE_MIGRATION_simplify_streaming_dashboard.md`
+
+### Migration: Add Player Color
+- **Added** `color` column to `players` table for custom color theme assignment
+- Allows administrators to assign specific colors to players for avatar display
+- Backward compatible: NULL values use hash-based color assignment
+- See: `.dev-docs/DATABASE_MIGRATION_add_player_color.md`
 
 ---
 

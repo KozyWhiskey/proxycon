@@ -12,6 +12,7 @@ interface Player {
   name: string;
   nickname?: string | null;
   avatar_url?: string | null;
+  color?: string | null;
   created_at: string;
 }
 
@@ -29,18 +30,12 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+import { COLOR_CLASSES } from '@/lib/player-colors';
+
 // Generate a color based on the player's name (consistent color per player)
-function getPlayerColor(name: string): string {
-  const colors = [
-    'bg-yellow-500/20 border-yellow-500/30 text-yellow-500',
-    'bg-emerald-500/20 border-emerald-500/30 text-emerald-500',
-    'bg-blue-500/20 border-blue-500/30 text-blue-500',
-    'bg-purple-500/20 border-purple-500/30 text-purple-500',
-    'bg-rose-500/20 border-rose-500/30 text-rose-500',
-    'bg-cyan-500/20 border-cyan-500/30 text-cyan-500',
-    'bg-orange-500/20 border-orange-500/30 text-orange-500',
-    'bg-pink-500/20 border-pink-500/30 text-pink-500',
-  ];
+// Used as fallback when no color is assigned
+function getPlayerColorFromHash(name: string): string {
+  const colors = Object.values(COLOR_CLASSES);
   
   // Simple hash function to consistently assign colors
   let hash = 0;
@@ -48,6 +43,14 @@ function getPlayerColor(name: string): string {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return colors[Math.abs(hash) % colors.length];
+}
+
+// Get player color class - uses stored color if available, otherwise falls back to hash-based
+function getPlayerColor(color: string | null | undefined, name: string): string {
+  if (color && COLOR_CLASSES[color]) {
+    return COLOR_CLASSES[color];
+  }
+  return getPlayerColorFromHash(name);
 }
 
 export default function PlayerSelectionGrid({ players }: PlayerSelectionGridProps) {
@@ -78,7 +81,7 @@ export default function PlayerSelectionGrid({ players }: PlayerSelectionGridProp
       {players.map((player) => {
         const displayName = player.nickname || player.name;
         const initials = getInitials(player.name);
-        const colorClass = getPlayerColor(player.name);
+        const colorClass = getPlayerColor(player.color, player.name);
         const isLoading = loadingId === player.id;
         const isDisabled = !!loadingId && !isLoading;
 
