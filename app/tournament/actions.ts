@@ -679,7 +679,7 @@ async function generateNextRound(tournamentId: string, currentRound: number): Pr
 
 // A helper function to fetch the combined timer data
 async function getTimerData(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   tournamentId: string,
   roundNumber: number
 ): Promise<TimerData | null> {

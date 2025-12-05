@@ -272,7 +272,13 @@ export default async function Home() {
     userMatchParticipants?.map((p) => p.match_id) || [];
 
   // Fetch the last 10 matches where the user participated
-  let recentMatches = [];
+  let recentMatches: Array<{
+    id: string;
+    tournament_id: string | null;
+    round_number: number | null;
+    game_type: string | null;
+    created_at: string;
+  }> = [];
   if (userMatchIds.length > 0) {
     const { data: matches } = await supabase
       .from('matches')
