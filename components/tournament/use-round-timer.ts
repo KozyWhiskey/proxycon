@@ -10,14 +10,12 @@ import {
 } from '@/app/tournament/actions';
 import { TimerData, TimerControlResult } from '@/lib/types';
 
-// Define the shape of the props the hook will receive
 interface UseRoundTimerProps {
   tournamentId: string;
   roundNumber: number;
   initialTimerData: TimerData;
 }
 
-// Define the shape of the object the hook will return
 interface UseRoundTimerReturn {
   status: 'initial' | 'running' | 'paused' | 'expired';
   displayTime: string;
@@ -31,71 +29,93 @@ interface UseRoundTimerReturn {
   currentDuration: number;
 }
 
+/**
+ * Simplified timer hook using remaining_seconds as the single source of truth.
+ * 
+ * States:
+ * - Initial: startedAt is null -> display roundDurationMinutes * 60
+ * - Running: startedAt set, pausedAt null -> display remainingSeconds - elapsed
+ * - Paused: pausedAt set -> display remainingSeconds (exact value from server)
+ * - Expired: calculated time <= 0
+ */
 export function useRoundTimer({
   tournamentId,
   roundNumber,
   initialTimerData,
 }: UseRoundTimerProps): UseRoundTimerReturn {
   const [timerData, setTimerData] = useState<TimerData>(initialTimerData);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [displaySeconds, setDisplaySeconds] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    roundDurationMinutes,
-    startedAt,
-    pausedAt,
-    totalPausedSeconds,
-  } = timerData;
+  const { roundDurationMinutes, startedAt: rawStartedAt, pausedAt: rawPausedAt, remainingSeconds } = timerData;
+  
+  // Fix timezone issue: database stores timestamps without timezone info
+  // We need to treat them as UTC by appending 'Z' if missing
+  const ensureUTC = (timestamp: string | null): string | null => {
+    if (!timestamp) return null;
+    // If the timestamp doesn't end with 'Z' or a timezone offset, treat it as UTC
+    if (!timestamp.endsWith('Z') && !timestamp.match(/[+-]\d{2}:\d{2}$/)) {
+      return timestamp + 'Z';
+    }
+    return timestamp;
+  };
+  
+  const startedAt = ensureUTC(rawStartedAt);
+  const pausedAt = ensureUTC(rawPausedAt);
 
-  // This is the primary effect for managing the timer's state and countdown.
+  // Calculate the display time based on current state
   useEffect(() => {
-    const { startedAt, pausedAt, totalPausedSeconds, roundDurationMinutes } = timerData;
-
-    let remainingSeconds = 0;
-
-    if (!startedAt) {
-      // State 1: Timer has not started.
-      remainingSeconds = roundDurationMinutes * 60;
-      setTimeRemaining(remainingSeconds);
-      return; // No interval needed.
-    }
-
-    // If we get here, the timer has started.
-    const startTime = new Date(startedAt).getTime();
-    const durationSecs = roundDurationMinutes * 60;
-
-    if (pausedAt) {
-      // State 2: Timer is paused.
-      const pauseTime = new Date(pausedAt).getTime();
-      const grossElapsedSecs = Math.floor((pauseTime - startTime) / 1000);
-      const netElapsedSecs = grossElapsedSecs - totalPausedSeconds;
-      remainingSeconds = durationSecs - netElapsedSecs;
-      setTimeRemaining(Math.max(0, remainingSeconds));
-      return; // No interval needed.
-    }
+    console.log('[useRoundTimer] Effect running with:', {
+      startedAt,
+      pausedAt,
+      remainingSeconds,
+      roundDurationMinutes,
+    });
     
-    // State 3: Timer is running.
-    // Set the initial time remaining for the running state.
-    const now = new Date().getTime();
-    const grossElapsedSecs = Math.floor((now - startTime) / 1000);
-    const netElapsedSecs = grossElapsedSecs - totalPausedSeconds;
-    setTimeRemaining(Math.max(0, durationSecs - netElapsedSecs));
+    // State 1: Timer not started - show full duration
+    if (!startedAt) {
+      const display = roundDurationMinutes * 60;
+      console.log('[useRoundTimer] State: initial, display:', display);
+      setDisplaySeconds(display);
+      return;
+    }
 
-    // Set up the one-second tick interval.
+    // State 2: Timer is paused - show exact remaining seconds from server
+    if (pausedAt) {
+      const display = Math.max(0, remainingSeconds ?? 0);
+      console.log('[useRoundTimer] State: paused, display:', display);
+      setDisplaySeconds(display);
+      return;
+    }
+
+    // State 3: Timer is running - calculate and count down
+    const calculateRemaining = () => {
+      const now = Date.now();
+      const started = new Date(startedAt).getTime();
+      const elapsed = Math.floor((now - started) / 1000);
+      const remaining = Math.max(0, (remainingSeconds ?? 0) - elapsed);
+      return remaining;
+    };
+
+    // Set initial value
+    const initialRemaining = calculateRemaining();
+    console.log('[useRoundTimer] State: running, initial remaining:', initialRemaining);
+    setDisplaySeconds(initialRemaining);
+
+    // Set up countdown interval
     const interval = setInterval(() => {
-      setTimeRemaining(prevTime => Math.max(0, prevTime - 1));
+      setDisplaySeconds(calculateRemaining());
     }, 1000);
 
-    // Cleanup function to clear interval when dependencies change (e.g., on pause).
     return () => clearInterval(interval);
-    
-  }, [timerData]); // This effect re-runs every time server state changes.
+  }, [startedAt, pausedAt, remainingSeconds, roundDurationMinutes]);
 
+  // Determine the current status
   const status = !startedAt
     ? 'initial'
     : pausedAt
     ? 'paused'
-    : timeRemaining > 0
+    : displaySeconds > 0
     ? 'running'
     : 'expired';
 
@@ -104,13 +124,16 @@ export function useRoundTimer({
     setIsLoading(true);
     try {
       const result = await startRoundTimer(tournamentId, roundNumber);
+      console.log('[handleStart] Server response:', result);
       if (result.success && result.updatedTimerData) {
+        console.log('[handleStart] Setting timerData:', result.updatedTimerData);
         toast.success('Round timer started');
         setTimerData(result.updatedTimerData);
       } else {
         toast.error(result.message || 'Failed to start timer');
       }
     } catch (error) {
+      console.error('[handleStart] Error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -121,13 +144,16 @@ export function useRoundTimer({
     setIsLoading(true);
     try {
       const result = await pauseRoundTimer(tournamentId, roundNumber);
+      console.log('[handlePause] Server response:', result);
       if (result.success && result.updatedTimerData) {
+        console.log('[handlePause] Setting timerData:', result.updatedTimerData);
         toast.success('Timer paused');
         setTimerData(result.updatedTimerData);
       } else {
         toast.error(result.message || 'Failed to pause timer');
       }
     } catch (error) {
+      console.error('[handlePause] Error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -138,13 +164,16 @@ export function useRoundTimer({
     setIsLoading(true);
     try {
       const result = await resumeRoundTimer(tournamentId, roundNumber);
+      console.log('[handleResume] Server response:', result);
       if (result.success && result.updatedTimerData) {
+        console.log('[handleResume] Setting timerData:', result.updatedTimerData);
         toast.success('Timer resumed');
         setTimerData(result.updatedTimerData);
       } else {
         toast.error(result.message || 'Failed to resume timer');
       }
     } catch (error) {
+      console.error('[handleResume] Error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -167,7 +196,6 @@ export function useRoundTimer({
       setIsLoading(false);
     }
   };
-  // --- END ACTION HANDLERS ---
 
   // --- FORMATTING ---
   const formatTime = (seconds: number): string => {
@@ -178,11 +206,9 @@ export function useRoundTimer({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const displayTime = formatTime(timeRemaining);
-
   return {
     status,
-    displayTime,
+    displayTime: formatTime(displaySeconds),
     isLoading,
     actions: {
       handleStart,

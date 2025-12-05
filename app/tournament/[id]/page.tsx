@@ -68,7 +68,7 @@ export default async function TournamentPage({ params }: PageProps) {
   // Fetch timer state for current round (use first match of round)
   const { data: timerMatch } = await supabase
     .from('matches')
-    .select('started_at, paused_at, total_paused_seconds')
+    .select('started_at, paused_at, remaining_seconds')
     .eq('tournament_id', id)
     .eq('round_number', currentRound)
     .limit(1)
@@ -273,7 +273,7 @@ export default async function TournamentPage({ params }: PageProps) {
               roundDurationMinutes: tournament.round_duration_minutes || 50,
               startedAt: timerMatch?.started_at || null,
               pausedAt: timerMatch?.paused_at || null,
-              totalPausedSeconds: timerMatch?.total_paused_seconds || 0,
+              remainingSeconds: timerMatch?.remaining_seconds ?? null,
             }}
           />
         )}

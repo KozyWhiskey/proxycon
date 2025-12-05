@@ -696,7 +696,7 @@ async function getTimerData(
 
   const { data: matchData, error: matchError } = await supabase
     .from('matches')
-    .select('started_at, paused_at, total_paused_seconds')
+    .select('started_at, paused_at, remaining_seconds')
     .eq('tournament_id', tournamentId)
     .eq('round_number', roundNumber)
     .limit(1)
@@ -711,7 +711,7 @@ async function getTimerData(
     roundDurationMinutes: tournamentData.round_duration_minutes,
     startedAt: matchData?.started_at || null,
     pausedAt: matchData?.paused_at || null,
-    totalPausedSeconds: matchData?.total_paused_seconds || 0,
+    remainingSeconds: matchData?.remaining_seconds ?? null,
   };
 }
 
@@ -725,6 +725,17 @@ export async function startRoundTimer(
   try {
     const supabase = await createClient();
 
+    // Get tournament duration
+    const { data: tournament } = await supabase
+      .from('tournaments')
+      .select('round_duration_minutes')
+      .eq('id', tournamentId)
+      .single();
+
+    if (!tournament) {
+      return { success: false, message: 'Tournament not found' };
+    }
+
     const { data: matches } = await supabase
       .from('matches')
       .select('id')
@@ -736,12 +747,26 @@ export async function startRoundTimer(
     }
 
     const now = new Date().toISOString();
+    const durationMinutes = tournament.round_duration_minutes;
+    const initialSeconds = durationMinutes * 60;
+    
+    // Debug logging
+    console.log('[startRoundTimer] duration minutes:', durationMinutes);
+    console.log('[startRoundTimer] initial seconds:', initialSeconds);
+    console.log('[startRoundTimer] started_at:', now);
+    
+    // Sanity check - duration should be reasonable (1-300 minutes)
+    if (initialSeconds < 60 || initialSeconds > 18000) {
+      console.error('[startRoundTimer] Invalid initial seconds:', initialSeconds);
+      return { success: false, message: `Invalid duration: ${durationMinutes} minutes` };
+    }
+    
     const { error } = await supabase
       .from('matches')
       .update({
         started_at: now,
         paused_at: null,
-        total_paused_seconds: 0,
+        remaining_seconds: initialSeconds,
       })
       .eq('tournament_id', tournamentId)
       .eq('round_number', roundNumber);
@@ -755,6 +780,8 @@ export async function startRoundTimer(
     if (!updatedTimerData) {
       return { success: false, message: 'Failed to fetch updated timer data.' };
     }
+    
+    console.log('[startRoundTimer] returning timerData:', updatedTimerData);
 
     return { success: true, updatedTimerData };
   } catch (error) {
@@ -773,7 +800,7 @@ export async function pauseRoundTimer(
 
     const { data: match } = await supabase
       .from('matches')
-      .select('started_at, paused_at')
+      .select('started_at, paused_at, remaining_seconds')
       .eq('tournament_id', tournamentId)
       .eq('round_number', roundNumber)
       .limit(1)
@@ -787,22 +814,77 @@ export async function pauseRoundTimer(
       return { success: false, message: 'Timer already paused' };
     }
 
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('matches')
-      .update({ paused_at: now })
-      .eq('tournament_id', tournamentId)
-      .eq('round_number', roundNumber);
+    // Calculate how much time has elapsed since the timer started (or resumed)
+    const now = new Date();
+    
+    // Fix timezone: database stores timestamp without timezone, treat as UTC
+    let startedAtStr = match.started_at;
+    if (!startedAtStr.endsWith('Z') && !startedAtStr.match(/[+-]\d{2}:\d{2}$/)) {
+      startedAtStr = startedAtStr + 'Z';
+    }
+    const startedAt = new Date(startedAtStr);
+    const elapsedSeconds = Math.floor((now.getTime() - startedAt.getTime()) / 1000);
+    
+    // Debug logging
+    console.log('[pauseRoundTimer] match.remaining_seconds:', match.remaining_seconds);
+    console.log('[pauseRoundTimer] started_at (raw):', match.started_at);
+    console.log('[pauseRoundTimer] started_at (fixed):', startedAtStr);
+    console.log('[pauseRoundTimer] now:', now.toISOString());
+    console.log('[pauseRoundTimer] elapsedSeconds:', elapsedSeconds);
+    
+    // Sanity check - elapsed should be positive and reasonable
+    if (elapsedSeconds < 0) {
+      console.error('[pauseRoundTimer] Negative elapsed time detected!');
+      // If elapsed is negative, something is wrong with timestamps - just use current remaining
+      const newRemainingSeconds = Math.max(0, match.remaining_seconds || 0);
+      console.log('[pauseRoundTimer] Using existing remaining_seconds:', newRemainingSeconds);
+      
+      const { error } = await supabase
+        .from('matches')
+        .update({ 
+          paused_at: now.toISOString(),
+        })
+        .eq('tournament_id', tournamentId)
+        .eq('round_number', roundNumber);
 
-    if (error) {
-      console.error('Error pausing timer:', error);
-      return { success: false, message: error.message };
+      if (error) {
+        console.error('Error pausing timer:', error);
+        return { success: false, message: error.message };
+      }
+    } else {
+      // Calculate new remaining seconds (don't go below 0)
+      const currentRemaining = match.remaining_seconds || 0;
+      const newRemainingSeconds = Math.max(0, currentRemaining - elapsedSeconds);
+      
+      console.log('[pauseRoundTimer] currentRemaining:', currentRemaining);
+      console.log('[pauseRoundTimer] newRemainingSeconds:', newRemainingSeconds);
+      
+      // Sanity check - new remaining should not exceed original remaining
+      if (newRemainingSeconds > currentRemaining) {
+        console.error('[pauseRoundTimer] New remaining exceeds current! Using current value.');
+      }
+
+      const { error } = await supabase
+        .from('matches')
+        .update({ 
+          paused_at: now.toISOString(),
+          remaining_seconds: Math.min(newRemainingSeconds, currentRemaining),
+        })
+        .eq('tournament_id', tournamentId)
+        .eq('round_number', roundNumber);
+
+      if (error) {
+        console.error('Error pausing timer:', error);
+        return { success: false, message: error.message };
+      }
     }
 
     const updatedTimerData = await getTimerData(supabase, tournamentId, roundNumber);
-     if (!updatedTimerData) {
+    if (!updatedTimerData) {
       return { success: false, message: 'Failed to fetch updated timer data.' };
     }
+    
+    console.log('[pauseRoundTimer] returning timerData:', updatedTimerData);
 
     return { success: true, updatedTimerData };
   } catch (error) {
@@ -821,10 +903,9 @@ export async function resumeRoundTimer(
 
     const { data: match } = await supabase
       .from('matches')
-      .select('started_at, paused_at, total_paused_seconds')
+      .select('started_at, paused_at, remaining_seconds')
       .eq('tournament_id', tournamentId)
       .eq('round_number', roundNumber)
-      .not('paused_at', 'is', null)
       .limit(1)
       .single();
 
@@ -835,16 +916,21 @@ export async function resumeRoundTimer(
       return { success: false, message: 'Timer not paused' };
     }
 
-    const now = new Date().getTime();
-    const pausedTime = new Date(match.paused_at).getTime();
-    const pausedDuration = Math.floor((now - pausedTime) / 1000);
-    const newTotalPaused = (match.total_paused_seconds || 0) + pausedDuration;
+    // Debug logging
+    console.log('[resumeRoundTimer] match.remaining_seconds:', match.remaining_seconds);
+    console.log('[resumeRoundTimer] match.paused_at:', match.paused_at);
+
+    // Simply set a new start time and clear paused_at
+    // remaining_seconds already holds the correct value from when we paused
+    const now = new Date().toISOString();
+    
+    console.log('[resumeRoundTimer] new started_at:', now);
 
     const { error } = await supabase
       .from('matches')
       .update({
+        started_at: now,
         paused_at: null,
-        total_paused_seconds: newTotalPaused,
       })
       .eq('tournament_id', tournamentId)
       .eq('round_number', roundNumber);
@@ -855,9 +941,11 @@ export async function resumeRoundTimer(
     }
 
     const updatedTimerData = await getTimerData(supabase, tournamentId, roundNumber);
-     if (!updatedTimerData) {
+    if (!updatedTimerData) {
       return { success: false, message: 'Failed to fetch updated timer data.' };
     }
+    
+    console.log('[resumeRoundTimer] returning timerData:', updatedTimerData);
 
     return { success: true, updatedTimerData };
   } catch (error) {
@@ -906,7 +994,7 @@ export async function updateRoundDuration(
           roundDurationMinutes: newDurationMinutes,
           startedAt: null,
           pausedAt: null,
-          totalPausedSeconds: 0
+          remainingSeconds: null
         } 
       };
     }
@@ -918,7 +1006,7 @@ export async function updateRoundDuration(
       .update({
         started_at: null,
         paused_at: null,
-        total_paused_seconds: 0,
+        remaining_seconds: null,
       })
       .eq('tournament_id', tournamentId)
       .eq('round_number', currentRound);

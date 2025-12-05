@@ -53,7 +53,7 @@ interface Match {
   round_number: number;
   started_at: string | null;
   paused_at: string | null;
-  total_paused_seconds: number;
+  remaining_seconds: number | null;
   updated_at: string | null;
   created_at: string;
 }
@@ -117,7 +117,7 @@ interface MatchFeedItem {
 interface TimerState {
   startedAt: string | null;
   pausedAt: string | null;
-  totalPausedSeconds: number;
+  remainingSeconds: number | null;
 }
 
 // Match Result Entry Component
@@ -322,7 +322,7 @@ export default function TournamentDashboard({ params }: PageProps) {
   const [timerState, setTimerState] = useState<TimerState>({
     startedAt: null,
     pausedAt: null,
-    totalPausedSeconds: 0,
+    remainingSeconds: null,
   });
   const [isTimerLoading, setIsTimerLoading] = useState(false);
 
@@ -363,7 +363,7 @@ export default function TournamentDashboard({ params }: PageProps) {
     // Fetch all matches
     const { data: matches } = await supabase
       .from('matches')
-      .select('id, round_number, started_at, paused_at, total_paused_seconds, updated_at, created_at')
+      .select('id, round_number, started_at, paused_at, remaining_seconds, updated_at, created_at')
       .eq('tournament_id', tournamentId)
       .order('round_number', { ascending: true });
 
@@ -385,7 +385,7 @@ export default function TournamentDashboard({ params }: PageProps) {
       setTimerState({
         startedAt: timerMatch.started_at,
         pausedAt: timerMatch.paused_at,
-        totalPausedSeconds: timerMatch.total_paused_seconds || 0,
+        remainingSeconds: timerMatch.remaining_seconds,
       });
       updateTimerDisplay(timerMatch, tournamentData.round_duration_minutes);
     }
@@ -602,38 +602,38 @@ export default function TournamentDashboard({ params }: PageProps) {
     timerMatch: Match,
     roundDurationMinutes: number
   ) => {
+    // State 1: Timer not started - show full duration
     if (!timerMatch.started_at) {
-      setTimerDisplay(`${roundDurationMinutes}:00`);
+      const mins = roundDurationMinutes;
+      setTimerDisplay(`${mins.toString().padStart(2, '0')}:00`);
       setTimerStatus('not_started');
       return;
     }
 
-    const startTime = new Date(timerMatch.started_at).getTime();
-    const durationMs = roundDurationMinutes * 60 * 1000;
-    const pausedSeconds = timerMatch.total_paused_seconds || 0;
-
+    // State 2: Timer is paused - show exact remaining seconds from server
     if (timerMatch.paused_at) {
-      const pauseTime = new Date(timerMatch.paused_at).getTime();
-      const elapsedMs = pauseTime - startTime - pausedSeconds * 1000;
-      const remainingMs = Math.max(0, durationMs - elapsedMs);
-      const mins = Math.floor(remainingMs / 60000);
-      const secs = Math.floor((remainingMs % 60000) / 1000);
+      const remaining = Math.max(0, timerMatch.remaining_seconds ?? 0);
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
       setTimerDisplay(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
       setTimerStatus('paused');
+      return;
+    }
+
+    // State 3: Timer is running - calculate from startedAt and remaining_seconds
+    const startTime = new Date(timerMatch.started_at).getTime();
+    const now = Date.now();
+    const elapsedSecs = Math.floor((now - startTime) / 1000);
+    const remaining = Math.max(0, (timerMatch.remaining_seconds ?? 0) - elapsedSecs);
+
+    if (remaining <= 0) {
+      setTimerDisplay('00:00');
+      setTimerStatus('expired');
     } else {
-      const now = Date.now();
-      const elapsedMs = now - startTime - pausedSeconds * 1000;
-      const remainingMs = Math.max(0, durationMs - elapsedMs);
-      
-      if (remainingMs <= 0) {
-        setTimerDisplay('00:00');
-        setTimerStatus('expired');
-      } else {
-        const mins = Math.floor(remainingMs / 60000);
-        const secs = Math.floor((remainingMs % 60000) / 1000);
-        setTimerDisplay(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
-        setTimerStatus('running');
-      }
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      setTimerDisplay(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      setTimerStatus('running');
     }
   };
 
@@ -648,7 +648,7 @@ export default function TournamentDashboard({ params }: PageProps) {
         setTimerState({
           startedAt: result.updatedTimerData.startedAt,
           pausedAt: result.updatedTimerData.pausedAt,
-          totalPausedSeconds: result.updatedTimerData.totalPausedSeconds,
+          remainingSeconds: result.updatedTimerData.remainingSeconds,
         });
         fetchDashboardData();
       } else {
@@ -671,7 +671,7 @@ export default function TournamentDashboard({ params }: PageProps) {
         setTimerState({
           startedAt: result.updatedTimerData.startedAt,
           pausedAt: result.updatedTimerData.pausedAt,
-          totalPausedSeconds: result.updatedTimerData.totalPausedSeconds,
+          remainingSeconds: result.updatedTimerData.remainingSeconds,
         });
         fetchDashboardData();
       } else {
@@ -694,7 +694,7 @@ export default function TournamentDashboard({ params }: PageProps) {
         setTimerState({
           startedAt: result.updatedTimerData.startedAt,
           pausedAt: result.updatedTimerData.pausedAt,
-          totalPausedSeconds: result.updatedTimerData.totalPausedSeconds,
+          remainingSeconds: result.updatedTimerData.remainingSeconds,
         });
         fetchDashboardData();
       } else {
