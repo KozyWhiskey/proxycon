@@ -1,10 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
-import { getCurrentUser } from '@/lib/get-current-user';
-import { redirect } from 'next/navigation';
-import ClaimProfile from '@/components/dashboard/claim-profile';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { requireProfile } from '@/lib/get-current-user';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trophy, Calendar } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import Link from 'next/link';
 import UserHeader from '@/components/dashboard/user-header';
 import QuickActions from '@/components/dashboard/quick-actions';
@@ -12,62 +10,39 @@ import QuickActions from '@/components/dashboard/quick-actions';
 export default async function Home() {
   const supabase = await createClient();
   
-  // Auth Check
-  const authData = await getCurrentUser();
-  if (!authData || !authData.user) {
-    redirect('/login');
-  }
+  // Auth & Profile Check
+  const { user, profile } = await requireProfile();
 
-  const { user, profile } = authData;
-
-  // Check for linked player record
-  const { data: linkedPlayer } = await supabase
-    .from('players')
-    .select('*')
+  // Calculate total wins (V3: count match_participants where result = 'win')
+  // This is expensive at scale, but fine for now. V3 suggests storing this in event_members,
+  // but for a global stat we'd need a rollup or just a count query.
+  const { count: totalWins } = await supabase
+    .from('match_participants')
+    .select('*', { count: 'exact', head: true })
     .eq('profile_id', user.id)
-    .single();
-
-  if (!linkedPlayer) {
-    const { data: unclaimedPlayers } = await supabase
-      .from('players')
-      .select('id, name, avatar_url')
-      .is('profile_id', null)
-      .order('name');
-
-    return (
-      <main className="min-h-screen bg-slate-950 p-4">
-        <div className="max-w-4xl mx-auto space-y-8 mt-12">
-           <div className="text-center">
-             <h1 className="text-3xl font-bold text-slate-100 mb-2">Welcome, {profile?.username || 'Player'}</h1>
-             <p className="text-slate-400">Please link your legacy profile to continue.</p>
-           </div>
-           <ClaimProfile players={unclaimedPlayers || []} />
-        </div>
-      </main>
-    );
-  }
+    .eq('result', 'win');
 
   // Get next active event (if any) to show a quick link
-  const { data: activeEventParticipation } = await supabase
-    .from('event_participants')
+  const { data: activeEventMember } = await supabase
+    .from('event_members')
     .select('event_id, events(id, name, start_date)')
     .eq('profile_id', user.id)
     .eq('events.is_active', true)
     .limit(1)
     .maybeSingle();
 
-  const eventsData = activeEventParticipation?.events;
-  const activeEvent = Array.isArray(eventsData) ? eventsData[0] : eventsData;
+  // TypeScript workaround because Supabase types might be inferred deeply
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeEvent = (activeEventMember as any)?.events;
 
   return (
     <main className="min-h-screen bg-slate-950 pb-24">
       {/* User Header */}
       <div className="sticky top-0 z-10">
         <UserHeader
-          userName={linkedPlayer.name}
-          userNickname={linkedPlayer.nickname}
-          userColor={linkedPlayer.color}
-          userAvatarUrl={linkedPlayer.avatar_url}
+          displayName={profile.display_name || 'Player'}
+          username={profile.username}
+          avatarUrl={profile.avatar_url}
         />
       </div>
 
@@ -78,7 +53,7 @@ export default async function Home() {
           <Card className="bg-slate-900 border-slate-800">
             <CardContent className="p-6 flex flex-col items-center justify-center text-center">
               <Trophy className="w-8 h-8 text-yellow-500 mb-2" />
-              <div className="text-3xl font-bold text-slate-100">{linkedPlayer.wins || 0}</div>
+              <div className="text-3xl font-bold text-slate-100">{totalWins || 0}</div>
               <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Wins</div>
             </CardContent>
           </Card>

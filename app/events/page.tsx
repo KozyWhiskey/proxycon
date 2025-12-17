@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { getCurrentUser } from '@/lib/get-current-user';
-import { redirect } from 'next/navigation';
+import { requireProfile } from '@/lib/get-current-user';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, ArrowRight } from 'lucide-react';
@@ -10,13 +9,8 @@ import PageHeader from '@/components/ui/page-header';
 export default async function EventsPage() {
   const supabase = await createClient();
   
-  // Auth Check
-  const authData = await getCurrentUser();
-  if (!authData || !authData.user) {
-    redirect('/login');
-  }
-
-  const { user } = authData;
+  // Auth & Profile Check
+  const { user } = await requireProfile();
 
   // Fetch Events for User
   // event_participants -> events

@@ -5,15 +5,18 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-interface MatchParticipant {
+// V3 Interfaces (aligned with lib/types.ts and fetched data)
+interface Profile {
   id: string;
-  player_id: string;
-  result: string | null;
-  player: {
-    id: string;
-    name: string;
-    nickname: string | null;
-  };
+  display_name: string | null;
+  username: string | null;
+}
+
+interface MatchParticipant {
+  id: string; // match_participant_id
+  profile_id: string;
+  result: 'win' | 'loss' | 'draw' | null;
+  profile: Profile; // Nested profile object
 }
 
 interface Match {
@@ -26,19 +29,19 @@ interface Tournament {
   id: string;
   name: string;
   format: string;
-  status: string;
+  status: string; // 'pending', 'active', 'completed'
 }
 
 interface ActiveTournamentProps {
   tournament: Tournament | null;
   currentMatch: Match | null;
-  currentUserId: string;
+  currentProfileId: string; // Changed from currentUserId
 }
 
 export default function ActiveTournament({
   tournament,
   currentMatch,
-  currentUserId,
+  currentProfileId,
 }: ActiveTournamentProps) {
   const router = useRouter();
 
@@ -57,7 +60,7 @@ export default function ActiveTournament({
 
   // Find the opponent (the participant who is not the current user)
   const opponent = currentMatch?.participants.find(
-    (p) => p.player_id !== currentUserId
+    (p) => p.profile_id !== currentProfileId
   );
 
   // Check if match is already completed
@@ -117,7 +120,7 @@ export default function ActiveTournament({
           <div>
             <p className="text-sm text-slate-400 mb-1">Your Match</p>
             <p className="text-lg text-slate-100">
-              You vs. {opponent.player.nickname || opponent.player.name}
+              You vs. {opponent.profile.display_name || opponent.profile.username}
             </p>
           </div>
         )}
@@ -147,4 +150,3 @@ export default function ActiveTournament({
     </Card>
   );
 }
-

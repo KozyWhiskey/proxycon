@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PlayerSelector from './player-selector';
 import { toast } from 'sonner';
-import { Trophy } from 'lucide-react';
+// import { Trophy } from 'lucide-react'; // No longer needed as prize section is removed
 
 interface Player {
   id: string;
-  name: string;
-  nickname: string | null;
+  display_name: string | null;
+  username: string | null;
 }
 
 interface TournamentSetupFormProps {
@@ -28,9 +28,9 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
   const [maxRounds, setMaxRounds] = useState('3');
   const [roundDuration, setRoundDuration] = useState('50');
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [prize1st, setPrize1st] = useState('');
-  const [prize2nd, setPrize2nd] = useState('');
-  const [prize3rd, setPrize3rd] = useState('');
+  // const [prize1st, setPrize1st] = useState(''); // Removed prize state
+  // const [prize2nd, setPrize2nd] = useState('');
+  // const [prize3rd, setPrize3rd] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,9 +55,9 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
         format, 
         parseInt(maxRounds, 10),
         parseInt(roundDuration, 10),
-        prize1st.trim() || undefined,
-        prize2nd.trim() || undefined,
-        prize3rd.trim() || undefined,
+        // prize1st.trim() || undefined, // Removed prize args
+        // prize2nd.trim() || undefined,
+        // prize3rd.trim() || undefined,
         eventId // Pass eventId to action
       );
       
@@ -156,7 +156,8 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
             />
           </div>
 
-          {/* Tournament Prizes Section */}
+          {/* Tournament Prizes Section (Removed for V3) */}
+          {/*
           <div className="space-y-4 pt-4 border-t border-slate-800">
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
@@ -201,6 +202,7 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
               </div>
             </div>
           </div>
+          */}
 
           <PlayerSelector
             players={players}

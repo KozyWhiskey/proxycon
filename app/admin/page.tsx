@@ -2,7 +2,6 @@ import { getCurrentUser } from '@/lib/get-current-user';
 import { redirect } from 'next/navigation';
 import PageHeader from '@/components/ui/page-header';
 import FixMatchResult from '@/components/admin/fix-match-result';
-import ManagePlayers from '@/components/admin/manage-players';
 import { AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -41,7 +40,6 @@ export default async function AdminPage() {
 
         {/* Admin Tools */}
         <div className="space-y-6">
-          <ManagePlayers />
           <FixMatchResult />
         </div>
       </div>

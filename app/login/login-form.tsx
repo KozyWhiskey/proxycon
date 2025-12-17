@@ -137,18 +137,6 @@ export default function LoginForm() {
           </div>
 
           <form action={isLogin ? handleLogin : handleSignup} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  placeholder="Jace Beleren"
-                  required
-                  className="bg-slate-950 border-slate-800"
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

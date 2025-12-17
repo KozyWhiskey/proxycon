@@ -29,18 +29,13 @@ export async function updateMyProfile(data: {
 
     const supabase = await createClient();
 
-    // V2: Update 'profiles' table
-    const updateData: any = {
-      // mapping nickname -> username? or keeping nickname in profile?
-      // V2 schema has 'username', 'avatar_url'. No 'color' in profiles.
-      // 'color' is still in 'players' table.
+    // V3: Update 'profiles' table
+    const updateData = {
+      display_name: data.nickname?.trim() || null,
       avatar_url: data.avatar_url?.trim() || null,
-      // bio?
+      updated_at: new Date().toISOString()
     };
 
-    // We also need to update the LINKED player record if it exists
-    // This is messy during migration.
-    // Let's try to update 'profiles' first.
     const { error: profileError } = await supabase
       .from('profiles')
       .update(updateData)
@@ -48,27 +43,7 @@ export async function updateMyProfile(data: {
 
     if (profileError) {
         console.error('Error updating profile:', profileError);
-        // Fallback or ignore?
-    }
-
-    // Also update 'players' table via profile_id link
-    // This maintains backward compatibility for V1 views that query 'players'
-    const playerUpdateData: any = {
-      nickname: data.nickname?.trim() || null,
-      color: data.color?.trim() || null,
-      avatar_url: data.avatar_url?.trim() || null,
-    };
-    
-    const { error } = await supabase
-      .from('players')
-      .update(playerUpdateData)
-      .eq('profile_id', userId); // Use profile_id to find the linked player
-
-    if (error) {
-       console.error('Error updating linked player:', error);
-       // This might fail if the user hasn't claimed a player yet.
-       // In that case, maybe we should create a new player record?
-       // For now, let's just return success if profile updated.
+        return { success: false, message: 'Failed to update profile' };
     }
 
     revalidatePath('/');

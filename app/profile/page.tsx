@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { getCurrentUser } from '@/lib/get-current-user';
-import { redirect } from 'next/navigation';
+import { requireProfile } from '@/lib/get-current-user';
 import PageHeader from '@/components/ui/page-header';
 import ProfileForm from '@/components/profile/profile-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,30 +9,13 @@ import Link from 'next/link';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const authData = await getCurrentUser();
-
-  if (!authData || !authData.user) {
-    redirect('/login');
-  }
-
-  // Fetch the LINKED player record for compatibility
-  const { data: linkedPlayer } = await supabase
-    .from('players')
-    .select('*')
-    .eq('profile_id', authData.user.id)
-    .single();
-
-  if (!linkedPlayer) {
-    // Should not happen if they are on this page via normal flow, 
-    // but redirect to home to claim/create profile if so.
-    redirect('/');
-  }
+  const { user, profile } = await requireProfile();
 
   // Fetch deck count for a quick stat
   const { count: deckCount } = await supabase
     .from('decks')
     .select('*', { count: 'exact', head: true })
-    .eq('owner_id', authData.user.id);
+    .eq('owner_id', user.id);
 
   return (
     <main className="min-h-screen bg-slate-950 pb-24">
@@ -53,10 +35,10 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <ProfileForm
-              userName={linkedPlayer.name}
-              userNickname={linkedPlayer.nickname}
-              userColor={linkedPlayer.color}
-              userAvatarUrl={linkedPlayer.avatar_url}
+              userName={profile.username}
+              userNickname={profile.display_name}
+              userColor={null} // Color theme not yet supported in V3 profiles
+              userAvatarUrl={profile.avatar_url}
             />
           </CardContent>
         </Card>
@@ -65,7 +47,7 @@ export default async function ProfilePage() {
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="text-xl text-slate-100">My Decks</CardTitle>
-            <CardDescription>Manage your library of {deckCount} decks.</CardDescription>
+            <CardDescription>Manage your library of {deckCount || 0} decks.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 justify-between px-4">

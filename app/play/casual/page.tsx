@@ -18,18 +18,20 @@ export default async function CasualPlayPage({ searchParams }: PageProps) {
     redirect('/login');
   }
 
-  // Fetch all players for selection
-  // In V2, we might want to filter this by "Event" or show all.
-  // For Casual, global list of players is fine, or friends.
-  // Let's stick to global list of players for now.
-  const { data: players, error: playersError } = await supabase
-    .from('players')
-    .select('id, name, nickname, avatar_url, color, created_at, updated_at, wins') // Ensure all required fields for Player type
-    .order('name', { ascending: true });
+  // Ensure profile is complete (V3 Onboarding)
+  if (!authData.profile || !authData.profile.username || !authData.profile.display_name) {
+    redirect('/onboarding');
+  }
 
-  if (playersError) {
-    console.error('Error fetching players:', playersError);
-    // Handle error gracefully?
+  // Fetch all profiles for selection (V3)
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url, bio, favorite_card_image, created_at, updated_at') // Select V3 profile fields
+    .order('display_name', { ascending: true }); // Order by display_name
+
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+    // Handle error gracefully
   }
 
   // Fetch current user's decks
@@ -50,7 +52,7 @@ export default async function CasualPlayPage({ searchParams }: PageProps) {
 
       <div className="max-w-2xl mx-auto p-4">
         <CasualGameForm 
-          players={players || []} 
+          players={profiles || []} // Pass profiles
           userDecks={decks || []} 
           eventId={eventId}
         />

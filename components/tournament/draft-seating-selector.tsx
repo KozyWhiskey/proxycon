@@ -9,17 +9,18 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Shuffle } from 'lucide-react';
 
-interface Player {
+// V3 Interfaces
+interface Profile {
   id: string;
-  name: string;
-  nickname: string | null;
+  display_name: string | null;
+  username: string | null;
 }
 
 interface Participant {
   id: string;
-  player_id: string;
+  profile_id: string;
   draft_seat: number | null;
-  players: Player | null;
+  profile: Profile | null;
 }
 
 interface DraftSeatingSelectorProps {
@@ -41,16 +42,14 @@ export default function DraftSeatingSelector({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localParticipants, setLocalParticipants] = useState(participants);
 
-  // Sync local state with props when they change (e.g. after router.refresh())
+  // Sync local state with props when they change
   useEffect(() => {
     setLocalParticipants(participants);
   }, [participants]);
 
-  // Calculate participants with seats assigned
   const participantsWithSeats = localParticipants.filter((p) => p.draft_seat !== null);
   const allSeatsAssignedLocal = participantsWithSeats.length === numPlayers;
 
-  // Create seat map
   const seatMap = new Map<number, Participant>();
   localParticipants.forEach((p) => {
     if (p.draft_seat !== null) {
@@ -58,30 +57,26 @@ export default function DraftSeatingSelector({
     }
   });
 
-  // Calculate table layout
-  // For N players, seats go clockwise around the table:
-  // Top row: 1, 2, 3... (left to right)
-  // Bottom row: (N/2+1) to N, but displayed right to left for clockwise
-  // Example for 6 players: Top [1,2,3], Bottom [4,5,6] displayed as [6,5,4]
   const seatsPerSide = Math.ceil(numPlayers / 2);
   const topRowSeats = Array.from({ length: seatsPerSide }, (_, i) => i + 1);
   const bottomRowSeats = Array.from(
     { length: numPlayers - seatsPerSide },
     (_, i) => i + seatsPerSide + 1
-  ).reverse(); // Reverse to display right to left (clockwise continuation)
+  ).reverse();
 
   const handleSeatClick = (seatNumber: number) => {
     setSelectedSeat(seatNumber);
     setIsDialogOpen(true);
   };
 
-  const handleAssignPlayer = async (playerId: string) => {
+  const handleAssignPlayer = async (profileId: string) => {
     if (!selectedSeat) return;
 
     setIsSubmitting(true);
 
     try {
-      const result = await selectSeat(tournamentId, playerId, selectedSeat);
+      // Note: Action still uses variable name 'playerId' but expects profile_id
+      const result = await selectSeat(tournamentId, profileId, selectedSeat);
 
       if (!result.success) {
         toast.error(result.message || 'Failed to assign seat');
@@ -89,11 +84,10 @@ export default function DraftSeatingSelector({
         return;
       }
 
-      // Update local state
       const updatedParticipants = localParticipants.map((p) =>
-        p.player_id === playerId
+        p.profile_id === profileId
           ? { ...p, draft_seat: selectedSeat }
-          : p.draft_seat === selectedSeat && p.player_id !== playerId
+          : p.draft_seat === selectedSeat && p.profile_id !== profileId
             ? { ...p, draft_seat: null }
             : p
       );
@@ -101,9 +95,9 @@ export default function DraftSeatingSelector({
       setIsDialogOpen(false);
       setSelectedSeat(null);
       
-      const player = localParticipants.find((p) => p.player_id === playerId);
-      const playerName = player?.players?.nickname || player?.players?.name || 'Player';
-      toast.success(`${playerName} assigned to seat ${selectedSeat}`);
+      const p = localParticipants.find((p) => p.profile_id === profileId);
+      const name = p?.profile?.display_name || p?.profile?.username || 'Player';
+      toast.success(`${name} assigned to seat ${selectedSeat}`);
     } catch (error) {
       console.error('Error assigning seat:', error);
       toast.error('An unexpected error occurred');
@@ -112,11 +106,11 @@ export default function DraftSeatingSelector({
     }
   };
 
-  const handleClearSeat = async (playerId: string) => {
+  const handleClearSeat = async (profileId: string) => {
     setIsSubmitting(true);
 
     try {
-      const result = await selectSeat(tournamentId, playerId, null);
+      const result = await selectSeat(tournamentId, profileId, null);
 
       if (!result.success) {
         toast.error(result.message || 'Failed to clear seat');
@@ -124,9 +118,8 @@ export default function DraftSeatingSelector({
         return;
       }
 
-      // Update local state
       const updatedParticipants = localParticipants.map((p) =>
-        p.player_id === playerId
+        p.profile_id === profileId
           ? { ...p, draft_seat: null }
           : p
       );
@@ -158,18 +151,14 @@ export default function DraftSeatingSelector({
         setIsSubmitting(false);
         return;
       }
-
-      // Redirect will happen via server action
-      router.push(`/tournament/${tournamentId}`);
+      // Redirect happens via server action
     } catch (error) {
-      // Check if this is a redirect error (expected behavior)
       if (error && typeof error === 'object' && 'digest' in error) {
         const digest = (error as { digest?: string }).digest;
         if (digest?.startsWith('NEXT_REDIRECT')) {
           return;
         }
       }
-
       console.error('Error starting draft:', error);
       toast.error('An unexpected error occurred');
       setIsSubmitting(false);
@@ -210,15 +199,11 @@ export default function DraftSeatingSelector({
     };
   };
 
-  // Get available players (those without seats)
   const availablePlayers = localParticipants.filter((p) => p.draft_seat === null);
-  
-  // Get player currently in selected seat
   const currentSeatPlayer = selectedSeat ? seatMap.get(selectedSeat) : null;
 
   return (
     <div className="space-y-6">
-      {/* Instructions */}
       <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
           <CardTitle className="text-slate-100">Assign Seats</CardTitle>
@@ -247,18 +232,15 @@ export default function DraftSeatingSelector({
         </CardContent>
       </Card>
 
-      {/* Table Visualization */}
       <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
           <CardTitle className="text-slate-100">Draft Table</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
-            {/* Top row (seats 1 to N/2, left to right) */}
             <div className="flex flex-wrap justify-center gap-4">
               {topRowSeats.map((seatNum) => {
                 const { status, participant } = getSeatStatus(seatNum);
-                const isAvailable = status === 'available';
                 const isTaken = status === 'taken';
 
                 return (
@@ -276,7 +258,7 @@ export default function DraftSeatingSelector({
                       <span className="text-2xl font-bold text-slate-100">{seatNum}</span>
                       {isTaken && participant && (
                         <span className="text-xs text-slate-400 truncate w-full px-1">
-                          {participant.players?.nickname || participant.players?.name || 'Player'}
+                          {participant.profile?.display_name || participant.profile?.username || 'Player'}
                         </span>
                       )}
                     </div>
@@ -285,16 +267,13 @@ export default function DraftSeatingSelector({
               })}
             </div>
 
-            {/* Table center (visual separator) */}
             <div className="flex items-center justify-center">
               <div className="h-1 w-full bg-slate-700 rounded"></div>
             </div>
 
-            {/* Bottom row (seats N to N/2+1, right to left, clockwise) */}
             <div className="flex flex-wrap justify-center gap-4">
               {bottomRowSeats.map((seatNum) => {
                 const { status, participant } = getSeatStatus(seatNum);
-                const isAvailable = status === 'available';
                 const isTaken = status === 'taken';
 
                 return (
@@ -312,7 +291,7 @@ export default function DraftSeatingSelector({
                       <span className="text-2xl font-bold text-slate-100">{seatNum}</span>
                       {isTaken && participant && (
                         <span className="text-xs text-slate-400 truncate w-full px-1">
-                          {participant.players?.nickname || participant.players?.name || 'Player'}
+                          {participant.profile?.display_name || participant.profile?.username || 'Player'}
                         </span>
                       )}
                     </div>
@@ -324,7 +303,6 @@ export default function DraftSeatingSelector({
         </CardContent>
       </Card>
 
-      {/* Start Draft Button */}
       {allSeatsAssignedLocal && (
         <Card className="bg-slate-900 border-yellow-500/20">
           <CardContent className="pt-6">
@@ -342,7 +320,6 @@ export default function DraftSeatingSelector({
         </Card>
       )}
 
-      {/* Progress indicator */}
       {!allSeatsAssignedLocal && (
         <Card className="bg-slate-900 border-slate-800">
           <CardContent className="pt-6">
@@ -353,7 +330,6 @@ export default function DraftSeatingSelector({
         </Card>
       )}
 
-      {/* Player Selection Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-slate-900 border-slate-800 text-slate-100">
           <DialogHeader>
@@ -362,15 +338,14 @@ export default function DraftSeatingSelector({
             </DialogTitle>
             <DialogDescription className="text-slate-400">
               {currentSeatPlayer
-                ? `${currentSeatPlayer.players?.nickname || currentSeatPlayer.players?.name || 'Player'} is currently in this seat.`
+                ? `${currentSeatPlayer.profile?.display_name || currentSeatPlayer.profile?.username || 'Player'} is currently in this seat.`
                 : 'Select a player to assign to this seat.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {/* Clear seat option if seat is taken */}
             {currentSeatPlayer && (
               <Button
-                onClick={() => handleClearSeat(currentSeatPlayer.player_id)}
+                onClick={() => handleClearSeat(currentSeatPlayer.profile_id)}
                 disabled={isSubmitting}
                 className="w-full bg-red-500/10 border-2 border-red-500 text-red-500 hover:bg-red-500/20"
               >
@@ -378,18 +353,17 @@ export default function DraftSeatingSelector({
               </Button>
             )}
 
-            {/* Available players */}
             {availablePlayers.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-sm text-slate-400 font-semibold">Available Players:</p>
                 {availablePlayers.map((participant) => (
                   <Button
                     key={participant.id}
-                    onClick={() => handleAssignPlayer(participant.player_id)}
+                    onClick={() => handleAssignPlayer(participant.profile_id)}
                     disabled={isSubmitting}
                     className="w-full bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700"
                   >
-                    {participant.players?.nickname || participant.players?.name || 'Player'}
+                    {participant.profile?.display_name || participant.profile?.username || 'Player'}
                   </Button>
                 ))}
               </div>
@@ -406,4 +380,3 @@ export default function DraftSeatingSelector({
     </div>
   );
 }
-

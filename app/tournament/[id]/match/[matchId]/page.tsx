@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import MatchReportingForm from '@/components/tournament/match-reporting-form';
 import PageHeader from '@/components/ui/page-header';
-import { getCurrentUser } from '@/lib/get-current-user'; // Import getCurrentUser
+import { requireProfile } from '@/lib/get-current-user'; // Import requireProfile
 import { getUsersDecks } from '@/app/decks/actions'; // Import getUsersDecks
 
 interface PageProps {
@@ -14,12 +14,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
   const supabase = await createClient();
 
   // Get current user and their decks
-  const authData = await getCurrentUser();
-  if (!authData || !authData.user) {
-    // This case should be handled by middleware redirecting to login
-    notFound(); 
-  }
-  const { user } = authData;
+  const { user } = await requireProfile();
   const { decks, error: decksError } = await getUsersDecks(); // Fetch decks for the current user
 
   if (decksError) {
@@ -41,7 +36,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
   // Fetch participants
   const { data: participants } = await supabase
     .from('match_participants')
-    .select('id, player_id, result')
+    .select('id, profile_id, result')
     .eq('match_id', matchId);
 
   if (!participants || participants.length === 0) {
@@ -67,20 +62,20 @@ export default async function MatchReportingPage({ params }: PageProps) {
     );
   }
 
-  // Fetch player details
-  const playerIds = participants.map((p) => p.player_id);
-  const { data: players } = await supabase
-    .from('players')
-    .select('id, name, nickname, profile_id') // Include profile_id to identify logged-in user's player record
-    .in('id', playerIds);
+  // Fetch profile details
+  const profileIds = participants.map((p) => p.profile_id);
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, display_name')
+    .in('id', profileIds);
 
-  const playersMap = new Map(players?.map((p) => [p.id, p]) || []);
+  const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
   const matchParticipants = participants.map((p) => ({
     id: p.id,
-    player_id: p.player_id,
+    profile_id: p.profile_id,
     result: p.result,
-    player: playersMap.get(p.player_id),
+    profile: profilesMap.get(p.profile_id),
   }));
 
   // Handle bye (single participant)
@@ -101,13 +96,12 @@ export default async function MatchReportingPage({ params }: PageProps) {
   }
 
   // Get player names for subtitle
-  const player1Name = matchParticipants[0]?.player?.nickname || matchParticipants[0]?.player?.name || 'Player 1';
-  const player2Name = matchParticipants[1]?.player?.nickname || matchParticipants[1]?.player?.name || 'Player 2';
+  const player1Name = matchParticipants[0]?.profile?.display_name || matchParticipants[0]?.profile?.username || 'Player 1';
+  const player2Name = matchParticipants[1]?.profile?.display_name || matchParticipants[1]?.profile?.username || 'Player 2';
 
   // Determine which participant is the current user (if any)
-  const player1IsCurrentUser = matchParticipants[0]?.player?.profile_id === user.id;
-  const player2IsCurrentUser = matchParticipants[1]?.player?.profile_id === user.id;
-
+  const player1IsCurrentUser = matchParticipants[0]?.profile_id === user.id;
+  const player2IsCurrentUser = matchParticipants[1]?.profile_id === user.id;
 
   return (
     <main className="min-h-screen bg-slate-950 pb-24">
@@ -123,7 +117,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
           matchId={matchId}
           participants={matchParticipants}
           userDecks={decks || []} // Pass fetched decks
-          player1ProfileId={player1IsCurrentUser ? user.id : undefined} // Pass user's Auth ID if this player is the user
+          player1ProfileId={player1IsCurrentUser ? user.id : undefined} 
           player2ProfileId={player2IsCurrentUser ? user.id : undefined}
         />
       </div>

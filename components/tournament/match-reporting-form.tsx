@@ -15,18 +15,17 @@ import {
 } from '@/components/ui/select';
 import { Deck } from '@/lib/types'; // Import Deck type
 
-interface Player {
+interface Profile {
   id: string;
-  name: string;
-  nickname: string | null;
-  profile_id: string | null; // Added profile_id
+  username: string;
+  display_name: string | null;
 }
 
 interface Participant {
   id: string;
-  player_id: string;
+  profile_id: string;
   result: string | null;
-  player: Player | undefined;
+  profile: Profile | undefined;
 }
 
 interface MatchReportingFormProps {
@@ -59,8 +58,8 @@ export default function MatchReportingForm({
     return <p className="text-slate-400">Invalid match participants</p>;
   }
 
-  const player1Name = player1.player?.nickname || player1.player?.name || 'Player 1';
-  const player2Name = player2.player?.nickname || player2.player?.name || 'Player 2';
+  const player1Name = player1.profile?.display_name || player1.profile?.username || 'Player 1';
+  const player2Name = player2.profile?.display_name || player2.profile?.username || 'Player 2';
 
   // Determine result from game scores
   const getResultPreview = () => {
@@ -89,8 +88,8 @@ export default function MatchReportingForm({
 
     try {
       // Invert logic for clarity on who is "player1" and "player2" in action
-      const p1Id = player1.player_id;
-      const p2Id = player2.player_id;
+      const p1Id = player1.profile_id;
+      const p2Id = player2.profile_id;
 
       const response = await submitResultWithGames(
         matchId,

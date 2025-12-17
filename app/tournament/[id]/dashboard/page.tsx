@@ -42,10 +42,10 @@ interface Tournament {
   round_duration_minutes: number;
 }
 
-interface Player {
+interface Profile {
   id: string;
-  name: string;
-  nickname: string | null;
+  username: string;
+  display_name: string | null;
 }
 
 interface Match {
@@ -61,7 +61,7 @@ interface Match {
 interface MatchParticipant {
   id: string;
   match_id: string;
-  player_id: string;
+  profile_id: string;
   result: 'win' | 'loss' | 'draw' | null;
   games_won: number;
 }
@@ -350,11 +350,11 @@ export default function TournamentDashboard({ params }: PageProps) {
     // Fetch tournament participants
     const { data: participants } = await supabase
       .from('tournament_participants')
-      .select('player_id')
+      .select('profile_id')
       .eq('tournament_id', tournamentId);
 
-    const playerIds = participants?.map((p) => p.player_id) || [];
-    setTotalPlayers(playerIds.length);
+    const profileIds = participants?.map((p) => p.profile_id) || [];
+    setTotalPlayers(profileIds.length);
 
     // Fetch all matches
     const { data: matches } = await supabase
@@ -390,17 +390,17 @@ export default function TournamentDashboard({ params }: PageProps) {
     const matchIds = matches.map((m) => m.id);
     const { data: allParticipants } = await supabase
       .from('match_participants')
-      .select('id, match_id, player_id, result, games_won')
+      .select('id, match_id, profile_id, result, games_won')
       .in('match_id', matchIds);
 
-    // Fetch player details
-    const { data: players } = await supabase
-      .from('players')
-      .select('id, name, nickname')
-      .in('id', playerIds);
+    // Fetch profile details
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name')
+      .in('id', profileIds);
 
-    const playersMap = new Map<string, Player>(
-      players?.map((p) => [p.id, p]) || []
+    const profilesMap = new Map<string, Profile>(
+      profiles?.map((p) => [p.id, p]) || []
     );
 
     // Build match history for standings calculation
@@ -421,22 +421,22 @@ export default function TournamentDashboard({ params }: PageProps) {
           convertDbMatchToMatchResult(
             match.id,
             match.round_number || 1,
-            matchParticipants.map((p) => ({ playerId: p.player_id, result: p.result }))
+            matchParticipants.map((p) => ({ playerId: p.profile_id, result: p.result }))
           )
         );
       }
     }
 
     // Calculate standings
-    const standingsMap = calculateStandings(playerIds, matchHistory);
+    const standingsMap = calculateStandings(profileIds, matchHistory);
     const sortedStandings = sortStandings(Array.from(standingsMap.values()));
 
     const standingsDisplay: Standing[] = sortedStandings.map((s, index) => {
-      const player = playersMap.get(s.playerId);
+      const profile = profilesMap.get(s.playerId);
       return {
         rank: index + 1,
         playerId: s.playerId,
-        playerName: player?.nickname || player?.name || 'Unknown',
+        playerName: profile?.display_name || profile?.username || 'Unknown',
         wins: s.matchWins,
         losses: s.matchLosses,
         draws: s.matchDraws,
@@ -462,10 +462,10 @@ export default function TournamentDashboard({ params }: PageProps) {
       matchParticipantsGrouped.get(p.matchId)!.push(p);
     });
 
-    // Create a map of player records
-    const playerRecordMap = new Map<string, string>();
+    // Create a map of profile records
+    const profileRecordMap = new Map<string, string>();
     standingsDisplay.forEach((s) => {
-      playerRecordMap.set(s.playerId, `${s.wins}-${s.losses}-${s.draws}`);
+      profileRecordMap.set(s.playerId, `${s.wins}-${s.losses}-${s.draws}`);
     });
 
     const pairingsDisplay: PairingDisplay[] = [];
@@ -476,13 +476,13 @@ export default function TournamentDashboard({ params }: PageProps) {
 
       if (isBye) {
         const p = matchParticipants[0];
-        const player = playersMap.get(p.player_id);
+        const profile = profilesMap.get(p.profile_id);
         pairingsDisplay.push({
           matchId: match.id,
           player1: {
-            id: p.player_id,
-            name: player?.nickname || player?.name || 'Unknown',
-            record: playerRecordMap.get(p.player_id) || '0-0-0',
+            id: p.profile_id,
+            name: profile?.display_name || profile?.username || 'Unknown',
+            record: profileRecordMap.get(p.profile_id) || '0-0-0',
             result: p.result,
             gamesWon: p.games_won || 0,
           },
@@ -493,22 +493,22 @@ export default function TournamentDashboard({ params }: PageProps) {
       } else if (matchParticipants.length >= 2) {
         const p1 = matchParticipants[0];
         const p2 = matchParticipants[1];
-        const player1 = playersMap.get(p1.player_id);
-        const player2 = playersMap.get(p2.player_id);
+        const profile1 = profilesMap.get(p1.profile_id);
+        const profile2 = profilesMap.get(p2.profile_id);
 
         pairingsDisplay.push({
           matchId: match.id,
           player1: {
-            id: p1.player_id,
-            name: player1?.nickname || player1?.name || 'Unknown',
-            record: playerRecordMap.get(p1.player_id) || '0-0-0',
+            id: p1.profile_id,
+            name: profile1?.display_name || profile1?.username || 'Unknown',
+            record: profileRecordMap.get(p1.profile_id) || '0-0-0',
             result: p1.result,
             gamesWon: p1.games_won || 0,
           },
           player2: {
-            id: p2.player_id,
-            name: player2?.nickname || player2?.name || 'Unknown',
-            record: playerRecordMap.get(p2.player_id) || '0-0-0',
+            id: p2.profile_id,
+            name: profile2?.display_name || profile2?.username || 'Unknown',
+            record: profileRecordMap.get(p2.profile_id) || '0-0-0',
             result: p2.result,
             gamesWon: p2.games_won || 0,
           },
@@ -548,16 +548,16 @@ export default function TournamentDashboard({ params }: PageProps) {
 
       if (isBye) {
         const p = matchParticipants[0];
-        const player = playersMap.get(p.player_id);
+        const profile = profilesMap.get(p.profile_id);
         feedItems.push({
           id: match.id,
           round_number: match.round_number || 1,
           player1: {
-            name: player?.nickname || player?.name || 'Unknown',
+            name: profile?.display_name || profile?.username || 'Unknown',
             gamesWon: p.games_won || 0,
           },
           player2: null,
-          winner: player?.nickname || player?.name || 'Unknown',
+          winner: profile?.display_name || profile?.username || 'Unknown',
           isDraw: false,
           isBye: true,
           completedAt: match.updated_at || match.created_at,
@@ -565,20 +565,20 @@ export default function TournamentDashboard({ params }: PageProps) {
       } else if (matchParticipants.length >= 2) {
         const p1 = matchParticipants[0];
         const p2 = matchParticipants[1];
-        const player1 = playersMap.get(p1.player_id);
-        const player2 = playersMap.get(p2.player_id);
+        const profile1 = profilesMap.get(p1.profile_id);
+        const profile2 = profilesMap.get(p2.profile_id);
         const isDraw = p1.result === 'draw';
-        const winner = isDraw ? null : (p1.result === 'win' ? (player1?.nickname || player1?.name || 'Unknown') : (player2?.nickname || player2?.name || 'Unknown'));
+        const winner = isDraw ? null : (p1.result === 'win' ? (profile1?.display_name || profile1?.username || 'Unknown') : (profile2?.display_name || profile2?.username || 'Unknown'));
 
         feedItems.push({
           id: match.id,
           round_number: match.round_number || 1,
           player1: {
-            name: player1?.nickname || player1?.name || 'Unknown',
+            name: profile1?.display_name || profile1?.username || 'Unknown',
             gamesWon: p1.games_won || 0,
           },
           player2: {
-            name: player2?.nickname || player2?.name || 'Unknown',
+            name: profile2?.display_name || profile2?.username || 'Unknown',
             gamesWon: p2.games_won || 0,
           },
           winner,

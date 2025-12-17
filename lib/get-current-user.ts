@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { User } from '@supabase/supabase-js';
 import { Profile } from './types';
+import { redirect } from 'next/navigation';
 
 export interface CurrentUser {
   user: User;
@@ -29,6 +30,28 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return {
     user,
     profile: profile || null
+  };
+}
+
+/**
+ * Ensures the user is authenticated and has a valid profile.
+ * Redirects to /login if not authenticated.
+ * Redirects to /onboarding if profile is missing/incomplete.
+ */
+export async function requireProfile(): Promise<{ user: User; profile: Profile }> {
+  const authData = await getCurrentUser();
+
+  if (!authData || !authData.user) {
+    redirect('/login');
+  }
+
+  if (!authData.profile || !authData.profile.username) {
+    redirect('/onboarding');
+  }
+
+  return {
+    user: authData.user,
+    profile: authData.profile
   };
 }
 

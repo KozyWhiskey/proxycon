@@ -10,7 +10,7 @@ interface AdminActionResult {
 
 export async function fixMatchResult(
   matchId: string,
-  newWinnerId: string
+  newWinnerId: string // profile_id
 ): Promise<AdminActionResult> {
   try {
     const supabase = await createClient();
@@ -18,7 +18,7 @@ export async function fixMatchResult(
     // Step 1: Get current match participants
     const { data: participants, error: participantsError } = await supabase
       .from('match_participants')
-      .select('player_id, result')
+      .select('profile_id, result')
       .eq('match_id', matchId);
 
     if (participantsError || !participants || participants.length === 0) {
@@ -26,7 +26,7 @@ export async function fixMatchResult(
     }
 
     // Validate new winner is in the match
-    const participantIds = participants.map((p) => p.player_id);
+    const participantIds = participants.map((p) => p.profile_id);
     if (!participantIds.includes(newWinnerId)) {
       return { success: false, message: 'New winner must be a participant in this match' };
     }
@@ -40,7 +40,7 @@ export async function fixMatchResult(
       .from('match_participants')
       .update({ result: currentWinner?.result === '1st' ? '1st' : 'win' })
       .eq('match_id', matchId)
-      .eq('player_id', newWinnerId);
+      .eq('profile_id', newWinnerId);
 
     if (winnerError) {
       return { success: false, message: `Failed to update winner: ${winnerError.message}` };
@@ -48,7 +48,7 @@ export async function fixMatchResult(
 
     // Set all others as losers (or ranked positions if it was ranked)
     for (const participant of participants) {
-      if (participant.player_id === newWinnerId) continue;
+      if (participant.profile_id === newWinnerId) continue;
 
       let newResult: string;
       if (currentWinner?.result === '1st') {
@@ -72,38 +72,7 @@ export async function fixMatchResult(
         .from('match_participants')
         .update({ result: newResult })
         .eq('match_id', matchId)
-        .eq('player_id', participant.player_id);
-    }
-
-    // Step 4: Update player wins/losses
-    // Decrement wins for old winner (if exists)
-    if (currentWinner && currentWinner.player_id !== newWinnerId) {
-      const { data: oldWinner } = await supabase
-        .from('players')
-        .select('wins')
-        .eq('id', currentWinner.player_id)
-        .single();
-
-      if (oldWinner && oldWinner.wins > 0) {
-        await supabase
-          .from('players')
-          .update({ wins: oldWinner.wins - 1 })
-          .eq('id', currentWinner.player_id);
-      }
-    }
-
-    // Increment wins for new winner
-    const { data: newWinner } = await supabase
-      .from('players')
-      .select('wins')
-      .eq('id', newWinnerId)
-      .single();
-
-    if (newWinner) {
-      await supabase
-        .from('players')
-        .update({ wins: (newWinner.wins || 0) + 1 })
-        .eq('id', newWinnerId);
+        .eq('profile_id', participant.profile_id);
     }
 
     revalidatePath('/');
@@ -119,8 +88,8 @@ export async function fixMatchResult(
 
 export async function fixMatchResultWithGames(
   matchId: string,
-  player1Id: string,
-  player2Id: string,
+  player1Id: string, // profile_id
+  player2Id: string, // profile_id
   player1Games: number,
   player2Games: number
 ): Promise<AdminActionResult> {
@@ -130,7 +99,7 @@ export async function fixMatchResultWithGames(
     // Step 1: Get current match participants
     const { data: participants, error: participantsError } = await supabase
       .from('match_participants')
-      .select('player_id, result')
+      .select('profile_id, result')
       .eq('match_id', matchId);
 
     if (participantsError || !participants || participants.length < 2) {
@@ -138,13 +107,10 @@ export async function fixMatchResultWithGames(
     }
 
     // Validate players are in the match
-    const participantIds = participants.map((p) => p.player_id);
+    const participantIds = participants.map((p) => p.profile_id);
     if (!participantIds.includes(player1Id) || !participantIds.includes(player2Id)) {
       return { success: false, message: 'Players must be participants in this match' };
     }
-
-    // Get current winner for player wins adjustment
-    const currentWinner = participants.find((p) => p.result === 'win');
 
     // Determine new result based on game scores
     let player1Result: string;
@@ -169,7 +135,7 @@ export async function fixMatchResultWithGames(
       .from('match_participants')
       .update({ result: player1Result, games_won: player1Games })
       .eq('match_id', matchId)
-      .eq('player_id', player1Id);
+      .eq('profile_id', player1Id);
 
     if (player1Error) {
       return { success: false, message: `Failed to update player 1: ${player1Error.message}` };
@@ -179,45 +145,10 @@ export async function fixMatchResultWithGames(
       .from('match_participants')
       .update({ result: player2Result, games_won: player2Games })
       .eq('match_id', matchId)
-      .eq('player_id', player2Id);
+      .eq('profile_id', player2Id);
 
     if (player2Error) {
       return { success: false, message: `Failed to update player 2: ${player2Error.message}` };
-    }
-
-    // Step 3: Update player wins count
-    const newWinnerId = player1Result === 'win' ? player1Id : player2Result === 'win' ? player2Id : null;
-
-    // If there was a previous winner and it's different from the new winner, decrement old winner's wins
-    if (currentWinner && currentWinner.player_id !== newWinnerId) {
-      const { data: oldWinner } = await supabase
-        .from('players')
-        .select('wins')
-        .eq('id', currentWinner.player_id)
-        .single();
-
-      if (oldWinner && oldWinner.wins > 0) {
-        await supabase
-          .from('players')
-          .update({ wins: oldWinner.wins - 1 })
-          .eq('id', currentWinner.player_id);
-      }
-    }
-
-    // If there's a new winner (not a draw) and they weren't the previous winner, increment their wins
-    if (newWinnerId && (!currentWinner || currentWinner.player_id !== newWinnerId)) {
-      const { data: newWinner } = await supabase
-        .from('players')
-        .select('wins')
-        .eq('id', newWinnerId)
-        .single();
-
-      if (newWinner) {
-        await supabase
-          .from('players')
-          .update({ wins: (newWinner.wins || 0) + 1 })
-          .eq('id', newWinnerId);
-      }
     }
 
     // Generate result message
@@ -247,95 +178,45 @@ export async function addPlayer(data: {
   avatar_url: string | null;
   color: string | null;
 }): Promise<AdminActionResult> {
-  try {
-    const supabase = await createClient();
-
-    if (!data.name || !data.name.trim()) {
-      return { success: false, message: 'Player name is required' };
-    }
-
-    // Build insert object, conditionally include color if it's provided
-    const insertData: any = {
-      name: data.name.trim(),
-      nickname: data.nickname?.trim() || null,
-      avatar_url: data.avatar_url?.trim() || null,
-      wins: 0,
-    };
-
-    // Only include color if it's provided (column might not exist yet)
-    if (data.color?.trim()) {
-      insertData.color = data.color.trim();
-    }
-
-    const { error } = await supabase.from('players').insert(insertData);
-
-    if (error) {
-      if (error.message.includes('column') && error.message.includes('color')) {
-        return {
-          success: false,
-          message:
-            'Player color column is missing. Run .dev-docs/DATABASE_MIGRATION_add_player_color.md in Supabase, then try again.',
-        };
-      }
-      return { success: false, message: `Failed to add player: ${error.message}` };
-    }
-
-    revalidatePath('/');
-    revalidatePath('/admin');
-    revalidatePath('/login');
-    return { success: true, message: `Player "${data.name}" added successfully` };
-  } catch (error) {
-    console.error('Error in addPlayer:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unexpected error occurred';
-    return { success: false, message: errorMessage };
-  }
+  // Deprecated in V3
+  return { success: false, message: 'Please create users via the Sign Up page or Supabase Dashboard.' };
 }
 
 export async function updatePlayer(
-  playerId: string,
+  playerId: string, // profile_id
   data: {
-    name: string;
-    nickname: string | null;
+    name: string; // username
+    nickname: string | null; // display_name
     avatar_url: string | null;
-    color: string | null;
+    color: string | null; // not supported in V3 profiles yet
   }
 ): Promise<AdminActionResult> {
   try {
     const supabase = await createClient();
 
     if (!data.name || !data.name.trim()) {
-      return { success: false, message: 'Player name is required' };
+      return { success: false, message: 'Username is required' };
     }
 
-    // Build update object - always include color so admins can clear it
-    const updateData: any = {
-      name: data.name.trim(),
-      nickname: data.nickname?.trim() || null,
+    const updateData = {
+      username: data.name.trim(),
+      display_name: data.nickname?.trim() || null,
       avatar_url: data.avatar_url?.trim() || null,
-      color: data.color?.trim() || null,
+      updated_at: new Date().toISOString()
     };
 
     const { error } = await supabase
-      .from('players')
+      .from('profiles')
       .update(updateData)
       .eq('id', playerId);
 
     if (error) {
-      if (error.message.includes('column') && error.message.includes('color')) {
-        return {
-          success: false,
-          message:
-            'Player color column is missing. Run .dev-docs/DATABASE_MIGRATION_add_player_color.md in Supabase, then try again.',
-        };
-      }
-      return { success: false, message: `Failed to update player: ${error.message}` };
+      return { success: false, message: `Failed to update profile: ${error.message}` };
     }
 
     revalidatePath('/');
     revalidatePath('/admin');
-    revalidatePath('/login');
-    return { success: true, message: 'Player updated successfully' };
+    return { success: true, message: 'Profile updated successfully' };
   } catch (error) {
     console.error('Error in updatePlayer:', error);
     const errorMessage =
@@ -345,47 +226,6 @@ export async function updatePlayer(
 }
 
 export async function deletePlayer(playerId: string): Promise<AdminActionResult> {
-  try {
-    const supabase = await createClient();
-
-    // Get player name for message
-    const { data: player } = await supabase
-      .from('players')
-      .select('name, nickname')
-      .eq('id', playerId)
-      .single();
-
-    if (!player) {
-      return { success: false, message: 'Player not found' };
-    }
-
-    // Delete player (cascade will handle related records if foreign keys are set up)
-    // Note: This will fail if there are foreign key constraints without CASCADE
-    const { error } = await supabase.from('players').delete().eq('id', playerId);
-
-    if (error) {
-      // Check if it's a foreign key constraint error
-      if (error.message.includes('foreign key') || error.message.includes('constraint')) {
-        return {
-          success: false,
-          message:
-            'Cannot delete player: They have tournament or match records. Delete those first or contact support.',
-        };
-      }
-      return { success: false, message: `Failed to delete player: ${error.message}` };
-    }
-
-    revalidatePath('/');
-    revalidatePath('/admin');
-    revalidatePath('/login');
-    return {
-      success: true,
-      message: `Player "${player.nickname || player.name}" deleted successfully`,
-    };
-  } catch (error) {
-    console.error('Error in deletePlayer:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unexpected error occurred';
-    return { success: false, message: errorMessage };
-  }
+   // Deprecated in V3 - too risky to delete profiles/users from simple admin UI
+   return { success: false, message: 'Please delete users via Supabase Dashboard.' };
 }

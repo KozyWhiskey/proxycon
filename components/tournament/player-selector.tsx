@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 
 interface Player {
   id: string;
-  name: string;
-  nickname: string | null;
+  display_name: string | null;
+  username: string | null;
 }
 
 interface PlayerSelectorProps {
@@ -46,7 +46,7 @@ export default function PlayerSelector({
             >
               <div className="p-4 h-16 flex items-center justify-between">
                 <span className="text-slate-100 font-medium">
-                  {player.nickname || player.name}
+                  {player.display_name || player.username || 'Unknown'}
                 </span>
                 <div
                   className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
@@ -82,4 +82,3 @@ export default function PlayerSelector({
     </div>
   );
 }
-

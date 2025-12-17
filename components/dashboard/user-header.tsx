@@ -7,22 +7,17 @@ import { LogOut, User, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserHeaderProps {
-  userName: string;
-  userNickname: string | null;
-  userColor: string | null;
-  userAvatarUrl: string | null;
+  displayName: string;
+  username: string | null;
+  avatarUrl: string | null;
 }
 
 export default function UserHeader({ 
-  userName, 
-  userNickname, 
-  userColor, 
-  userAvatarUrl 
+  displayName, 
+  username, 
+  avatarUrl 
 }: UserHeaderProps) {
   const router = useRouter();
-  
-  // Compute display name from props
-  const displayName = userNickname || userName;
 
   const handleLogout = async () => {
     try {
@@ -50,8 +45,8 @@ export default function UserHeader({
         onClick={handleProfileClick}
       >
         <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shrink-0 transition-colors group-hover:bg-yellow-500/30">
-          {userAvatarUrl ? (
-             <img src={userAvatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+          {avatarUrl ? (
+             <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
           ) : (
              <User className="w-5 h-5 text-yellow-500" />
           )}
@@ -64,6 +59,7 @@ export default function UserHeader({
             </p>
             <Edit2 className="w-3 h-3 text-slate-500 group-hover:text-yellow-500 transition-colors" />
           </div>
+          {username && <p className="text-xs text-slate-500">@{username}</p>}
         </div>
       </div>
       <Button

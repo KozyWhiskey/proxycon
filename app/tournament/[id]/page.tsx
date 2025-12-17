@@ -80,26 +80,26 @@ export default async function TournamentPage({ params }: PageProps) {
   // Get all tournament participants
   const { data: tournamentParticipants } = await supabase
     .from('tournament_participants')
-    .select('player_id')
+    .select('profile_id')
     .eq('tournament_id', id);
 
-  const playerIds = tournamentParticipants?.map((tp) => tp.player_id) || [];
+  const profileIds = tournamentParticipants?.map((tp) => tp.profile_id) || [];
 
   // Fetch all match participants for standings calculation
   const matchIds = matches.map((m) => m.id);
   const { data: allParticipants } = await supabase
     .from('match_participants')
-    .select('match_id, player_id, result, games_won')
+    .select('match_id, profile_id, result, games_won')
     .in('match_id', matchIds);
 
   // Build match history for Swiss standings calculation
-  const participantsByMatch = new Map<string, { playerId: string; result: 'win' | 'loss' | 'draw' | null; gamesWon: number }[]>();
+  const participantsByMatch = new Map<string, { profileId: string; result: 'win' | 'loss' | 'draw' | null; gamesWon: number }[]>();
   allParticipants?.forEach((p) => {
     if (!participantsByMatch.has(p.match_id)) {
       participantsByMatch.set(p.match_id, []);
     }
     participantsByMatch.get(p.match_id)!.push({
-      playerId: p.player_id,
+      profileId: p.profile_id,
       result: p.result as 'win' | 'loss' | 'draw' | null,
       gamesWon: p.games_won || 0,
     });
@@ -114,29 +114,29 @@ export default async function TournamentPage({ params }: PageProps) {
         convertDbMatchToMatchResult(
           match.id,
           match.round_number || 1,
-          participants.map((p) => ({ playerId: p.playerId, result: p.result }))
+          participants.map((p) => ({ playerId: p.profileId, result: p.result }))
         )
       );
     }
   }
 
   // Calculate standings using MTG Swiss rules (3-1-0 point system, OMW% tiebreaker)
-  const standingsMap = calculateStandings(playerIds, matchHistory);
+  const standingsMap = calculateStandings(profileIds, matchHistory);
   
   // Also track games won from the database for display
   const gamesWonMap = new Map<string, number>();
   allParticipants?.forEach((p) => {
-    const current = gamesWonMap.get(p.player_id) || 0;
-    gamesWonMap.set(p.player_id, current + (p.games_won || 0));
+    const current = gamesWonMap.get(p.profile_id) || 0;
+    gamesWonMap.set(p.profile_id, current + (p.games_won || 0));
   });
 
-  // Fetch player details for standings
-  const { data: standingsPlayers } = await supabase
-    .from('players')
-    .select('id, name, nickname')
-    .in('id', playerIds);
+  // Fetch profile details for standings
+  const { data: standingsProfiles } = await supabase
+    .from('profiles')
+    .select('id, username, display_name')
+    .in('id', profileIds);
 
-  const playersMap = new Map(standingsPlayers?.map((p) => [p.id, p]) || []);
+  const profilesMap = new Map(standingsProfiles?.map((p) => [p.id, p]) || []);
 
   // Convert to sorted array using MTG tiebreakers (Points > OMW% > GW%)
   const sortedStandings = sortStandings(Array.from(standingsMap.values()));
@@ -152,7 +152,7 @@ export default async function TournamentPage({ params }: PageProps) {
     mwPercentage: standing.matchWinPercentage,
     gwPercentage: standing.gameWinPercentage,
     receivedBye: standing.receivedBye,
-    player: playersMap.get(standing.playerId),
+    profile: profilesMap.get(standing.playerId),
   }));
 
   // Fetch participants for current round matches
@@ -160,45 +160,45 @@ export default async function TournamentPage({ params }: PageProps) {
     currentRoundMatches.map(async (match) => {
       const { data: participants } = await supabase
         .from('match_participants')
-        .select('id, player_id, result, games_won')
+        .select('id, profile_id, result, games_won')
         .eq('match_id', match.id);
 
       if (!participants || participants.length === 0) {
         return { match, participants: [] };
       }
 
-      // Fetch player details
-      const playerIds = participants.map((p) => p.player_id);
-      const { data: players } = await supabase
-        .from('players')
-        .select('id, name, nickname')
-        .in('id', playerIds);
+      // Fetch profile details
+      const profileIds = participants.map((p) => p.profile_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, display_name')
+        .in('id', profileIds);
 
-      const playersMap = new Map(players?.map((p) => [p.id, p]) || []);
+      const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
       return {
         match,
         participants: participants.map((p) => ({
           ...p,
-          player: playersMap.get(p.player_id),
+          profile: profilesMap.get(p.profile_id),
         })),
       };
     })
   );
 
-  interface ParticipantWithPlayer {
+  interface ParticipantWithProfile {
     id: string;
-    player_id: string;
+    profile_id: string;
     result: string | null;
     games_won: number | null;
-    player?: {
+    profile?: {
       id: string;
-      name: string;
-      nickname: string | null;
+      username: string;
+      display_name: string | null;
     };
   }
 
-  const getMatchStatus = (participants: ParticipantWithPlayer[]) => {
+  const getMatchStatus = (participants: ParticipantWithProfile[]) => {
     const winner = participants.find((p) => p.result === 'win');
     const hasDraw = participants.every((p) => p.result === 'draw');
     const hasResult = participants.some((p) => p.result !== null);
@@ -217,11 +217,11 @@ export default async function TournamentPage({ params }: PageProps) {
         return `Draw (${p1Games}-${p2Games})`;
       }
 
-      if (winner && winner.player && hasGameScore) {
+      if (winner && winner.profile && hasGameScore) {
         const winnerGames = winner.games_won || 0;
         const loser = participants.find((p) => p.result === 'loss');
         const loserGames = loser?.games_won || 0;
-        return `${winner.player.nickname || winner.player.name} Won (${winnerGames}-${loserGames})`;
+        return `${winner.profile.display_name || winner.profile.username} Won (${winnerGames}-${loserGames})`;
       }
     }
 
@@ -229,13 +229,13 @@ export default async function TournamentPage({ params }: PageProps) {
       return 'Draw';
     }
 
-    if (winner && winner.player) {
-      return `${winner.player.nickname || winner.player.name} Won`;
+    if (winner && winner.profile) {
+      return `${winner.profile.display_name || winner.profile.username} Won`;
     }
 
     // Check for bye (only one participant with win)
     if (participants.length === 1 && participants[0].result === 'win') {
-      return `${participants[0].player?.nickname || participants[0].player?.name || 'Player'} (Bye)`;
+      return `${participants[0].profile?.display_name || participants[0].profile?.username || 'Player'} (Bye)`;
     }
 
     return 'Match Completed';
@@ -302,7 +302,7 @@ export default async function TournamentPage({ params }: PageProps) {
                     </span>
                     <div className="flex flex-col">
                       <span className="text-slate-100 font-medium">
-                        {standing.player?.nickname || standing.player?.name || 'Unknown Player'}
+                        {standing.profile?.display_name || standing.profile?.username || 'Unknown Player'}
                       </span>
                       {standing.receivedBye && (
                         <span className="text-xs text-yellow-600">Has bye</span>
@@ -354,7 +354,7 @@ export default async function TournamentPage({ params }: PageProps) {
                   <span className="text-3xl">🥇</span>
                   <div className="flex-1">
                     <p className="text-slate-100 font-semibold text-lg">
-                      {standings[0].player?.nickname || standings[0].player?.name || 'Unknown'}
+                      {standings[0].profile?.display_name || standings[0].profile?.username || 'Unknown'}
                     </p>
                     <p className="text-yellow-500 font-medium">{tournament.prize_1st}</p>
                   </div>
@@ -365,7 +365,7 @@ export default async function TournamentPage({ params }: PageProps) {
                   <span className="text-3xl">🥈</span>
                   <div className="flex-1">
                     <p className="text-slate-100 font-semibold text-lg">
-                      {standings[1].player?.nickname || standings[1].player?.name || 'Unknown'}
+                      {standings[1].profile?.display_name || standings[1].profile?.username || 'Unknown'}
                     </p>
                     <p className="text-slate-300">{tournament.prize_2nd}</p>
                   </div>
@@ -376,7 +376,7 @@ export default async function TournamentPage({ params }: PageProps) {
                   <span className="text-3xl">🥉</span>
                   <div className="flex-1">
                     <p className="text-slate-100 font-semibold text-lg">
-                      {standings[2].player?.nickname || standings[2].player?.name || 'Unknown'}
+                      {standings[2].profile?.display_name || standings[2].profile?.username || 'Unknown'}
                     </p>
                     <p className="text-amber-500">{tournament.prize_3rd}</p>
                   </div>
@@ -393,7 +393,7 @@ export default async function TournamentPage({ params }: PageProps) {
 
             // Handle bye (single participant)
             if (participants.length === 1) {
-              const player = participants[0].player;
+              const profile = participants[0].profile;
               return (
                 <Card
                   key={match.id}
@@ -404,7 +404,7 @@ export default async function TournamentPage({ params }: PageProps) {
                   </CardHeader>
                   <CardContent>
                     <p className="text-lg text-slate-100 mb-2">
-                      {player?.nickname || player?.name || 'Unknown Player'}
+                      {profile?.display_name || profile?.username || 'Unknown Player'}
                     </p>
                     <p className="text-sm text-slate-400">{status}</p>
                   </CardContent>
@@ -413,8 +413,8 @@ export default async function TournamentPage({ params }: PageProps) {
             }
 
             // Normal match with two players
-            const player1 = participants[0]?.player;
-            const player2 = participants[1]?.player;
+            const player1 = participants[0]?.profile;
+            const player2 = participants[1]?.profile;
 
             return (
               <Card
@@ -425,8 +425,8 @@ export default async function TournamentPage({ params }: PageProps) {
               >
                 <CardHeader>
                   <CardTitle className="text-slate-100">
-                    {player1?.nickname || player1?.name || 'Player 1'} vs.{' '}
-                    {player2?.nickname || player2?.name || 'Player 2'}
+                    {player1?.display_name || player1?.username || 'Player 1'} vs.{' '}
+                    {player2?.display_name || player2?.username || 'Player 2'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">

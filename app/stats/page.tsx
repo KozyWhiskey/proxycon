@@ -71,18 +71,18 @@ export default async function StatsPage() {
   if (allMatchIds.length > 0) {
     const { data } = await supabase
       .from('match_participants')
-      .select('match_id, player_id, result')
+      .select('match_id, profile_id, result')
       .in('match_id', allMatchIds);
     allMatchParticipants = data;
   }
 
-  // Get all players
-  const { data: allPlayers } = await supabase
-    .from('players')
-    .select('id, name, nickname')
-    .order('name', { ascending: true });
+  // Get all profiles
+  const { data: allProfiles } = await supabase
+    .from('profiles')
+    .select('id, username, display_name')
+    .order('username', { ascending: true });
 
-  if (!allPlayers || allPlayers.length === 0) {
+  if (!allProfiles || allProfiles.length === 0) {
     return (
       <main className="min-h-screen bg-slate-950 pb-24">
         <PageHeader title="Stats" subtitle="Global player statistics" backHref="/" backLabel="Home" />
@@ -97,7 +97,7 @@ export default async function StatsPage() {
     );
   }
 
-  const playersMap = new Map(allPlayers.map((p) => [p.id, p]));
+  const profilesMap = new Map(allProfiles.map((p) => [p.id, p]));
 
   // Calculate tournament winners
   const tournamentWinners: TournamentWinner[] = [];
@@ -105,12 +105,12 @@ export default async function StatsPage() {
     // Get tournament participants
     const { data: tournamentParticipants } = await supabase
       .from('tournament_participants')
-      .select('player_id')
+      .select('profile_id')
       .eq('tournament_id', tournament.id);
 
     if (!tournamentParticipants || tournamentParticipants.length === 0) continue;
 
-    const playerIds = tournamentParticipants.map((tp) => tp.player_id);
+    const profileIds = tournamentParticipants.map((tp) => tp.profile_id);
 
     // Get all matches for this tournament
     const { data: tournamentMatchesData } = await supabase
@@ -130,26 +130,26 @@ export default async function StatsPage() {
           convertDbMatchToMatchResult(
             match.id,
             match.round_number || 1,
-            participants.map((p) => ({ playerId: p.player_id, result: p.result as 'win' | 'loss' | 'draw' | null }))
+            participants.map((p) => ({ playerId: p.profile_id, result: p.result as 'win' | 'loss' | 'draw' | null }))
           )
         );
       }
     }
 
     // Calculate standings
-    const standingsMap = calculateStandings(playerIds, matchHistory);
+    const standingsMap = calculateStandings(profileIds, matchHistory);
     const sortedStandings = sortStandings(Array.from(standingsMap.values()));
 
     if (sortedStandings.length > 0) {
       const winner = sortedStandings[0];
-      const winnerPlayer = playersMap.get(winner.playerId);
-      if (winnerPlayer) {
+      const winnerProfile = profilesMap.get(winner.playerId);
+      if (winnerProfile) {
         tournamentWinners.push({
           tournamentId: tournament.id,
           tournamentName: tournament.name,
           winnerId: winner.playerId,
-          winnerName: winnerPlayer.name,
-          winnerNickname: winnerPlayer.nickname,
+          winnerName: winnerProfile.username,
+          winnerNickname: winnerProfile.display_name,
         });
       }
     }
@@ -158,12 +158,12 @@ export default async function StatsPage() {
   // Calculate player statistics
   const playerStatsMap = new Map<string, PlayerStats>();
 
-  // Initialize all players
-  for (const player of allPlayers) {
-    playerStatsMap.set(player.id, {
-      playerId: player.id,
-      playerName: player.name,
-      playerNickname: player.nickname,
+  // Initialize all profiles
+  for (const profile of allProfiles) {
+    playerStatsMap.set(profile.id, {
+      playerId: profile.id,
+      playerName: profile.username,
+      playerNickname: profile.display_name,
       tournamentWins: 0,
       matchWins: 0,
       matchLosses: 0,
@@ -238,26 +238,26 @@ export default async function StatsPage() {
     if (!hasResults) continue;
 
     for (const participant of participants) {
-      const stats = playerStatsMap.get(participant.player_id);
+      const stats = playerStatsMap.get(participant.profile_id);
       if (!stats) continue;
 
       stats.totalMatches++;
 
       if (participant.result === 'win') {
         stats.matchWins++;
-        const currentStreak = (currentStreaks.get(participant.player_id) || 0) + 1;
-        currentStreaks.set(participant.player_id, currentStreak);
-        const longestStreak = longestStreaks.get(participant.player_id) || 0;
+        const currentStreak = (currentStreaks.get(participant.profile_id) || 0) + 1;
+        currentStreaks.set(participant.profile_id, currentStreak);
+        const longestStreak = longestStreaks.get(participant.profile_id) || 0;
         if (currentStreak > longestStreak) {
-          longestStreaks.set(participant.player_id, currentStreak);
+          longestStreaks.set(participant.profile_id, currentStreak);
         }
       } else if (participant.result === 'loss') {
         stats.matchLosses++;
-        currentStreaks.set(participant.player_id, 0);
+        currentStreaks.set(participant.profile_id, 0);
       } else if (participant.result === 'draw') {
         stats.matchDraws++;
         // Draws break win streaks but don't count as losses for streak purposes
-        currentStreaks.set(participant.player_id, 0);
+        currentStreaks.set(participant.profile_id, 0);
       }
     }
   }

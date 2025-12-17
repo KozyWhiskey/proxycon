@@ -18,7 +18,7 @@ import { AVAILABLE_COLORS, COLOR_DISPLAY_NAMES, getColorClass, isGuild } from '@
 import { Loader2 } from 'lucide-react';
 
 interface ProfileFormProps {
-  userName: string;
+  userName: string | null;
   userNickname: string | null;
   userColor: string | null;
   userAvatarUrl: string | null;
@@ -59,7 +59,7 @@ export default function ProfileForm({
       <div className="space-y-2">
         <Label className="text-slate-100">Full Name</Label>
         <Input
-          value={userName}
+          value={userName || ''}
           disabled
           className="h-12 bg-slate-950 border-slate-800 text-slate-400"
         />

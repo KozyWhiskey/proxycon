@@ -17,13 +17,13 @@ interface Match {
   game_type: string;
   created_at: string;
   participants: Array<{
-    player_id: string;
+    profile_id: string;
     result: string | null;
     games_won: number;
-    player: {
+    profile: {
       id: string;
-      name: string;
-      nickname: string | null;
+      username: string;
+      display_name: string | null;
     };
   }>;
 }
@@ -55,25 +55,25 @@ export default function FixMatchResult() {
         recentMatches.map(async (match) => {
           const { data: participants } = await supabase
             .from('match_participants')
-            .select('player_id, result, games_won')
+            .select('profile_id, result, games_won')
             .eq('match_id', match.id);
 
           if (!participants) return null;
 
-          const playerIds = participants.map((p) => p.player_id);
-          const { data: players } = await supabase
-            .from('players')
-            .select('id, name, nickname')
-            .in('id', playerIds);
+          const profileIds = participants.map((p) => p.profile_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, display_name')
+            .in('id', profileIds);
 
-          const playersMap = new Map(players?.map((p) => [p.id, p]) || []);
+          const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
           return {
             ...match,
             participants: participants.map((p) => ({
               ...p,
               games_won: p.games_won || 0,
-              player: playersMap.get(p.player_id),
+              profile: profilesMap.get(p.profile_id),
             })),
           };
         })
@@ -105,8 +105,8 @@ export default function FixMatchResult() {
     
     const player1 = selectedMatch.participants[0];
     const player2 = selectedMatch.participants[1];
-    const player1Name = player1?.player?.nickname || player1?.player?.name || 'Player 1';
-    const player2Name = player2?.player?.nickname || player2?.player?.name || 'Player 2';
+    const player1Name = player1?.profile?.display_name || player1?.profile?.username || 'Player 1';
+    const player2Name = player2?.profile?.display_name || player2?.profile?.username || 'Player 2';
 
     if (player1Games === player2Games) {
       return { type: 'draw', text: `Draw ${player1Games}-${player2Games}` };
@@ -125,8 +125,8 @@ export default function FixMatchResult() {
 
     setIsSubmitting(true);
 
-    const player1Id = selectedMatch.participants[0].player_id;
-    const player2Id = selectedMatch.participants[1].player_id;
+    const player1Id = selectedMatch.participants[0].profile_id;
+    const player2Id = selectedMatch.participants[1].profile_id;
 
     const result = await fixMatchResultWithGames(
       selectedMatchId,
@@ -179,7 +179,7 @@ export default function FixMatchResult() {
             <SelectContent>
               {matches.map((match) => {
                 const participants = match.participants
-                  .map((p) => p.player?.nickname || p.player?.name || 'Unknown')
+                  .map((p) => p.profile?.display_name || p.profile?.username || 'Unknown')
                   .join(' vs ');
                 const matchLabel = match.tournament_id
                   ? `Round ${match.round_number} - ${participants}`
@@ -201,8 +201,8 @@ export default function FixMatchResult() {
               <p className="text-sm text-slate-400 mb-2">Current Results:</p>
               <div className="space-y-1">
                 {selectedMatch.participants.map((p) => (
-                  <div key={p.player_id} className="text-slate-100 flex justify-between">
-                    <span>{p.player?.nickname || p.player?.name || 'Unknown'}</span>
+                  <div key={p.profile_id} className="text-slate-100 flex justify-between">
+                    <span>{p.profile?.display_name || p.profile?.username || 'Unknown'}</span>
                     <span className="text-slate-400">
                       {p.result || 'pending'} ({p.games_won} games)
                     </span>
@@ -218,8 +218,8 @@ export default function FixMatchResult() {
               {/* Player 1 */}
               <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
                 <span className="text-slate-100 font-medium">
-                  {selectedMatch.participants[0]?.player?.nickname || 
-                   selectedMatch.participants[0]?.player?.name || 'Player 1'}
+                  {selectedMatch.participants[0]?.profile?.display_name || 
+                   selectedMatch.participants[0]?.profile?.username || 'Player 1'}
                 </span>
                 <div className="flex items-center gap-3">
                   <Button
@@ -249,8 +249,8 @@ export default function FixMatchResult() {
               {/* Player 2 */}
               <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
                 <span className="text-slate-100 font-medium">
-                  {selectedMatch.participants[1]?.player?.nickname || 
-                   selectedMatch.participants[1]?.player?.name || 'Player 2'}
+                  {selectedMatch.participants[1]?.profile?.display_name || 
+                   selectedMatch.participants[1]?.profile?.username || 'Player 2'}
                 </span>
                 <div className="flex items-center gap-3">
                   <Button
