@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Play, Trophy, Menu, BarChart3 } from 'lucide-react';
+import { Home, Play, User, Calendar, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function BottomNav() {
@@ -15,24 +15,24 @@ export default function BottomNav() {
       label: 'Home',
     },
     {
+      href: '/events',
+      icon: Calendar,
+      label: 'Events',
+    },
+    {
       href: '/play/casual',
       icon: Play,
       label: 'Play',
     },
     {
-      href: '/tournament/new',
-      icon: Trophy,
-      label: 'Draft',
+      href: '/stats',
+      icon: BarChart2,
+      label: 'Stats',
     },
     {
-      href: '/tournaments',
-      icon: Menu,
-      label: 'Tournaments',
-    },
-    {
-      href: '/weekend-summary',
-      icon: BarChart3,
-      label: 'Summary',
+      href: '/profile',
+      icon: User,
+      label: 'Profile',
     },
   ];
 

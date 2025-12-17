@@ -4,8 +4,13 @@ import TournamentSetupForm from '@/components/tournament/tournament-setup-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PageHeader from '@/components/ui/page-header';
 
-export default async function NewTournamentPage() {
+interface PageProps {
+  searchParams: Promise<{ eventId?: string }>;
+}
+
+export default async function NewTournamentPage({ searchParams }: PageProps) {
   const supabase = await createClient();
+  const { eventId } = await searchParams;
 
   // Fetch all players
   const { data: players, error } = await supabase
@@ -54,13 +59,12 @@ export default async function NewTournamentPage() {
       <PageHeader
         title="New Tournament"
         subtitle="Create a new tournament bracket"
-        backHref="/"
-        backLabel="Dashboard"
+        backHref={eventId ? `/events/${eventId}` : '/'}
+        backLabel={eventId ? "Event Dashboard" : "Dashboard"}
       />
       <div className="max-w-2xl mx-auto p-4 space-y-6">
-        <TournamentSetupForm players={players} />
+        <TournamentSetupForm players={players} eventId={eventId} />
       </div>
     </main>
   );
 }
-

@@ -19,9 +19,10 @@ interface Player {
 
 interface TournamentSetupFormProps {
   players: Player[];
+  eventId?: string; // Added eventId prop
 }
 
-export default function TournamentSetupForm({ players }: TournamentSetupFormProps) {
+export default function TournamentSetupForm({ players, eventId }: TournamentSetupFormProps) {
   const [tournamentName, setTournamentName] = useState('');
   const [format, setFormat] = useState('draft');
   const [maxRounds, setMaxRounds] = useState('3');
@@ -56,7 +57,8 @@ export default function TournamentSetupForm({ players }: TournamentSetupFormProp
         parseInt(roundDuration, 10),
         prize1st.trim() || undefined,
         prize2nd.trim() || undefined,
-        prize3rd.trim() || undefined
+        prize3rd.trim() || undefined,
+        eventId // Pass eventId to action
       );
       
       if (!result.success) {

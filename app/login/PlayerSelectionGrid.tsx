@@ -61,8 +61,9 @@ export default function PlayerSelectionGrid({ players }: PlayerSelectionGridProp
     
     try {
       setLoadingId(playerId);
-      await login(playerId);
-      toast.success('Welcome back!');
+      // TODO: This component appears to be deprecated. The login action now expects FormData (email/password).
+      // await login(playerId);
+      toast.error('Legacy login is disabled.');
     } catch (error) {
       // Handle redirect error (it's expected)
       if (error && typeof error === 'object' && 'digest' in error) {

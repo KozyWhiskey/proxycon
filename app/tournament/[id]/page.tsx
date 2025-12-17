@@ -26,7 +26,7 @@ export default async function TournamentPage({ params }: PageProps) {
   // Fetch tournament
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
-    .select('id, name, format, status, max_rounds, round_duration_minutes, prize_1st, prize_2nd, prize_3rd')
+    .select('id, event_id, name, format, status, max_rounds, round_duration_minutes, prize_1st, prize_2nd, prize_3rd')
     .eq('id', id)
     .single();
 
@@ -38,6 +38,9 @@ export default async function TournamentPage({ params }: PageProps) {
   if (tournament.status === 'pending') {
     redirect(`/tournament/${id}/seating`);
   }
+
+  const backHref = tournament.event_id ? `/events/${tournament.event_id}` : '/';
+  const backLabel = tournament.event_id ? 'Event Dashboard' : 'Home';
 
   // Fetch all matches for this tournament, grouped by round
   const { data: matches } = await supabase
@@ -247,8 +250,8 @@ export default async function TournamentPage({ params }: PageProps) {
       <PageHeader
         title={tournament.name}
         subtitle={subtitle}
-        backHref="/"
-        backLabel="Dashboard"
+        backHref={backHref}
+        backLabel={backLabel}
       />
       <RoundGeneratedToast />
       <div className="max-w-2xl mx-auto p-4 space-y-6">

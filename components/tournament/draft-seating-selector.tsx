@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { selectSeat, startDraft } from '@/app/tournament/actions';
+import { useState, useEffect } from 'react';
+import { selectSeat, startDraft, randomizeSeating } from '@/app/tournament/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { Shuffle } from 'lucide-react';
 
 interface Player {
   id: string;
@@ -39,6 +40,11 @@ export default function DraftSeatingSelector({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localParticipants, setLocalParticipants] = useState(participants);
+
+  // Sync local state with props when they change (e.g. after router.refresh())
+  useEffect(() => {
+    setLocalParticipants(participants);
+  }, [participants]);
 
   // Calculate participants with seats assigned
   const participantsWithSeats = localParticipants.filter((p) => p.draft_seat !== null);
@@ -170,6 +176,29 @@ export default function DraftSeatingSelector({
     }
   };
 
+  const handleRandomize = async () => {
+    if (participantsWithSeats.length > 0) {
+      if (!confirm('This will overwrite existing seat assignments. Are you sure?')) {
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await randomizeSeating(tournamentId);
+      if (result.success) {
+        toast.success('Seating randomized');
+        router.refresh();
+      } else {
+        toast.error(result.message || 'Failed to randomize');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getSeatStatus = (seatNumber: number) => {
     const participant = seatMap.get(seatNumber);
     if (!participant) {
@@ -195,13 +224,26 @@ export default function DraftSeatingSelector({
           <CardTitle className="text-slate-100">Assign Seats</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-400 mb-4">
-            Click on a seat to assign a player. Seats are numbered 1 through {numPlayers}.
-            In Round 1, players will be paired with the player across from them.
-          </p>
-          <p className="text-slate-400 text-sm">
-            {participantsWithSeats.length} of {numPlayers} seats assigned
-          </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <p className="text-slate-400 mb-1">
+                Click on a seat to assign a player. Seats are numbered 1 through {numPlayers}.
+                In Round 1, players will be paired with the player across from them.
+              </p>
+              <p className="text-slate-400 text-sm">
+                {participantsWithSeats.length} of {numPlayers} seats assigned
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleRandomize} 
+              disabled={isSubmitting}
+              className="border-slate-700 text-slate-300 hover:bg-slate-800 shrink-0"
+            >
+              <Shuffle className="w-4 h-4 mr-2" />
+              Randomize
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

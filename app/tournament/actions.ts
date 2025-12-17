@@ -14,6 +14,7 @@ import {
   BYE_GAMES_WON,
   type MatchResult,
 } from '@/lib/swiss-pairing';
+import { TimerData, TimerControlResult } from '@/lib/types';
 
 interface CreateTournamentResult {
   success: boolean;
@@ -29,7 +30,8 @@ export async function createTournament(
   roundDurationMinutes: number = 50,
   prize1st?: string,
   prize2nd?: string,
-  prize3rd?: string
+  prize3rd?: string,
+  eventId?: string // Added eventId parameter
 ): Promise<CreateTournamentResult> {
   try {
     if (!name || name.trim().length === 0) {
@@ -64,6 +66,7 @@ export async function createTournament(
         prize_1st: prize1st || null,
         prize_2nd: prize2nd || null,
         prize_3rd: prize3rd || null,
+        event_id: eventId || null, // Include event_id
       })
       .select()
       .single();
@@ -125,6 +128,7 @@ export async function createTournament(
   }
 }
 
+// ... rest of the file remains unchanged
 interface SubmitResultResult {
   success: boolean;
   message?: string;
@@ -132,73 +136,66 @@ interface SubmitResultResult {
 }
 
 /**
- * Submit match result with game scores for tiebreaker tracking
- * This is the primary action for reporting match results
+ * Submit match result with game scores and deck IDs for tiebreaker tracking
  */
 export async function submitResultWithGames(
   matchId: string,
-  winnerId: string | null, // null for draw
-  loserId: string | null, // null for draw
   player1Id: string,
   player1Games: number,
+  player1DeckId: string | null,
   player2Id: string,
   player2Games: number,
+  player2DeckId: string | null,
   tournamentId: string
 ): Promise<SubmitResultResult> {
   try {
     const supabase = await createClient();
-    const isDraw = winnerId === null;
 
-    // Update match participants with results and games won
+    // Determine results
+    const isDraw = player1Games === player2Games;
+    let p1Result: 'win' | 'loss' | 'draw';
+    let p2Result: 'win' | 'loss' | 'draw';
+
     if (isDraw) {
-      // Both players get draw result
-      const { error: player1Error } = await supabase
-        .from('match_participants')
-        .update({ result: 'draw', games_won: player1Games })
-        .eq('match_id', matchId)
-        .eq('player_id', player1Id);
-
-      if (player1Error) {
-        console.error('Error updating player 1 draw:', player1Error);
-        return { success: false, message: `Failed to update result: ${player1Error.message}` };
-      }
-
-      const { error: player2Error } = await supabase
-        .from('match_participants')
-        .update({ result: 'draw', games_won: player2Games })
-        .eq('match_id', matchId)
-        .eq('player_id', player2Id);
-
-      if (player2Error) {
-        console.error('Error updating player 2 draw:', player2Error);
-        return { success: false, message: `Failed to update result: ${player2Error.message}` };
-      }
+      p1Result = 'draw';
+      p2Result = 'draw';
+    } else if (player1Games > player2Games) {
+      p1Result = 'win';
+      p2Result = 'loss';
     } else {
-      // Winner gets 'win', loser gets 'loss'
-      const winnerGames = winnerId === player1Id ? player1Games : player2Games;
-      const loserGames = winnerId === player1Id ? player2Games : player1Games;
+      p1Result = 'loss';
+      p2Result = 'win';
+    }
 
-      const { error: winnerError } = await supabase
-        .from('match_participants')
-        .update({ result: 'win', games_won: winnerGames })
-        .eq('match_id', matchId)
-        .eq('player_id', winnerId);
+    // Update match participants with results, games won, and deck IDs
+    const { error: p1Error } = await supabase
+      .from('match_participants')
+      .update({
+        result: p1Result,
+        games_won: player1Games,
+        deck_id: player1DeckId,
+      })
+      .eq('match_id', matchId)
+      .eq('player_id', player1Id);
 
-      if (winnerError) {
-        console.error('Error updating winner:', winnerError);
-        return { success: false, message: `Failed to update winner: ${winnerError.message}` };
-      }
+    if (p1Error) {
+      console.error('Error updating player 1 result:', p1Error);
+      return { success: false, message: `Failed to update result for ${player1Id}: ${p1Error.message}` };
+    }
 
-      const { error: loserError } = await supabase
-        .from('match_participants')
-        .update({ result: 'loss', games_won: loserGames })
-        .eq('match_id', matchId)
-        .eq('player_id', loserId);
+    const { error: p2Error } = await supabase
+      .from('match_participants')
+      .update({
+        result: p2Result,
+        games_won: player2Games,
+        deck_id: player2DeckId,
+      })
+      .eq('match_id', matchId)
+      .eq('player_id', player2Id);
 
-      if (loserError) {
-        console.error('Error updating loser:', loserError);
-        return { success: false, message: `Failed to update loser: ${loserError.message}` };
-      }
+    if (p2Error) {
+      console.error('Error updating player 2 result:', p2Error);
+      return { success: false, message: `Failed to update result for ${player2Id}: ${p2Error.message}` };
     }
 
     // Check if all matches in the current round are complete
@@ -716,8 +713,6 @@ async function getTimerData(
 }
 
 
-import { TimerData, TimerControlResult } from '@/lib/types';
-
 export async function startRoundTimer(
   tournamentId: string,
   roundNumber: number
@@ -859,16 +854,14 @@ export async function pauseRoundTimer(
       console.log('[pauseRoundTimer] currentRemaining:', currentRemaining);
       console.log('[pauseRoundTimer] newRemainingSeconds:', newRemainingSeconds);
       
-      // Sanity check - new remaining should not exceed original remaining
-      if (newRemainingSeconds > currentRemaining) {
-        console.error('[pauseRoundTimer] New remaining exceeds current! Using current value.');
-      }
+      // Sanity check - new remaining should not exceed current! Using current value if it does.
+      const finalRemainingSeconds = (newRemainingSeconds > currentRemaining && currentRemaining > 0) ? currentRemaining : newRemainingSeconds;
 
       const { error } = await supabase
         .from('matches')
         .update({ 
           paused_at: now.toISOString(),
-          remaining_seconds: Math.min(newRemainingSeconds, currentRemaining),
+          remaining_seconds: finalRemainingSeconds,
         })
         .eq('tournament_id', tournamentId)
         .eq('round_number', roundNumber);
@@ -1036,68 +1029,62 @@ export async function updateRoundDuration(
  */
 export async function submitResultWithGamesNoRedirect(
   matchId: string,
-  winnerId: string | null, // null for draw
-  loserId: string | null, // null for draw
   player1Id: string,
   player1Games: number,
+  player1DeckId: string | null,
   player2Id: string,
   player2Games: number,
+  player2DeckId: string | null,
   tournamentId: string
 ): Promise<SubmitResultResult> {
   try {
     const supabase = await createClient();
-    const isDraw = winnerId === null;
 
-    // Update match participants with results and games won
+    // Determine results
+    const isDraw = player1Games === player2Games;
+    let p1Result: 'win' | 'loss' | 'draw';
+    let p2Result: 'win' | 'loss' | 'draw';
+
     if (isDraw) {
-      // Both players get draw result
-      const { error: player1Error } = await supabase
-        .from('match_participants')
-        .update({ result: 'draw', games_won: player1Games })
-        .eq('match_id', matchId)
-        .eq('player_id', player1Id);
-
-      if (player1Error) {
-        console.error('Error updating player 1 draw:', player1Error);
-        return { success: false, message: `Failed to update result: ${player1Error.message}` };
-      }
-
-      const { error: player2Error } = await supabase
-        .from('match_participants')
-        .update({ result: 'draw', games_won: player2Games })
-        .eq('match_id', matchId)
-        .eq('player_id', player2Id);
-
-      if (player2Error) {
-        console.error('Error updating player 2 draw:', player2Error);
-        return { success: false, message: `Failed to update result: ${player2Error.message}` };
-      }
+      p1Result = 'draw';
+      p2Result = 'draw';
+    } else if (player1Games > player2Games) {
+      p1Result = 'win';
+      p2Result = 'loss';
     } else {
-      // Winner gets 'win', loser gets 'loss'
-      const winnerGames = winnerId === player1Id ? player1Games : player2Games;
-      const loserGames = winnerId === player1Id ? player2Games : player1Games;
+      p1Result = 'loss';
+      p2Result = 'win';
+    }
 
-      const { error: winnerError } = await supabase
-        .from('match_participants')
-        .update({ result: 'win', games_won: winnerGames })
-        .eq('match_id', matchId)
-        .eq('player_id', winnerId);
+    // Update match participants with results, games won, and deck IDs
+    const { error: p1Error } = await supabase
+      .from('match_participants')
+      .update({
+        result: p1Result,
+        games_won: player1Games,
+        deck_id: player1DeckId,
+      })
+      .eq('match_id', matchId)
+      .eq('player_id', player1Id);
 
-      if (winnerError) {
-        console.error('Error updating winner:', winnerError);
-        return { success: false, message: `Failed to update winner: ${winnerError.message}` };
-      }
+    if (p1Error) {
+      console.error('Error updating player 1 result:', p1Error);
+      return { success: false, message: `Failed to update result for ${player1Id}: ${p1Error.message}` };
+    }
 
-      const { error: loserError } = await supabase
-        .from('match_participants')
-        .update({ result: 'loss', games_won: loserGames })
-        .eq('match_id', matchId)
-        .eq('player_id', loserId);
+    const { error: p2Error } = await supabase
+      .from('match_participants')
+      .update({
+        result: p2Result,
+        games_won: player2Games,
+        deck_id: player2DeckId,
+      })
+      .eq('match_id', matchId)
+      .eq('player_id', player2Id);
 
-      if (loserError) {
-        console.error('Error updating loser:', loserError);
-        return { success: false, message: `Failed to update loser: ${loserError.message}` };
-      }
+    if (p2Error) {
+      console.error('Error updating player 2 result:', p2Error);
+      return { success: false, message: `Failed to update result for ${player2Id}: ${p2Error.message}` };
     }
 
     // Check if all matches in the current round are complete
@@ -1164,6 +1151,77 @@ export async function submitResultWithGamesNoRedirect(
     return { success: true, nextRoundGenerated };
   } catch (error) {
     console.error('Error in submitResultWithGamesNoRedirect:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return { success: false, message: errorMessage };
+  }
+}
+
+interface RandomizeSeatingResult {
+  success: boolean;
+  message?: string;
+}
+
+export async function randomizeSeating(tournamentId: string): Promise<RandomizeSeatingResult> {
+  try {
+    const supabase = await createClient();
+
+    // Fetch all participants
+    const { data: participants, error: fetchError } = await supabase
+      .from('tournament_participants')
+      .select('id, player_id')
+      .eq('tournament_id', tournamentId);
+
+    if (fetchError || !participants) {
+      console.error('Error fetching participants:', fetchError);
+      return { success: false, message: 'Failed to fetch participants' };
+    }
+
+    if (participants.length === 0) {
+      return { success: false, message: 'No participants to seat' };
+    }
+
+    // Shuffle participants
+    const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
+
+    // Assign seats
+    // We update each participant one by one. In a real app with many users, batch update would be better.
+    // But for < 20 users, this is fine.
+    // First, we need to clear existing seats to avoid unique constraint violations if we are just swapping them around?
+    // The constraint is UNIQUE(tournament_id, draft_seat).
+    // If we update player A to seat 1, and player B is already in seat 1, it might fail.
+    // So safest way is to clear all seats first, then assign.
+    
+    // Clear all seats
+    const { error: clearError } = await supabase
+      .from('tournament_participants')
+      .update({ draft_seat: null })
+      .eq('tournament_id', tournamentId);
+
+    if (clearError) {
+      console.error('Error clearing seats:', clearError);
+      return { success: false, message: 'Failed to clear existing seats' };
+    }
+
+    // Assign new seats
+    for (let i = 0; i < shuffledParticipants.length; i++) {
+      const participant = shuffledParticipants[i];
+      const seatNumber = i + 1;
+
+      const { error: updateError } = await supabase
+        .from('tournament_participants')
+        .update({ draft_seat: seatNumber })
+        .eq('id', participant.id);
+
+      if (updateError) {
+        console.error(`Error assigning seat ${seatNumber} to participant ${participant.id}:`, updateError);
+        return { success: false, message: `Failed to assign seat ${seatNumber}` };
+      }
+    }
+
+    revalidatePath(`/tournament/${tournamentId}/seating`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error in randomizeSeating:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return { success: false, message: errorMessage };
   }
@@ -1453,4 +1511,3 @@ export async function startDraft(tournamentId: string): Promise<StartDraftResult
     return { success: false, message: errorMessage };
   }
 }
-

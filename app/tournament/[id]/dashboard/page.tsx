@@ -160,18 +160,14 @@ function MatchResultEntry({
 
     setIsSubmitting(true);
     try {
-      const isDraw = player1Games === player2Games;
-      const winnerId = player1Games > player2Games ? pairing.player1.id : pairing.player2.id;
-      const loserId = player1Games > player2Games ? pairing.player2.id : pairing.player1.id;
-
       const response = await submitResultWithGamesNoRedirect(
         pairing.matchId,
-        isDraw ? null : winnerId,
-        isDraw ? null : loserId,
         pairing.player1.id,
         player1Games,
+        null, // Deck ID not supported in quick dashboard
         pairing.player2.id,
         player2Games,
+        null, // Deck ID not supported in quick dashboard
         tournamentId
       );
 

@@ -42,7 +42,7 @@ export default function ActiveTournament({
 }: ActiveTournamentProps) {
   const router = useRouter();
 
-  if (!tournament || !currentMatch) {
+  if (!tournament) {
     return (
       <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
@@ -56,12 +56,12 @@ export default function ActiveTournament({
   }
 
   // Find the opponent (the participant who is not the current user)
-  const opponent = currentMatch.participants.find(
+  const opponent = currentMatch?.participants.find(
     (p) => p.player_id !== currentUserId
   );
 
   // Check if match is already completed
-  const isCompleted = currentMatch.participants.some((p) => p.result === 'win');
+  const isCompleted = currentMatch?.participants.some((p) => p.result === 'win');
 
   const handleCardClick = () => {
     router.push(`/tournament/${tournament.id}`);
@@ -69,8 +69,14 @@ export default function ActiveTournament({
 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/tournament/${tournament.id}/match/${currentMatch.id}`);
+    if (currentMatch) {
+      router.push(`/tournament/${tournament.id}/match/${currentMatch.id}`);
+    } else {
+      router.push(`/tournament/${tournament.id}`);
+    }
   };
+
+  const isPending = tournament.status === 'pending';
 
   return (
     <Card 
@@ -79,16 +85,35 @@ export default function ActiveTournament({
     >
       <CardHeader>
         <CardTitle className="text-slate-100 flex items-center gap-2">
-          <span className="text-yellow-500">Active Tournament</span>
+          <span className="text-yellow-500">
+            {isPending ? 'Tournament Pending' : 'Active Tournament'}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
           <p className="text-sm text-slate-400 mb-1">Tournament</p>
           <p className="text-lg font-semibold text-slate-100">{tournament.name}</p>
-          <p className="text-sm text-slate-400 mt-1">Round {currentMatch.round_number}</p>
+          {!isPending && currentMatch && (
+            <p className="text-sm text-slate-400 mt-1">Round {currentMatch.round_number}</p>
+          )}
         </div>
-        {opponent && (
+        
+        {isPending && (
+           <div>
+            <p className="text-sm text-slate-400 mb-1">Status</p>
+            <p className="text-lg text-slate-100">Drafting / Setup</p>
+          </div>
+        )}
+
+        {!isPending && !currentMatch && (
+           <div>
+            <p className="text-sm text-slate-400 mb-1">Status</p>
+            <p className="text-lg text-slate-100">Waiting for next round</p>
+          </div>
+        )}
+
+        {!isPending && currentMatch && opponent && (
           <div>
             <p className="text-sm text-slate-400 mb-1">Your Match</p>
             <p className="text-lg text-slate-100">
@@ -96,7 +121,8 @@ export default function ActiveTournament({
             </p>
           </div>
         )}
-        {!isCompleted && (
+        
+        {!isPending && currentMatch && !isCompleted && (
           <Button 
             onClick={handleButtonClick}
             className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
@@ -104,6 +130,16 @@ export default function ActiveTournament({
             Enter Result
           </Button>
         )}
+
+        {isPending && (
+           <Button 
+            onClick={handleButtonClick}
+            className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+          >
+            Go to Lobby
+          </Button>
+        )}
+
         {isCompleted && (
           <p className="text-sm text-slate-400">Match completed</p>
         )}

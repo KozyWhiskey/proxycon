@@ -1,0 +1,119 @@
+# ProxyCon V2 Upgrade Specification
+
+## 1. Project Overview
+
+**Goal**: Transition the application from a single-event "weekend companion" to a persistent Magic: The Gathering League Platform.
+**Current State**: The app uses a simple cookie-based "impersonation" auth and assumes a single global context for all matches.
+**Target State**: The app will support multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking, and expanded Game Modes.
+
+## 2. Database Evolution (Schema V2)
+
+We need to normalize the database. The current schema (`.dev-docs/DATABASE_STRUCTURE.md`) has everything at the top level. We need to nest data under events and link it to real `auth.users`.
+
+### 2.1 New Schema Definitions
+
+1.  **profiles** (Extends `auth.users`)
+    -   `id` (UUID, PK, references `auth.users.id`)
+    -   `username` (Text, Unique)
+    -   `avatar_url` (Text)
+    -   `favorite_card_image` (Text)
+    -   `bio` (Text)
+
+2.  **events** (The Container)
+    -   `id` (UUID, PK)
+    -   `owner_id` (UUID, references `profiles.id`)
+    -   `name` (Text) - e.g., "ProxyCon 2025"
+    -   `start_date` (Date)
+    -   `end_date` (Date)
+    -   `is_active` (Boolean)
+    -   `invite_code` (Text, Unique)
+
+3.  **event_participants** (Linking Players to Events)
+    -   `event_id` (UUID, PK Composite)
+    -   `profile_id` (UUID, PK Composite)
+    -   `nickname` (Text) - Allows different names per event.
+    -   `role` (Text) - 'admin', 'player', 'spectator'.
+
+4.  **decks** (Global Library)
+    -   `id` (UUID, PK)
+    -   `owner_id` (UUID, references `profiles.id`)
+    -   `name` (Text) - e.g., "Ur-Dragon Tribal"
+    -   `format` (Text) - 'commander', 'modern', 'cube'
+    -   `colors` (Array of Text) - ['W', 'U', 'B', 'R', 'G']
+    -   `commander_name` (Text)
+
+### 2.2 Updates to Existing Tables
+
+-   `matches`: Add `event_id` (FK to `events.id`).
+-   `match_participants`: Add `deck_id` (FK to `decks.id`).
+
+## 3. Implementation Roadmap
+
+### Phase 1: Authentication & Migration ✅ **COMPLETED**
+
+**Goal**: Replace `lib/get-current-user.ts` with Supabase Auth and link old data.
+
+-   **Configure Auth**:
+    -   ✅ Update `utils/supabase/middleware.ts` to protect routes using `supabase.auth.getUser()`.
+    -   ✅ Redirect unauthenticated users to `/login`.
+-   **Login Page (`app/login/page.tsx`)**:
+    -   ✅ Replace the "Player Selection Grid" with a standard Email/Password login form.
+    -   ✅ Add a "Sign Up" tab.
+-   **Claim Profile Flow**:
+    -   ✅ Create a "Claim Profile" component on the Dashboard.
+    -   **Logic**: Authenticated user selects their "Old Name" (from players table).
+    -   **Action**: System creates a profile linked to `auth.uid()` and updates any historical `match_participants` records to point to this new Profile ID (optional/complex step, initially just map them in `event_participants`).
+
+### Phase 2: Event Management
+
+**Goal**: Allow users to switch contexts between weekends.
+
+-   **Event Switcher**:
+    -   Create a global `EventContext` or use URL params (e.g., `/e/[eventId]/dashboard`).
+    -   Add a dropdown in `components/ui/page-header.tsx` to switch events.
+-   **Create Event UI**:
+    -   New page: `/events/new`. Form for Name, Date, Location.
+-   **Event Dashboard**:
+    -   Refactor `app/page.tsx` to be the "Global Landing" (Your Events list).
+    -   Move current dashboard logic to `app/events/[id]/page.tsx`.
+
+### Phase 3: Deck Tracker
+
+**Goal**: "Denny always wins with his XXX deck."
+
+-   **My Decks Page**:
+    -   Route: `/decks`
+    -   UI: List of decks with colors (using Mana symbols) and win rates.
+    -   Action: "Create Deck" -> Name, Colors, Format.
+-   **Match Reporting Integration**:
+    -   Update `components/tournament/match-reporting-form.tsx`.
+    -   When selecting a player, add a dropdown to select which deck they played.
+
+### Phase 4: Expanded Game Modes
+
+**Goal**: Support Team Sealed and complex Casual games.
+
+-   **Team Sealed Support**:
+    -   Update `lib/types.ts` to include `MatchType = '1v1' | 'free_for_all' | 'team_sealed'`.
+    -   Update `components/tournament/match-reporting-form.tsx` to handle Team Sealed:
+        -   Select "Team A" (List of players) vs "Team B" (List of players).
+        -   Record result for the Team.
+-   **Casual Mode Refactor**:
+    -   Remove Board Games logic from `app/play/casual/page.tsx`.
+    -   Focus strictly on MTG formats (Commander, Modern, etc.).
+
+## 4. Key Files to Modify
+
+-   **Auth**: `lib/get-current-user.ts` (Delete/Replace), `app/login/page.tsx`, `utils/supabase/middleware.ts`.
+-   **Database**: `lib/types.ts` (Update interfaces for Profile, Event, Deck).
+-   **UI**: `components/dashboard/user-header.tsx` (Add Avatar/Profile link), `app/layout.tsx` (Add Auth Provider if needed).
+-   **Match Logic**: `components/tournament/match-reporting-form.tsx`, `app/play/actions.ts`.
+
+## 5. Instructions for CLI
+
+When executing this plan:
+
+-   Always verify the database schema exists before writing code that queries it.
+-   Use Server Actions for all data mutations (`app/actions.ts` pattern).
+-   Preserve Shadcn UI styling (`components/ui`).
+-   **Async Cookies**: Remember Next.js 16 requires `await cookies()` in all Server Components and Actions.

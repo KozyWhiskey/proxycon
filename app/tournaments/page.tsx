@@ -1,7 +1,9 @@
 import { createClient } from '@/utils/supabase/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/ui/page-header';
 import TournamentManagementList from '@/components/tournament/tournament-management-list';
+import { getCurrentUser } from '@/lib/get-current-user';
+import { redirect } from 'next/navigation';
 import {
   calculateStandings,
   sortStandings,
@@ -133,21 +135,88 @@ async function fetchTournamentStandings(tournamentId: string): Promise<{
 
 export default async function TournamentsPage() {
   const supabase = await createClient();
+  const authData = await getCurrentUser();
 
-  // Fetch all tournaments
-  const { data: tournaments, error } = await supabase
+  if (!authData || !authData.user) {
+    redirect('/login');
+  }
+
+  // Get user's events
+  const { data: userEvents } = await supabase
+    .from('event_participants')
+    .select('event_id')
+    .eq('profile_id', authData.user.id);
+
+  const eventIds = userEvents?.map(e => e.event_id) || [];
+
+  // Get linked player for legacy tournament support
+  const { data: linkedPlayer } = await supabase
+    .from('players')
+    .select('id')
+    .eq('profile_id', authData.user.id)
+    .single();
+
+  let directTournamentIds: string[] = [];
+  if (linkedPlayer) {
+    const { data: participations } = await supabase
+      .from('tournament_participants')
+      .select('tournament_id')
+      .eq('player_id', linkedPlayer.id);
+    directTournamentIds = participations?.map(p => p.tournament_id) || [];
+  }
+
+  // If no events AND no direct tournaments, show empty state
+  if (eventIds.length === 0 && directTournamentIds.length === 0) {
+    return (
+      <main className="min-h-screen bg-slate-950 pb-24">
+        <PageHeader
+          title="Tournaments"
+          subtitle="View and manage tournaments"
+          backHref="/"
+          backLabel="Home"
+        />
+        <div className="max-w-2xl mx-auto p-4">
+          <Card className="bg-slate-900 border-slate-800">
+            <CardContent className="pt-6 text-center">
+              <p className="text-slate-400 mb-2">You haven't joined any events or tournaments yet.</p>
+              <p className="text-sm text-slate-500">Join an event to see tournaments.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
+  }
+
+  // Fetch tournaments matching EITHER:
+  // 1. Belonging to an event the user is in (eventIds)
+  // 2. The user is a direct participant in (directTournamentIds) - for legacy/mixed support
+  let query = supabase
     .from('tournaments')
     .select('id, name, format, status, created_at, max_rounds')
     .order('created_at', { ascending: false });
+
+  const conditions: string[] = [];
+  if (eventIds.length > 0) {
+    conditions.push(`event_id.in.(${eventIds.join(',')})`);
+  }
+  if (directTournamentIds.length > 0) {
+    conditions.push(`id.in.(${directTournamentIds.join(',')})`);
+  }
+
+  if (conditions.length > 0) {
+    query = query.or(conditions.join(','));
+  }
+
+  const { data: tournaments, error } = await query;
 
   if (error) {
     return (
       <main className="min-h-screen bg-slate-950 pb-24">
         <PageHeader
-          title="Tournament Management"
-          subtitle="Manage your tournaments"
+          title="Tournaments"
+          subtitle="View and manage tournaments"
           backHref="/"
-          backLabel="Dashboard"
+          backLabel="Home"
         />
         <div className="max-w-2xl mx-auto p-4">
           <Card className="bg-slate-900 border-slate-800">
@@ -179,10 +248,10 @@ export default async function TournamentsPage() {
   return (
     <main className="min-h-screen bg-slate-950 pb-24">
       <PageHeader
-        title="Tournament Management"
-        subtitle="View and manage all tournaments"
+        title="Tournaments"
+        subtitle="Your Event Tournaments"
         backHref="/"
-        backLabel="Dashboard"
+        backLabel="Home"
       />
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         <TournamentManagementList
@@ -194,4 +263,3 @@ export default async function TournamentsPage() {
     </main>
   );
 }
-

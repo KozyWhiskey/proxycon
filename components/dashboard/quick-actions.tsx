@@ -5,7 +5,19 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus, Play, Trophy } from 'lucide-react';
 
-export default function QuickActions() {
+interface QuickActionsProps {
+  eventId?: string;
+}
+
+export default function QuickActions({ eventId }: QuickActionsProps) {
+  const newTournamentHref = eventId 
+    ? `/tournament/new?eventId=${eventId}` 
+    : '/tournament/new';
+
+  const casualGameHref = eventId 
+    ? `/play/casual?eventId=${eventId}` 
+    : '/play/casual';
+
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
@@ -16,7 +28,7 @@ export default function QuickActions() {
           asChild
           className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold"
         >
-          <Link href="/tournament/new">
+          <Link href={newTournamentHref}>
             <Plus className="w-5 h-5 mr-2" />
             New Tournament
           </Link>
@@ -26,7 +38,7 @@ export default function QuickActions() {
           variant="outline"
           className="w-full h-12 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
         >
-          <Link href="/play/casual">
+          <Link href={casualGameHref}>
             <Play className="w-5 h-5 mr-2" />
             Log Casual Game
           </Link>

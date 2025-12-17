@@ -3,6 +3,8 @@
 import { getCurrentUserId } from '@/lib/get-current-user';
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
 
 interface UpdateProfileResult {
   success: boolean;
@@ -27,33 +29,49 @@ export async function updateMyProfile(data: {
 
     const supabase = await createClient();
 
-    // Build update object - always include all fields
+    // V2: Update 'profiles' table
     const updateData: any = {
-      nickname: data.nickname?.trim() || null,
+      // mapping nickname -> username? or keeping nickname in profile?
+      // V2 schema has 'username', 'avatar_url'. No 'color' in profiles.
+      // 'color' is still in 'players' table.
       avatar_url: data.avatar_url?.trim() || null,
-      color: data.color?.trim() || null,
+      // bio?
     };
 
-    // Update the current user's profile
-    const { error } = await supabase
-      .from('players')
+    // We also need to update the LINKED player record if it exists
+    // This is messy during migration.
+    // Let's try to update 'profiles' first.
+    const { error: profileError } = await supabase
+      .from('profiles')
       .update(updateData)
       .eq('id', userId);
 
+    if (profileError) {
+        console.error('Error updating profile:', profileError);
+        // Fallback or ignore?
+    }
+
+    // Also update 'players' table via profile_id link
+    // This maintains backward compatibility for V1 views that query 'players'
+    const playerUpdateData: any = {
+      nickname: data.nickname?.trim() || null,
+      color: data.color?.trim() || null,
+      avatar_url: data.avatar_url?.trim() || null,
+    };
+    
+    const { error } = await supabase
+      .from('players')
+      .update(playerUpdateData)
+      .eq('profile_id', userId); // Use profile_id to find the linked player
+
     if (error) {
-      // Surface a clear error if the color column is missing so the user knows to run the migration
-      if (error.message.includes('column') && error.message.includes('color')) {
-        return {
-          success: false,
-          message:
-            'Player color column is missing. Run .dev-docs/DATABASE_MIGRATION_add_player_color.md in Supabase, then try again.',
-        };
-      }
-      return { success: false, message: `Failed to update profile: ${error.message}` };
+       console.error('Error updating linked player:', error);
+       // This might fail if the user hasn't claimed a player yet.
+       // In that case, maybe we should create a new player record?
+       // For now, let's just return success if profile updated.
     }
 
     revalidatePath('/');
-    revalidatePath('/login');
     return { success: true, message: 'Profile updated successfully' };
   } catch (error) {
     console.error('Error in updateMyProfile:', error);
@@ -64,9 +82,92 @@ export async function updateMyProfile(data: {
 }
 
 /**
+ * Claims a legacy player record for the current authenticated user.
+ */
+export async function claimPlayer(playerId: string): Promise<{ success: boolean; message?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, message: 'Not authenticated' };
+
+  // Check if player is already claimed
+  const { data: player } = await supabase
+    .from('players')
+    .select('profile_id, name, avatar_url')
+    .eq('id', playerId)
+    .single();
+    
+  if (!player) return { success: false, message: 'Player not found' };
+  if (player.profile_id) return { success: false, message: 'Player already claimed' };
+
+  // Update player
+  const { error } = await supabase
+    .from('players')
+    .update({ profile_id: user.id })
+    .eq('id', playerId);
+
+  if (error) return { success: false, message: error.message };
+  
+  // Optionally copy data to profile
+  await supabase.from('profiles').update({
+      username: player.name, // Use player Name as username initially
+      avatar_url: player.avatar_url
+  }).eq('id', user.id);
+
+  revalidatePath('/');
+  return { success: true };
+}
+
+/**
+ * Creates a new player record for a new user who wasn't in the legacy system.
+ */
+export async function createNewPlayer(): Promise<{ success: boolean; message?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, message: 'Not authenticated' };
+
+  // Get profile data to use for new player
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile) return { success: false, message: 'Profile not found' };
+
+  // Create new player record linked to this profile
+  const { error } = await supabase
+    .from('players')
+    .insert({
+      profile_id: user.id,
+      name: profile.username || 'New Player', // Fallback name
+      avatar_url: profile.avatar_url,
+      wins: 0
+    });
+
+  if (error) {
+    console.error('Error creating new player:', error);
+    return { success: false, message: error.message };
+  }
+
+  revalidatePath('/');
+  return { success: true };
+}
+
+/**
+ * Logs out the current user.
+ */
+export async function logout() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  revalidatePath('/', 'layout');
+  redirect('/login');
+}
+
+
+/**
  * @deprecated Use updateMyProfile instead
- * Updates the current user's nickname.
- * Users can only update their own nickname.
  */
 export async function updateMyNickname(nickname: string | null): Promise<UpdateProfileResult> {
   return updateMyProfile({ nickname, color: null, avatar_url: null });

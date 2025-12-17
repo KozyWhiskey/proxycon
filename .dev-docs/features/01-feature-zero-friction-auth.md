@@ -1,9 +1,15 @@
-# Feature: Zero-Friction Auth
+# Feature: Zero-Friction Auth (Deprecated)
 
-## Objective
-Implement the "Who Are You?" passwordless login system. A user visiting the site for the first time will be presented with a list of players and can select their identity. This choice will be persisted via a cookie.
+**Status:** ⚠️ **DEPRECATED** (Replaced by V2 Auth)
 
-## Implementation Steps
+## Overview
+This feature originally implemented a "Who Are You?" passwordless login system where users selected their identity from a grid of players. This has been superseded by the V2 Authentication system using Supabase Auth (Email/Password).
+
+## Superseded By
+- **Feature:** V2 Platform Authentication
+- **Implementation:** `app/login/page.tsx` (Login Form), `app/user/actions.ts` (Auth Actions)
+
+## Legacy Implementation Steps (For Reference)
 
 1.  **Create Login Page (`app/login/page.tsx`):**
     -   This will be a Server Component.
@@ -27,7 +33,7 @@ Implement the "Who Are You?" passwordless login system. A user visiting the site
     -   If the cookie is **missing** and the user is **not** already on the `/login` page, redirect them to `/login`.
     -   If the cookie **is present**, allow the request to proceed.
 
-## Testing Plan
+## Testing Plan (Legacy)
 
 1.  **Test New User Experience:**
     -   Clear all cookies for the site in your browser.

@@ -39,7 +39,7 @@ interface TournamentWinner {
   winnerNickname: string | null;
 }
 
-export default async function WeekendSummaryPage() {
+export default async function StatsPage() {
   const supabase = await createClient();
 
   // Fetch all completed tournaments
@@ -85,7 +85,7 @@ export default async function WeekendSummaryPage() {
   if (!allPlayers || allPlayers.length === 0) {
     return (
       <main className="min-h-screen bg-slate-950 pb-24">
-        <PageHeader title="Weekend Summary" subtitle="Tournament and match statistics" backHref="/" backLabel="Dashboard" />
+        <PageHeader title="Stats" subtitle="Global player statistics" backHref="/" backLabel="Home" />
         <div className="max-w-4xl mx-auto p-4">
           <Card className="bg-slate-900 border-slate-800">
             <CardContent className="pt-6">
@@ -297,70 +297,13 @@ export default async function WeekendSummaryPage() {
   const totalTournaments = completedTournaments?.length || 0;
   const totalCasualGames = casualMatches?.length || 0;
 
-  // Build a simple feed of recent casual games (limit 10)
-  const casualMatchFeed =
-    casualMatches
-      ?.map((m) => {
-        const participants =
-          allMatchParticipants?.filter((p) => p.match_id === m.id) || [];
-
-        if (participants.length === 0) return null;
-
-        const winners = participants
-          .filter((p) => p.result === 'win' || p.result === '1st')
-          .map((p) => {
-            const player = playersMap.get(p.player_id);
-            return player?.nickname || player?.name || 'Unknown';
-          });
-
-        const others = participants
-          .filter(
-            (p) =>
-              p.result !== null && p.result !== 'win' && p.result !== '1st'
-          )
-          .map((p) => {
-            const player = playersMap.get(p.player_id);
-            return player?.nickname || player?.name || 'Unknown';
-          });
-
-        return {
-          id: m.id,
-          gameType: m.game_type,
-          createdAt: m.created_at,
-          boardGameName: m.game_type === 'board_game' ? m.notes || null : null,
-          winners,
-          others,
-        };
-      })
-      .filter((m): m is NonNullable<typeof m> => m !== null)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-      .slice(0, 10) || [];
-
-  const formatGameType = (gameType: string | null): string => {
-    if (!gameType) return 'Casual';
-    return gameType
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <main className="min-h-screen bg-slate-950 pb-24">
       <PageHeader
-        title="Weekend Summary"
-        subtitle="Tournament and match statistics"
+        title="Stats"
+        subtitle="Global player statistics and leaderboards"
         backHref="/"
-        backLabel="Dashboard"
+        backLabel="Home"
       />
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Tournament Overview */}
@@ -428,13 +371,12 @@ export default async function WeekendSummaryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-slate-300">Player</TableHead>
-                    <TableHead className="text-slate-300 text-center">Tournament Wins</TableHead>
+                    <TableHead className="text-slate-300 text-center">Tourney Wins</TableHead>
                     <TableHead className="text-slate-300 text-center">Match Wins</TableHead>
-                    <TableHead className="text-slate-300 text-center">Match Losses</TableHead>
+                    <TableHead className="text-slate-300 text-center">Losses</TableHead>
                     <TableHead className="text-slate-300 text-center">Win %</TableHead>
-                    <TableHead className="text-slate-300 text-center">Current Streak</TableHead>
-                    <TableHead className="text-slate-300 text-center">Longest Streak</TableHead>
-                    <TableHead className="text-slate-300 text-center">Total Matches</TableHead>
+                    <TableHead className="text-slate-300 text-center">Streak</TableHead>
+                    <TableHead className="text-slate-300 text-center">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -455,9 +397,6 @@ export default async function WeekendSummaryPage() {
                         </TableCell>
                         <TableCell className="text-center text-cyan-500 font-semibold">
                           {stat.currentWinStreak}
-                        </TableCell>
-                        <TableCell className="text-center text-purple-500 font-semibold">
-                          {stat.longestWinStreak}
                         </TableCell>
                         <TableCell className="text-center text-slate-400">{stat.totalMatches}</TableCell>
                       </TableRow>
@@ -603,90 +542,7 @@ export default async function WeekendSummaryPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Most Active Player */}
-          {leaderboardMostActive.length > 0 && (
-            <Card className="bg-slate-900 border-slate-800 md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-slate-100 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-slate-400" />
-                  Most Active Players
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {leaderboardMostActive.slice(0, 10).map((stat, index) => (
-                    <div
-                      key={stat.playerId}
-                      className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-slate-400 font-bold w-6 text-center">
-                          {index + 1}
-                        </span>
-                        <span className="text-slate-100 font-medium">
-                          {stat.playerNickname || stat.playerName}
-                        </span>
-                      </div>
-                      <span className="text-slate-400 font-bold">{stat.totalMatches} matches</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
-
-        {/* Casual Games Feed */}
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-slate-100 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
-              Casual Games (Recent)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {casualMatchFeed.length === 0 ? (
-              <p className="text-slate-400">No casual games recorded yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {casualMatchFeed.map((match) => (
-                  <div
-                    key={match.id}
-                    className="flex items-start justify-between p-3 bg-slate-800/50 rounded-md border border-slate-700/50"
-                  >
-                    <div className="flex flex-col gap-1 text-slate-200">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-sm font-semibold">
-                          {formatGameType(match.gameType)}
-                        </span>
-                        {match.boardGameName && (
-                          <span className="text-xs text-slate-400">
-                            • {match.boardGameName}
-                          </span>
-                        )}
-                      </div>
-                      {match.winners.length > 0 && (
-                        <span className="text-xs text-emerald-400">
-                          W: {match.winners.join(', ')}
-                        </span>
-                      )}
-                      {match.others.length > 0 && (
-                        <span className="text-xs text-slate-400">
-                          Others: {match.others.join(', ')}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-500">
-                      {formatDate(match.createdAt)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </main>
   );

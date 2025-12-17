@@ -1,15 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { submitResultWithGames } from '@/app/tournament/actions';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Minus, Plus } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Deck } from '@/lib/types'; // Import Deck type
 
 interface Player {
   id: string;
   name: string;
   nickname: string | null;
+  profile_id: string | null; // Added profile_id
 }
 
 interface Participant {
@@ -23,15 +33,23 @@ interface MatchReportingFormProps {
   tournamentId: string;
   matchId: string;
   participants: Participant[];
+  userDecks: Deck[]; // New prop: list of current user's decks
+  player1ProfileId?: string; // New prop: profile_id of player1 if they are the current user
+  player2ProfileId?: string; // New prop: profile_id of player2 if they are the current user
 }
 
 export default function MatchReportingForm({
   tournamentId,
   matchId,
   participants,
+  userDecks,
+  player1ProfileId,
+  player2ProfileId,
 }: MatchReportingFormProps) {
   const [player1Games, setPlayer1Games] = useState(0);
   const [player2Games, setPlayer2Games] = useState(0);
+  const [player1DeckId, setPlayer1DeckId] = useState<string | null>(null);
+  const [player2DeckId, setPlayer2DeckId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const player1 = participants[0];
@@ -70,18 +88,14 @@ export default function MatchReportingForm({
     setIsSubmitting(true);
 
     try {
-      const isDraw = player1Games === player2Games;
-      const winnerId = player1Games > player2Games ? player1.player_id : player2.player_id;
-      const loserId = player1Games > player2Games ? player2.player_id : player1.player_id;
+      // Invert logic for clarity on who is "player1" and "player2" in action
+      const p1Id = player1.player_id;
+      const p2Id = player2.player_id;
 
       const response = await submitResultWithGames(
         matchId,
-        isDraw ? null : winnerId,
-        isDraw ? null : loserId,
-        player1.player_id,
-        player1Games,
-        player2.player_id,
-        player2Games,
+        p1Id, player1Games, player1DeckId,
+        p2Id, player2Games, player2DeckId,
         tournamentId
       );
 
@@ -137,6 +151,27 @@ export default function MatchReportingForm({
             </Button>
           </div>
           <p className="text-xs text-slate-500">Games Won</p>
+
+          {player1ProfileId && userDecks.length > 0 && (
+            <div className="mt-4">
+              <Select onValueChange={setPlayer1DeckId} value={player1DeckId || ''}>
+                <SelectTrigger className="w-full bg-slate-950 border-slate-800">
+                  <SelectValue placeholder="Select Deck" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-800">
+                  <SelectItem value="" className="text-slate-400">No Deck Selected</SelectItem>
+                  {userDecks.map((deck) => (
+                    <SelectItem key={deck.id} value={deck.id}>
+                      {deck.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+           {player1ProfileId && userDecks.length === 0 && (
+             <p className="text-xs text-slate-500 mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
+           )}
         </div>
 
         {/* VS Divider */}
@@ -171,6 +206,26 @@ export default function MatchReportingForm({
             </Button>
           </div>
           <p className="text-xs text-slate-500">Games Won</p>
+          {player2ProfileId && userDecks.length > 0 && (
+            <div className="mt-4">
+              <Select onValueChange={setPlayer2DeckId} value={player2DeckId || ''}>
+                <SelectTrigger className="w-full bg-slate-950 border-slate-800">
+                  <SelectValue placeholder="Select Deck" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-800">
+                  <SelectItem value="" className="text-slate-400">No Deck Selected</SelectItem>
+                  {userDecks.map((deck) => (
+                    <SelectItem key={deck.id} value={deck.id}>
+                      {deck.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {player2ProfileId && userDecks.length === 0 && (
+             <p className="text-xs text-slate-500 mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
+           )}
         </div>
       </div>
 
