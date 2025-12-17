@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { headers } from 'next/headers'
 
 export async function login(prevState: any, formData: FormData) {
   const supabase = await createClient()
@@ -46,4 +47,44 @@ export async function signup(prevState: any, formData: FormData) {
 
   revalidatePath('/', 'layout')
   redirect('/')
+}
+
+export async function signInWithGoogle() {
+  const supabase = await createClient()
+  const origin = (await headers()).get('origin')
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  })
+
+  if (error) {
+    return { success: false, message: error.message }
+  }
+
+  if (data.url) {
+    redirect(data.url)
+  }
+}
+
+export async function signInWithDiscord() {
+  const supabase = await createClient()
+  const origin = (await headers()).get('origin')
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  })
+
+  if (error) {
+    return { success: false, message: error.message }
+  }
+
+  if (data.url) {
+    redirect(data.url)
+  }
 }
