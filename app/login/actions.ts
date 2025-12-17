@@ -20,7 +20,7 @@ export async function login(formData: FormData) {
     });
 
     if (error) {
-      return redirect("/login?message=Could not authenticate user");
+      return { message: error.message };
     }
 
     revalidatePath("/", "layout");
@@ -37,7 +37,7 @@ export async function login(formData: FormData) {
     });
 
     if (error) {
-      return redirect("/login?message=Could not authenticate user");
+      return { message: error.message };
     }
 
     return redirect("/login?message=Check email to continue sign in process");
@@ -62,9 +62,45 @@ export async function signup(formData: FormData) {
   const { error } = await supabase.auth.signUp(data);
 
   if (error) {
-    return redirect("/login?message=Could not authenticate user");
+    return { message: error.message };
   }
 
   revalidatePath("/", "layout");
   redirect("/login?message=Check email to continue sign in process");
+}
+
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${getURL()}auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { message: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+}
+
+export async function signInWithDiscord() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "discord",
+    options: {
+      redirectTo: `${getURL()}auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { message: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
 }

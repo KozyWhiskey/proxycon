@@ -27,14 +27,14 @@ export default function LoginForm() {
   const [isDiscordLoading, setIsDiscordLoading] = useState(false)
 
   async function handleLogin(formData: FormData) {
-    const res = await login(null, formData)
+    const res = await login(formData)
     if (res?.message) {
       toast.error(res.message)
     }
   }
 
   async function handleSignup(formData: FormData) {
-    const res = await signup(null, formData)
+    const res = await signup(formData)
     if (res?.message) {
       toast.error(res.message)
     }
