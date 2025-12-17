@@ -1,90 +1,70 @@
-'use server'
+"use server";
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
-import { getPublicUrl } from '@/lib/utils'
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-export async function login(prevState: any, formData: FormData) {
-  const supabase = await createClient()
+import { createClient } from "@/utils/supabase/server";
+import { getURL } from "@/lib/utils";
 
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+export async function login(formData: FormData) {
+  const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-  if (error) {
-    return { success: false, message: error.message }
-  }
+  // If password is provided, try password login
+  if (password) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  revalidatePath('/', 'layout')
-  redirect('/')
-}
-
-export async function signup(prevState: any, formData: FormData) {
-  const supabase = await createClient()
-
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const username = formData.get('username') as string
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-        data: {
-            username: username
-        }
+    if (error) {
+      return redirect("/login?message=Could not authenticate user");
     }
-  })
 
-  if (error) {
-    return { success: false, message: error.message }
-  }
+    revalidatePath("/", "layout");
+    redirect("/");
+  } 
+  // Otherwise fall back to Magic Link / OTP
+  else {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // This ensures the link sent to email points to the correct domain
+        emailRedirectTo: `${getURL()}auth/callback`,
+      },
+    });
 
-  revalidatePath('/', 'layout')
-  redirect('/')
-}
+    if (error) {
+      return redirect("/login?message=Could not authenticate user");
+    }
 
-export async function signInWithGoogle() {
-  const supabase = await createClient()
-  const origin = getPublicUrl()
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-    },
-  })
-
-  if (error) {
-    return { success: false, message: error.message }
-  }
-
-  if (data.url) {
-    redirect(data.url)
+    return redirect("/login?message=Check email to continue sign in process");
   }
 }
 
-export async function signInWithDiscord() {
-  const supabase = await createClient()
-  const origin = getPublicUrl()
+export async function signup(formData: FormData) {
+  const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'discord',
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  
+  const data = {
+    email,
+    password,
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      // This ensures the confirmation link points to the correct domain
+      emailRedirectTo: `${getURL()}auth/callback`,
     },
-  })
+  };
+
+  const { error } = await supabase.auth.signUp(data);
 
   if (error) {
-    return { success: false, message: error.message }
+    return redirect("/login?message=Could not authenticate user");
   }
 
-  if (data.url) {
-    redirect(data.url)
-  }
+  revalidatePath("/", "layout");
+  redirect("/login?message=Check email to continue sign in process");
 }
