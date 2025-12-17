@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { headers } from 'next/headers'
+import { getPublicUrl } from '@/lib/utils'
 
 export async function login(prevState: any, formData: FormData) {
   const supabase = await createClient()
@@ -51,7 +51,7 @@ export async function signup(prevState: any, formData: FormData) {
 
 export async function signInWithGoogle() {
   const supabase = await createClient()
-  const origin = (await headers()).get('origin')
+  const origin = getPublicUrl()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -71,7 +71,7 @@ export async function signInWithGoogle() {
 
 export async function signInWithDiscord() {
   const supabase = await createClient()
-  const origin = (await headers()).get('origin')
+  const origin = getPublicUrl()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
