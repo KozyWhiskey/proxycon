@@ -196,17 +196,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               </div>
             )}
             
-            {/* Desktop Stats/Description - shown under image on desktop */}
-            <div className="space-y-2">
-              <Label htmlFor="description-desktop" className="text-slate-100 font-medium">Oracle Text / Stats</Label>
-              <Textarea
-                id="description-desktop"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Card text, stats, or notes..."
-                className="bg-slate-950 border-slate-800 text-slate-300 min-h-[150px] font-mono text-sm resize-none"
-              />
-            </div>
+            {/* Desktop Stats/Description - REMOVED from left column to placce in wider right column */}
           </div>
 
           {/* Right Column (Desktop) / Main Column (Mobile): Form Inputs */}
@@ -325,15 +315,14 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               </div>
             </div>
 
-             {/* Mobile Description Input (Hidden on Desktop) */}
-            <div className="space-y-2 md:hidden">
-              <Label htmlFor="description-mobile" className="text-slate-100">Description / Stats</Label>
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-slate-100 font-medium">Oracle Text / Stats</Label>
               <Textarea
-                id="description-mobile"
+                id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Card text, stats, or notes..."
-                className="bg-slate-950 border-slate-800 text-slate-100 min-h-[100px]"
+                className="bg-slate-950 border-slate-800 text-slate-300 min-h-[150px] font-mono text-sm"
               />
             </div>
 
