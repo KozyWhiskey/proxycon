@@ -5,29 +5,29 @@ This document provides a comprehensive overview of the MTG League Platform proje
 ## 1. Project Overview
 
 **Goal**: Transition the application from a single-event "weekend companion" to a persistent Magic: The Gathering League Platform.
-**Current State**: The app currently serves as a mobile-first companion web application for a 3-day Magic: The Gathering tournament (ProxyCon 2025). It uses a simple cookie-based "impersonation" auth and assumes a single global context for all matches.
-**Target State**: The app will support multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking, and expanded Game Modes. The app is built for a small, casual group with a strong emphasis on "one-thumb" usability, zero-friction interactions, and instant feedback. It manages tournament brackets, match reporting, player stats, and more, all within a dark-mode, basement aesthetic.
+**Current State**: The app is currently in **V3 Development**, implementing robust Auth, Multi-Event support, and advanced features like Scryfall integration.
+**Target State**: A persistent platform supporting multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes. It manages tournament brackets, match reporting, player stats, and more, all within a dark-mode, basement aesthetic.
 
-### Core Features
+### Core Features (V3)
 
--   **Real User Accounts & Events**: Supports multiple events and real user accounts via Supabase Auth, moving beyond a single global context.
--   **Zero-Friction Auth**: Passwordless login using a player selection grid (will be replaced by standard Email/Password login in V2).
--   **Tournament Engine**: Swiss-style tournament management with draft seating, automatic round generation, and real-time standings.
+-   **Auth & Onboarding**: Secure identity via Supabase Auth (Email/Password) linked to a `public.profiles` table. Includes a mandatory onboarding flow (`/onboarding`) for new users to set usernames and preferences.
+-   **Events & Dashboard**: Support for multiple concurrent events. Users have a "Global Dashboard" for career stats and an "Event Dashboard" for specific tournament contexts.
+-   **Tournament Engine**: Swiss-style tournament management with draft seating, automatic round generation (using `tournament-pairings`), and real-time standings.
 -   **Match Reporting**: Simplified, thumb-friendly interface for reporting wins, losses, and draws.
--   **Dashboard**: A central hub for personal stats, active tournament information, and a live feed of recent matches.
+-   **Casual Mode**: Flexible logging for non-tournament games (Commander, 1v1) to track stats without affecting tournament brackets.
+-   **Deck Tracker**: Catalogue decks with performance tracking. Integrates with **Scryfall API** to auto-populate Commander details, card art, and oracle text.
+-   **Admin & Polish**: Dedicated `/admin` route for fixing match results and managing the system. Focus on "Dark Basement" aesthetic and mobile-first UX.
 -   **AI Commentary**: AI-generated "roasts" for match results, powered by the Vercel AI SDK and Google Gemini.
--   **Casual Mode**: Tracking for non-tournament games.
--   **Deck Tracking**: Allows users to track their decks, including colors, format, and win rates.
--   **Prize Wall & Ledger**: Planned features for managing ticket-based prizes and shared expenses.
 
 ### Tech Stack & Architecture
 
 -   **Framework**: Next.js 16 (App Router)
 -   **Language**: TypeScript
 -   **Database**: Supabase (Cloud PostgreSQL) with Row Level Security.
--   **Authentication**: Custom cookie-based session management (no passwords, will transition to Supabase Auth with Email/Password in V2).
+-   **Authentication**: Supabase Auth (Email/Password) + `public.profiles`.
 -   **Styling**: Tailwind CSS with Shadcn UI (Slate dark theme).
 -   **AI**: Vercel AI SDK with Google Gemini.
+-   **External APIs**: Scryfall API (Card data).
 -   **Key Libraries**: `tournament-pairings` for Swiss logic, `zod` for validation, `sonner` for toast notifications.
 
 ## 2. Building and Running
@@ -76,34 +76,34 @@ This project follows strict development patterns to ensure stability and consist
 -   **Server Actions**: All server actions should be wrapped in `try/catch` blocks and return a `{ success: boolean, message: string }` object to provide clear feedback to the client for toast notifications.
 -   **Styling**: Adhere to the "Dark Basement Aesthetic" using Tailwind CSS classes and pre-configured Shadcn UI components. Touch targets must be at least 48px (`h-12`).
 -   **State Management**: Favor server-side state and URL-based state management where possible. Client-side state is managed with React hooks (`useState`, `useReducer`).
+-   **User Data**: Always fetch user data via `getCurrentUser()` or `supabase.auth.getUser()`. Never rely on legacy tables.
 
 ## 4. Key Files and Directories
 
 -   `app/`: The core of the Next.js application using the App Router.
-    -   `app/page.tsx`: The main dashboard page (will be refactored to be the "Global Landing" for events).
-    -   `app/login/page.tsx`: The player selection screen for authentication (will be replaced with standard Email/Password login).
-    -   `app/tournament/`: Contains pages for creating, managing, and viewing tournaments.
-        -   `app/tournament/[id]/seating/page.tsx`: The visual draft seating selection page.
-        -   `app/tournament/[id]/match/[matchId]/page.tsx`: The match reporting interface.
-    -   `app/play/casual/page.tsx`: The interface for logging non-tournament games.
-    -   `app/events/`: New directory for event management.
-        -   `app/events/new`: Page for creating new events.
+    -   `app/page.tsx`: Global Landing / Dashboard.
+    -   `app/login/page.tsx`: Standard Supabase Auth login.
+    -   `app/onboarding/page.tsx`: New user onboarding flow.
+    -   `app/admin/`: Admin tools (Fix Match, etc.).
+    -   `app/tournament/`: Tournament management.
+        -   `app/tournament/[id]/seating/page.tsx`: Draft seating.
+        -   `app/tournament/[id]/match/[matchId]/page.tsx`: Match reporting.
+    -   `app/play/casual/page.tsx`: Casual game logging.
+    -   `app/events/`: Event management.
+        -   `app/events/new`: Create new events.
         -   `app/events/[id]/page.tsx`: Event-specific dashboard.
-    -   `app/decks/`: New directory for deck tracking.
-        -   `app/decks/page.tsx`: List of user's decks.
--   `components/`: Reusable React components, organized by feature (dashboard, tournament, shop).
+    -   `app/decks/`: Deck tracking and Scryfall search.
+        -   `app/decks/page.tsx`: Deck library.
+-   `components/`: Reusable React components.
     -   `components/ui/`: Core Shadcn UI components.
-    -   `components/dashboard/user-header.tsx`: Will be updated to add Avatar/Profile link.
-    -   `components/tournament/match-reporting-form.tsx`: Will be updated to integrate deck selection.
+    -   `components/decks/deck-form.tsx`: Includes Scryfall search integration.
 -   `utils/supabase/`: Supabase client configuration.
-    -   `client.ts`: Client-side (browser) Supabase client.
-    -   `server.ts`: Server-side Supabase client with async cookie handling.
-    -   `middleware.ts`: Middleware for refreshing user sessions.
--   `app/tournament/actions.ts`: Server Actions related to tournament management (creating tournaments, submitting results, etc.).
--   `.dev-docs/`: Contains extensive project documentation.
-    -   `PROJECT_SUMMARY.md`: The complete project specification.
-    -   `DATABASE_STRUCTURE.md`: Detailed database schema.
-    -   `TOURNAMENT_RULES.md`: Critical development rules and patterns.
--   `proxy.ts`: A workaround for Next.js 16 to replace the traditional `middleware.ts` for session management.
--   `package.json`: Project dependencies and scripts.
--   `README.md`: High-level project overview and setup instructions.
+    -   `client.ts`: Client-side client.
+    -   `server.ts`: Server-side client.
+    -   `middleware.ts`: Session management.
+-   `app/tournament/actions.ts`: Tournament Server Actions.
+-   `.dev-docs/`: Project documentation.
+    -   `features/`: V3 Feature specifications.
+-   `proxy.ts`: Next.js 16 middleware workaround.
+-   `package.json`: Project dependencies.
+-   `README.md`: High-level overview.

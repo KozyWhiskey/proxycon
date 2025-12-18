@@ -108,7 +108,7 @@ export default function DeckCard({ deck }: DeckCardProps) {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800">
+        <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-5xl">
           <DialogHeader>
             <DialogTitle>Edit Deck</DialogTitle>
           </DialogHeader>
