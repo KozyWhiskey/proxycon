@@ -13,13 +13,13 @@ import { Profile, Deck } from '@/lib/types'; // Updated import
 
 interface CasualGameFormProps {
   players: Profile[]; // Changed to Profile[]
-  userDecks: Deck[];
+  allDecks: Deck[];
   eventId?: string;
 }
 
 type GameFormat = 'commander' | '1v1' | '2hg' | 'ffa' | 'limited';
 
-export default function CasualGameForm({ players, userDecks, eventId }: CasualGameFormProps) {
+export default function CasualGameForm({ players, allDecks, eventId }: CasualGameFormProps) {
   const router = useRouter();
   const [format, setFormat] = useState<GameFormat>('commander');
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]); // Changed to selectedProfiles
@@ -184,6 +184,9 @@ export default function CasualGameForm({ players, userDecks, eventId }: CasualGa
               const profile = players.find((p) => p.id === profileId); // Changed to profile
               if (!profile) return null;
               const isWinner = winnerProfileIds.includes(profileId); // Changed to winnerProfileIds, profileId
+              
+              // Filter decks for this player
+              const playerDecks = allDecks.filter(d => d.owner_id === profileId);
 
               return (
                 <div key={profileId} className="flex flex-col gap-2 p-3 bg-slate-950/50 rounded-lg border border-slate-800">
@@ -207,9 +210,13 @@ export default function CasualGameForm({ players, userDecks, eventId }: CasualGa
                         <SelectValue placeholder="Select Deck (Optional)" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800">
-                        {userDecks.map(deck => (
-                            <SelectItem key={deck.id} value={deck.id}>{deck.name}</SelectItem>
-                        ))}
+                        {playerDecks.length > 0 ? (
+                            playerDecks.map(deck => (
+                                <SelectItem key={deck.id} value={deck.id}>{deck.name}</SelectItem>
+                            ))
+                        ) : (
+                            <SelectItem value="none" disabled>No decks found</SelectItem>
+                        )}
                     </SelectContent>
                    </Select>
                 </div>

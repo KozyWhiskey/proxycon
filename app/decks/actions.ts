@@ -26,11 +26,14 @@ export async function createDeck(formData: FormData): Promise<DeckActionResult> 
   const format = formData.get('format') as string;
   const colors = formData.getAll('colors') as string[]; // Array of strings
   const commanderName = formData.get('commanderName') as string | null;
+  const imageUrl = formData.get('imageUrl') as string | null;
+  const description = formData.get('description') as string | null;
 
   if (!name || !format) {
     return { success: false, message: 'Name and Format are required.' };
   }
 
+  // NOTE: Requires 'image_url' and 'description' columns in 'decks' table.
   const { data, error } = await supabase
     .from('decks')
     .insert({
@@ -39,6 +42,8 @@ export async function createDeck(formData: FormData): Promise<DeckActionResult> 
       format,
       colors: colors.length > 0 ? colors : null,
       commander_name: commanderName || null,
+      image_url: imageUrl || null,
+      description: description || null,
     })
     .select('id')
     .single();
@@ -66,6 +71,8 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
   const format = formData.get('format') as string;
   const colors = formData.getAll('colors') as string[];
   const commanderName = formData.get('commanderName') as string | null;
+  const imageUrl = formData.get('imageUrl') as string | null;
+  const description = formData.get('description') as string | null;
 
   if (!name || !format) {
     return { success: false, message: 'Name and Format are required.' };
@@ -78,6 +85,8 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
       format,
       colors: colors.length > 0 ? colors : null,
       commander_name: commanderName || null,
+      image_url: imageUrl || null,
+      description: description || null,
     })
     .eq('id', deckId)
     .eq('owner_id', authData.user.id); // Ensure ownership

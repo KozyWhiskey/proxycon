@@ -40,6 +40,8 @@ export interface Deck {
   format: string; // 'commander', 'modern', etc.
   colors: string[] | null; // ['W', 'U', 'B', 'R', 'G']
   commander_name: string | null;
+  image_url: string | null;
+  description: string | null;
   created_at: string;
 }
 

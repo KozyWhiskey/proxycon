@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentUser } from '@/lib/get-current-user';
-import { getUsersDecks } from '@/app/decks/actions';
 import { redirect } from 'next/navigation';
 import CasualGameForm from '@/components/casual/casual-game-form';
 import PageHeader from '@/components/ui/page-header';
@@ -34,8 +33,11 @@ export default async function CasualPlayPage({ searchParams }: PageProps) {
     // Handle error gracefully
   }
 
-  // Fetch current user's decks
-  const { decks, error: decksError } = await getUsersDecks();
+  // Fetch ALL decks to allow selecting decks for any player
+  const { data: decks, error: decksError } = await supabase
+    .from('decks')
+    .select('*')
+    .order('name', { ascending: true });
 
   if (decksError) {
     console.error('Error fetching decks:', decksError);
@@ -53,7 +55,7 @@ export default async function CasualPlayPage({ searchParams }: PageProps) {
       <div className="max-w-2xl mx-auto p-4">
         <CasualGameForm 
           players={profiles || []} // Pass profiles
-          userDecks={decks || []} 
+          allDecks={decks || []} 
           eventId={eventId}
         />
       </div>

@@ -2,13 +2,13 @@ import { createClient } from '@/utils/supabase/server';
 import { getCurrentUser } from '@/lib/get-current-user';
 import { getUsersDecks } from './actions';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Swords, Trash2, Edit2 } from 'lucide-react';
-import Link from 'next/link';
-import DeckForm from '@/components/decks/deck-form'; // Fixed Import Path
+import { Plus } from 'lucide-react';
+import DeckForm from '@/components/decks/deck-form';
+import DeckCard from '@/components/decks/deck-card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import PageHeader from '@/components/ui/page-header';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default async function DecksPage() {
   const supabase = await createClient();
@@ -64,35 +64,7 @@ export default async function DecksPage() {
         {decks && decks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {decks.map((deck) => (
-              <Card key={deck.id} className="bg-slate-900 border-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-xl text-slate-100 flex items-center gap-2">
-                    <Swords className="w-5 h-5 text-yellow-500" />
-                    {deck.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-between items-center">
-                  <div>
-                    <p className="text-slate-400 text-sm">{deck.format} {deck.commander_name ? `(${deck.commander_name})` : ''}</p>
-                    {deck.colors && deck.colors.length > 0 && (
-                      <div className="flex gap-1 mt-1">
-                        {deck.colors.map((color: string) => (
-                          <span key={color} className={`w-4 h-4 rounded-full ${color === 'W' ? 'bg-white' : color === 'U' ? 'bg-blue-500' : color === 'B' ? 'bg-black' : color === 'R' ? 'bg-red-500' : 'bg-green-500'} border border-slate-700`} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {/* In a real app, these would open edit/delete dialogs */}
-                    <Button variant="outline" size="icon" className="h-8 w-8 text-slate-400 hover:text-white border-slate-700">
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="destructive" size="icon" className="h-8 w-8">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <DeckCard key={deck.id} deck={deck} />
             ))}
           </div>
         ) : (
