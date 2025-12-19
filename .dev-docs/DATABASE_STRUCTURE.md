@@ -1,6 +1,6 @@
 # Database Structure (V3 Architecture)
 
-**Last Updated:** December 17, 2025 - V3 "Fresh Start" Architecture
+**Last Updated:** December 19, 2025 - V3 "Fresh Start" Architecture
 **Database:** Supabase (PostgreSQL)
 
 ---
@@ -82,6 +82,8 @@ Global library of user decks.
 | `format` | TEXT | NOT NULL | Deck format ('commander', 'modern', etc.) |
 | `colors` | TEXT[] | NULLABLE | Array of colors ['W', 'U', 'B', 'R', 'G'] |
 | `commander_name` | TEXT | NULLABLE | Name of the commander |
+| `image_url` | TEXT | NULLABLE | URL to deck art/image |
+| `description` | TEXT | NULLABLE | Deck description/notes |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
 
 ---
@@ -122,11 +124,13 @@ The atomic unit of gameplay. Used for BOTH Tournaments and Casual play.
 | `event_id` | UUID | FK → events.id, NULLABLE | Required for event stats |
 | `tournament_id` | UUID | FK → tournaments.id, NULLABLE | Null if casual game |
 | `round_number` | INTEGER | NULLABLE | Round number (if tournament) |
+| `table_number` | INTEGER | NULLABLE | Table number for the match |
 | `game_type` | TEXT | NOT NULL | Game type ('commander', 'draft_1v1') |
 | `started_at` | TIMESTAMP | NULLABLE | Timer start / Match start |
 | `completed_at` | TIMESTAMP | NULLABLE | Match completion time |
 | `paused_at` | TIMESTAMP | NULLABLE | Timer paused timestamp |
 | `remaining_seconds` | INTEGER | NULLABLE | Timer state |
+| `total_paused_seconds` | INTEGER | DEFAULT 0 | Total time paused in seconds |
 | `ai_commentary` | TEXT | NULLABLE | AI-generated match summary |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Match creation timestamp |
 

@@ -6,6 +6,8 @@ import ActiveTournament from '@/components/dashboard/active-tournament';
 import Feed from '@/components/dashboard/feed';
 import UserHeader from '@/components/dashboard/user-header';
 import QuickActions from '@/components/dashboard/quick-actions';
+import ManageMembersDialog from '@/components/events/manage-members-dialog';
+import { getEventMembers } from '@/app/events/actions';
 import {
   calculateStandings,
   sortStandings,
@@ -55,9 +57,12 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
   // Fetch Event Details
   const { data: event } = await supabase
     .from('events')
-    .select('name')
+    .select('name, invite_code')
     .eq('id', eventId)
     .single();
+
+  // Fetch Event Members
+  const members = await getEventMembers(eventId);
 
   // Fetch active tournaments FOR THIS EVENT
   const { data: activeTournaments } = await supabase
@@ -121,19 +126,113 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
     })
   );
 
-  // Calculate user stats FOR THIS EVENT (Simplified for V3)
-  const casualWins = 0; // Will re-implement later with V3 match_participants
-  const casualWinDetails: any[] = []; // Placeholder
-  const tournamentFirstPlace = 0; // Placeholder
-  const tournamentSecondPlace = 0; // Placeholder
-  const tournamentThirdPlace = 0; // Placeholder
-  const tournamentWins = 0; // Placeholder
-  const tournamentLosses = 0; // Placeholder
-  const tournamentDraws = 0; // Placeholder
-  const tournamentWinRate = '0.0'; // Placeholder
+  // --- 1. Fetch Stats (Casual & Tournament Matches) ---
+  const { data: userMatches } = await supabase
+    .from('match_participants')
+    .select(`
+      result,
+      match:matches (
+        id,
+        game_type,
+        created_at,
+        tournament_id,
+        event_id
+      )
+    `)
+    .eq('profile_id', currentProfileId)
+    .not('match', 'is', null) // Ensure match exists
+    .filter('match.event_id', 'eq', eventId); // Filter by this event
+
+  // Process stats in memory (efficient enough for single user/event)
+  let casualWins = 0;
+  let tournamentWins = 0;
+  let tournamentLosses = 0;
+  let tournamentDraws = 0;
+  const casualWinDetails: any[] = [];
+
+  // Helper to get opponents for a match (for casual details)
+  // We'll fetch these in bulk if needed, but for now let's just show game type
   
-  // Recent Matches for Feed - Filtered by EVENT_ID (Simplified for V3)
-  const formattedMatches: any[] = []; // Will re-implement later with V3 match_participants
+  if (userMatches) {
+    for (const record of userMatches) {
+      // @ts-ignore - Supabase type inference for joined tables can be tricky
+      const matchData = record.match;
+      const match = Array.isArray(matchData) ? matchData[0] : matchData;
+      
+      if (!match) continue;
+
+      if (match.tournament_id) {
+        // Tournament Stats
+        if (record.result === 'win') tournamentWins++;
+        else if (record.result === 'loss') tournamentLosses++;
+        else if (record.result === 'draw') tournamentDraws++;
+      } else {
+        // Casual Stats
+        if (record.result === 'win') {
+          casualWins++;
+          casualWinDetails.push({
+            gameType: match.game_type || 'Casual',
+            createdAt: match.created_at,
+            // We could fetch opponents here if strictly necessary, but it's N+1. 
+            // For now, leaving opponents undefined is acceptable per the interface.
+          });
+        }
+      }
+    }
+  }
+
+  const tournamentTotal = tournamentWins + tournamentLosses + tournamentDraws;
+  const tournamentWinRate = tournamentTotal > 0
+    ? ((tournamentWins / tournamentTotal) * 100).toFixed(1)
+    : '0.0';
+
+  // Placeholder for Placements (Requires analyzing full tournament history)
+  const tournamentFirstPlace = 0;
+  const tournamentSecondPlace = 0;
+  const tournamentThirdPlace = 0;
+
+
+  // --- 2. Fetch Feed Data (Recent Matches for Event) ---
+  const { data: recentMatches } = await supabase
+    .from('matches')
+    .select(`
+      id,
+      tournament_id,
+      round_number,
+      game_type,
+      created_at,
+      participants:match_participants (
+        id,
+        profile_id,
+        result,
+        profile:profiles (
+          id,
+          display_name,
+          username
+        )
+      )
+    `)
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  const formattedMatches = (recentMatches || []).map((m: any) => ({
+    id: m.id,
+    tournament_id: m.tournament_id,
+    round_number: m.round_number,
+    game_type: m.game_type,
+    created_at: m.created_at,
+    participants: m.participants.map((p: any) => ({
+      id: p.id,
+      player_id: p.profile_id,
+      result: p.result,
+      player: {
+        id: p.profile.id,
+        name: p.profile.display_name,
+        nickname: p.profile.display_name // Fallback to display_name
+      }
+    }))
+  }));
 
   return (
     <main className="min-h-screen bg-slate-950 pb-24">
@@ -152,6 +251,13 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
             <h1 className="text-4xl font-bold text-slate-100 mb-2">{event?.name || 'Event Dashboard'}</h1>
             <p className="text-slate-400 text-sm">ProxyCon Platform</p>
           </div>
+          <ManageMembersDialog 
+            eventId={eventId}
+            eventName={event?.name || 'Event'}
+            inviteCode={event?.invite_code}
+            initialMembers={members}
+            canManage={['owner', 'admin'].includes(eventMember.role)}
+          />
         </div>
         
         {/* MyStats will need to be refactored to use V3 schema */}

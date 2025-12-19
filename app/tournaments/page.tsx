@@ -138,7 +138,7 @@ export default async function TournamentsPage() {
 
   // Get user's events
   const { data: userEvents } = await supabase
-    .from('event_participants')
+    .from('event_members')
     .select('event_id')
     .eq('profile_id', user.id);
 

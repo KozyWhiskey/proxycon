@@ -176,7 +176,7 @@ export default function FixMatchResult() {
             <SelectTrigger className="w-full h-12 bg-slate-800 border-slate-700 text-slate-100">
               <SelectValue placeholder="Choose a match..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-900 border-slate-800">
               {matches.map((match) => {
                 const participants = match.participants
                   .map((p) => p.profile?.display_name || p.profile?.username || 'Unknown')

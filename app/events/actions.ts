@@ -48,13 +48,13 @@ export async function createEvent(
     return { success: false, message: eventError?.message || 'Failed to create event' };
   }
 
-  // 2. Add creator as admin participant
+  // 2. Add creator as owner
   const { error: participantError } = await supabase
     .from('event_members')
     .insert({
       event_id: event.id,
       profile_id: user.id,
-      role: 'admin',
+      role: 'owner',
     });
 
   if (participantError) {
@@ -113,4 +113,109 @@ export async function joinEvent(inviteCode: string): Promise<CreateEventResult> 
 
   revalidatePath('/');
   return { success: true, eventId: event.id };
+}
+
+export async function searchProfiles(query: string) {
+  const supabase = await createClient();
+  
+  if (!query || query.length < 2) return [];
+
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url')
+    .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+    .limit(10);
+
+  if (error) {
+    console.error('Error searching profiles:', error);
+    return [];
+  }
+
+  return profiles || [];
+}
+
+export async function addEventMember(eventId: string, profileId: string) {
+  const supabase = await createClient();
+  
+  // Check if already a member
+  const { data: existing } = await supabase
+    .from('event_members')
+    .select('event_id')
+    .eq('event_id', eventId)
+    .eq('profile_id', profileId)
+    .single();
+
+  if (existing) {
+    return { success: false, message: 'User is already a member of this event.' };
+  }
+
+  const { error } = await supabase
+    .from('event_members')
+    .insert({
+      event_id: eventId,
+      profile_id: profileId,
+      role: 'player', // Default role
+    });
+
+  if (error) {
+    console.error('Error adding member:', error);
+    return { success: false, message: 'Failed to add member.' };
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
+}
+
+export async function removeEventMember(eventId: string, profileId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('event_members')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('profile_id', profileId);
+
+  if (error) {
+    console.error('Error removing member:', error);
+    return { success: false, message: 'Failed to remove member.' };
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
+}
+
+export async function getEventMembers(eventId: string) {
+  const supabase = await createClient();
+
+  const { data: members, error } = await supabase
+    .from('event_members')
+    .select(`
+      role,
+      joined_at,
+      profile:profiles (
+        id,
+        username,
+        display_name,
+        avatar_url
+      )
+    `)
+    .eq('event_id', eventId);
+
+  if (error) {
+    console.error('Error fetching members:', error);
+    return [];
+  }
+
+  // Flatten the structure for easier consumption
+  return members.map((m: any) => {
+    const profile = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+    return {
+      id: profile?.id,
+      username: profile?.username,
+      display_name: profile?.display_name,
+      avatar_url: profile?.avatar_url,
+      role: m.role,
+      joined_at: m.joined_at,
+    };
+  });
 }
