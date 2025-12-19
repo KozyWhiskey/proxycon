@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import PageHeader from '@/components/ui/page-header';
+import JoinEventDialog from '@/components/events/join-event-dialog';
 
 export default async function EventsPage() {
   const supabase = await createClient();
@@ -31,10 +32,21 @@ export default async function EventsPage() {
         subtitle="Your Active Events"
         backHref="/"
         backLabel="Home"
+        actions={
+          <div className="flex gap-2">
+            <JoinEventDialog />
+            <Button asChild className="bg-yellow-500 hover:bg-yellow-600 text-black">
+              <Link href="/events/new">
+                <Plus className="w-4 h-4 mr-2" />
+                New Event
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
-        <div className="grid gap-4">
+      <div className="max-w-7xl mx-auto p-4 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {myEvents.map((event: any) => (
             <Link key={event.id} href={`/events/${event.id}`}>
               <Card className="bg-slate-900 border-slate-800 hover:border-yellow-500/50 transition-colors cursor-pointer group">
@@ -62,28 +74,20 @@ export default async function EventsPage() {
           ))}
 
           {myEvents.length === 0 && (
-            <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-lg col-span-full">
               <p className="text-slate-400 mb-4">You haven't joined any events yet.</p>
-              <Button asChild className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                <Link href="/events/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create First Event
-                </Link>
-              </Button>
+              <div className="flex justify-center gap-4">
+                <JoinEventDialog />
+                <Button asChild className="bg-yellow-500 hover:bg-yellow-600 text-black">
+                  <Link href="/events/new">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Event
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>
-
-        {myEvents.length > 0 && (
-          <div className="flex justify-center mt-8">
-             <Button asChild variant="outline" className="border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800">
-                <Link href="/events/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Event
-                </Link>
-              </Button>
-          </div>
-        )}
       </div>
     </main>
   );

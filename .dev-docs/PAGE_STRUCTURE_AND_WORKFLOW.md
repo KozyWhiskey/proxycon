@@ -41,6 +41,11 @@ This document provides a comprehensive overview of the application's page struct
 - **`/profile`**: User settings and profile management (Name, Avatar).
 - **`app/decks/page.tsx`, `app/profile/page.tsx`**
 
+### Community & Players
+- **`/players`**: The Global Player Directory. Lists all registered users with summary stats (Win %, Title Count).
+- **`/players/[id]`**: Public Player Profile. Shows detailed stats, deck library, and recent match history.
+- **`app/players/page.tsx`, `app/players/[id]/page.tsx`**
+
 ---
 
 ## 2. Core UX Workflows
@@ -91,6 +96,34 @@ This document provides a comprehensive overview of the application's page struct
     -   Go to **Home (`/`)**.
     -   View total career wins across *all* events.
 
+### D. Quick Actions & Context Awareness
+*Understanding where your games go.*
+
+The Home Screen (`/`) provides **Quick Actions**, but their behavior depends on whether you are in a specific **Event Context** or the **Global Context**.
+
+1.  **Global Context (Home Screen):**
+    -   **"Create New Event":** (Primary Action) The recommended flow for a group gathering. Creates a container for multiple tournaments and games.
+    -   **"New Tournament" (One-Shot):** Creates a standalone tournament *not* linked to any event. Useful for a quick draft night with no broader tracking.
+    -   **"Log Casual Game" (One-Shot):** Logs a single game to your personal history, but it won't appear on any Event Leaderboard.
+    -   **"View All Tournaments":** Links to `/tournaments` to see history.
+    -   **"Community":** Links to `/players` to browse the player directory.
+
+2.  **Event Context (Event Dashboard):**
+    -   **"New Tournament":** Automatically links the tournament to the current Event.
+    -   **"Log Casual Game":** Automatically links the game to the current Event (contributing to Event stats).
+
+### E. Community Exploration
+*Discovering other players and their stats.*
+
+1.  **Global Directory:**
+    -   Accessible via "Quick Actions" on Home or "Directory" button on Stats page.
+    -   View leaderboard-style summary of all players.
+2.  **Player Deep Dive:**
+    -   Click a player card to view their full profile.
+    -   See their career "box score" (Wins/Losses/Streaks).
+    -   Browse their public Deck Library.
+    -   Analyze their recent form via Match History.
+
 ---
 
 ## 3. Navigation Structure (Bottom Bar)
@@ -107,9 +140,14 @@ The app uses a sticky bottom navigation bar for quick access to top-level contex
 
 ## 4. UI Design Patterns
 
--   **One-Thumb Usability**: Primary actions are large buttons at the bottom of cards or the screen.
--   **Dark Mode**: The UI is permanently dark mode (Slate/Gray palette) with specific accent colors:
+**See Full Standards:** `.dev-docs/UX_UI_STANDARDS.md`
+
+-   **Philosophy:** Mobile-First, Desktop-Optimized.
+    -   **Mobile:** "One-Thumb" usability. Sticky bottom nav. Stacked layouts.
+    -   **Desktop:** Expanded grids (`max-w-7xl`), Split-view modals, and side-by-side forms.
+-   **Dark Mode:** The UI is permanently dark mode (Slate/Gray palette) with specific accent colors:
     -   **Yellow/Gold**: Tournament actions, buttons, and highlights.
     -   **Emerald/Green**: Casual play actions.
     -   **Cyan**: Information/Timers.
--   **Standard Headers**: All pages use a standardized top bar with a Back button, Title, Subtitle, and optional Action button (right-aligned).
+-   **Standard Headers:** All pages use a standardized top bar with a Back button, Title, Subtitle, and optional Action button (right-aligned).
+-   **Dialogs:** Desktop dialogs expand to `max-w-5xl` or `max-w-6xl` to utilize screen space.

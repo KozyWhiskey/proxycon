@@ -46,7 +46,7 @@ export default async function Home() {
         />
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 space-y-6">
         
         {/* Status Card */}
         <div className="grid grid-cols-2 gap-4">

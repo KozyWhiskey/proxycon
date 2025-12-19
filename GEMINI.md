@@ -5,19 +5,24 @@ This document provides a comprehensive overview of the MTG League Platform proje
 ## 1. Project Overview
 
 **Goal**: Transition the application from a single-event "weekend companion" to a persistent Magic: The Gathering League Platform.
-**Current State**: The app is currently in **V3 Development**, implementing robust Auth, Multi-Event support, and advanced features like Scryfall integration.
-**Target State**: A persistent platform supporting multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes. It manages tournament brackets, match reporting, player stats, and more, all within a dark-mode, basement aesthetic.
+**Current State**: The app is in **V3 Development** and has achieved **Stable V3 Architecture**.
+**Target State**: A persistent platform supporting multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes.
 
 ### Core Features (V3)
 
--   **Auth & Onboarding**: Secure identity via Supabase Auth (Email/Password) linked to a `public.profiles` table. Includes a mandatory onboarding flow (`/onboarding`) for new users to set usernames and preferences.
--   **Events & Dashboard**: Support for multiple concurrent events. Users have a "Global Dashboard" for career stats and an "Event Dashboard" for specific tournament contexts.
--   **Tournament Engine**: Swiss-style tournament management with draft seating, automatic round generation (using `tournament-pairings`), and real-time standings.
--   **Match Reporting**: Simplified, thumb-friendly interface for reporting wins, losses, and draws.
--   **Casual Mode**: Flexible logging for non-tournament games (Commander, 1v1) to track stats without affecting tournament brackets.
--   **Deck Tracker**: Catalogue decks with performance tracking. Integrates with **Scryfall API** to auto-populate Commander details, card art, and oracle text.
--   **Admin & Polish**: Dedicated `/admin` route for fixing match results and managing the system. Focus on "Dark Basement" aesthetic and mobile-first UX.
--   **AI Commentary**: AI-generated "roasts" for match results, powered by the Vercel AI SDK and Google Gemini.
+-   **Auth & Onboarding**: Secure identity via Supabase Auth (Email/Password) linked to a `public.profiles` table. Includes a mandatory onboarding flow (`/onboarding`).
+-   **Events & Dashboard**: Support for multiple concurrent events.
+    -   **Global Dashboard**: Personal career stats and "One-Shot" quick actions.
+    -   **Event Dashboard**: Hub for a specific tournament weekend/league.
+    -   **Workflow**: Distinct flows for Creating vs. Joining events (via Invite Code).
+-   **Tournament Engine**: Swiss-style tournament management with draft seating, automatic round generation, and real-time standings.
+-   **Deck Tracker**: Catalogue decks with performance tracking.
+    -   **Scryfall Integration**: Search cards, auto-populate details, and **select specific art/prints**.
+-   **UX/UI Standards**: "Mobile-First, Desktop-Optimized".
+    -   Responsive grids (`max-w-7xl` on desktop).
+    -   Split-view forms for complex inputs (Deck Editor).
+    -   Context-aware Quick Actions (Global vs. Event).
+-   **Casual Mode**: Flexible logging for non-tournament games (Commander, 1v1).
 
 ### Tech Stack & Architecture
 
@@ -27,8 +32,7 @@ This document provides a comprehensive overview of the MTG League Platform proje
 -   **Authentication**: Supabase Auth (Email/Password) + `public.profiles`.
 -   **Styling**: Tailwind CSS with Shadcn UI (Slate dark theme).
 -   **AI**: Vercel AI SDK with Google Gemini.
--   **External APIs**: Scryfall API (Card data).
--   **Key Libraries**: `tournament-pairings` for Swiss logic, `zod` for validation, `sonner` for toast notifications.
+-   **External APIs**: Scryfall API (Card data & Art).
 
 ## 2. Building and Running
 
@@ -40,70 +44,33 @@ This document provides a comprehensive overview of the MTG League Platform proje
 
 ### Key Commands
 
--   **Install Dependencies**:
-    ```bash
-    npm install
-    ```
--   **Run Development Server**:
-    ```bash
-    npm run dev
-    ```
-    The application will be available at `http://localhost:3000`.
-
--   **Build for Production**:
-    ```bash
-    npm run build
-    ```
--   **Start Production Server**:
-    ```bash
-    npm start
-    ```
--   **Lint Code**:
-    ```bash
-    npm run lint
-    ```
--   **Seed Database** (Optional):
-    ```bash
-    npm run seed
-    ```
+-   **Install Dependencies**: `npm install`
+-   **Run Dev Server**: `npm run dev` (http://localhost:3000)
+-   **Build**: `npm run build`
+-   **Lint**: `npm run lint`
 
 ## 3. Development Conventions
 
-This project follows strict development patterns to ensure stability and consistency.
-
--   **Next.js 16 Async Cookies**: Server components **must** use `await cookies()` to access the cookie store. Direct calls like `cookies().get()` will fail.
--   **Supabase SSR**: All server-side database operations must use the `createServerClient` from `@supabase/ssr` to handle cookie-based authentication correctly. Do not use the standard `createClient`.
--   **Server Actions**: All server actions should be wrapped in `try/catch` blocks and return a `{ success: boolean, message: string }` object to provide clear feedback to the client for toast notifications.
--   **Styling**: Adhere to the "Dark Basement Aesthetic" using Tailwind CSS classes and pre-configured Shadcn UI components. Touch targets must be at least 48px (`h-12`).
--   **State Management**: Favor server-side state and URL-based state management where possible. Client-side state is managed with React hooks (`useState`, `useReducer`).
--   **User Data**: Always fetch user data via `getCurrentUser()` or `supabase.auth.getUser()`. Never rely on legacy tables.
+-   **Next.js 16 Async Cookies**: Always use `await cookies()`.
+-   **Supabase SSR**: Use `createServerClient`.
+-   **Database Schema**: V3 Schema uses `event_members` (NOT `event_participants`). Use `verify_and_update_v3_schema.sql` to sync.
+-   **Styling**: Follow `.dev-docs/UX_UI_STANDARDS.md`.
+    -   Forms/Dialogs on Desktop: `sm:max-w-5xl` or `sm:max-w-6xl`.
+    -   Page Containers: `max-w-7xl mx-auto`.
 
 ## 4. Key Files and Directories
 
--   `app/`: The core of the Next.js application using the App Router.
-    -   `app/page.tsx`: Global Landing / Dashboard.
-    -   `app/login/page.tsx`: Standard Supabase Auth login.
-    -   `app/onboarding/page.tsx`: New user onboarding flow.
-    -   `app/admin/`: Admin tools (Fix Match, etc.).
-    -   `app/tournament/`: Tournament management.
-        -   `app/tournament/[id]/seating/page.tsx`: Draft seating.
-        -   `app/tournament/[id]/match/[matchId]/page.tsx`: Match reporting.
-    -   `app/play/casual/page.tsx`: Casual game logging.
-    -   `app/events/`: Event management.
-        -   `app/events/new`: Create new events.
-        -   `app/events/[id]/page.tsx`: Event-specific dashboard.
-    -   `app/decks/`: Deck tracking and Scryfall search.
-        -   `app/decks/page.tsx`: Deck library.
--   `components/`: Reusable React components.
-    -   `components/ui/`: Core Shadcn UI components.
-    -   `components/decks/deck-form.tsx`: Includes Scryfall search integration.
--   `utils/supabase/`: Supabase client configuration.
-    -   `client.ts`: Client-side client.
-    -   `server.ts`: Server-side client.
-    -   `middleware.ts`: Session management.
--   `app/tournament/actions.ts`: Tournament Server Actions.
+-   `app/`: App Router.
+    -   `app/page.tsx`: Global Dashboard (Context-aware Quick Actions).
+    -   `app/events/page.tsx`: Event List + Join/Create Actions.
+    -   `app/events/[id]/page.tsx`: Event Dashboard.
+    -   `app/decks/`: Deck library.
+-   `components/`: React components.
+    -   `components/dashboard/quick-actions.tsx`: Context-aware action buttons.
+    -   `components/decks/deck-form.tsx`: Scryfall search & Art selection.
+    -   `components/events/join-event-dialog.tsx`: Client-side join modal.
 -   `.dev-docs/`: Project documentation.
-    -   `features/`: V3 Feature specifications.
--   `proxy.ts`: Next.js 16 middleware workaround.
--   `package.json`: Project dependencies.
--   `README.md`: High-level overview.
+    -   `UX_UI_STANDARDS.md`: **NEW** Design system and responsive rules.
+    -   `DATABASE_STRUCTURE.md`: V3 Schema definition.
+    -   `PAGE_STRUCTURE_AND_WORKFLOW.md`: updated workflows.
+-   `verify_and_update_v3_schema.sql`: SQL script to ensure DB consistency.

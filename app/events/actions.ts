@@ -50,7 +50,7 @@ export async function createEvent(
 
   // 2. Add creator as admin participant
   const { error: participantError } = await supabase
-    .from('event_participants')
+    .from('event_members')
     .insert({
       event_id: event.id,
       profile_id: user.id,
@@ -88,7 +88,7 @@ export async function joinEvent(inviteCode: string): Promise<CreateEventResult> 
 
   // 2. Check if already joined
   const { data: existing } = await supabase
-    .from('event_participants')
+    .from('event_members')
     .select('event_id')
     .eq('event_id', event.id)
     .eq('profile_id', user.id)
@@ -100,7 +100,7 @@ export async function joinEvent(inviteCode: string): Promise<CreateEventResult> 
 
   // 3. Join
   const { error: joinError } = await supabase
-    .from('event_participants')
+    .from('event_members')
     .insert({
       event_id: event.id,
       profile_id: user.id,
