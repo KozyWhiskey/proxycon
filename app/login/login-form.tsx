@@ -14,7 +14,7 @@ function SubmitButton({ text }: { text: string }) {
   const { pending } = useFormStatus()
 
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
+    <Button type="submit" className="w-full h-12 text-base font-medium shadow-[0_0_15px_rgba(186,147,43,0.2)]" disabled={pending}>
       {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
       {text}
     </Button>
@@ -69,12 +69,12 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto border-slate-800 bg-slate-900/50">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">
+    <Card className="w-full max-w-md mx-auto glass-panel border-white/10">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl text-center font-heading tracking-wide uppercase">
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </CardTitle>
-        <CardDescription className="text-center">
+        <CardDescription className="text-center text-muted-foreground">
           {isLogin
             ? 'Enter your credentials to access the platform'
             : 'Join the ProxyCon league'}
@@ -84,7 +84,8 @@ export default function LoginForm() {
         <div className="space-y-4">
           <Button 
             type="button" 
-            className="w-full bg-white text-black hover:bg-slate-100 border border-slate-200"
+            variant="outline"
+            className="w-full h-12 bg-white/5 hover:bg-white/10 text-white border-white/10"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isDiscordLoading}
           >
@@ -115,7 +116,8 @@ export default function LoginForm() {
 
           <Button 
             type="button" 
-            className="w-full bg-[#5865F2] text-white hover:bg-[#4752C4] border border-[#5865F2]"
+            variant="outline"
+            className="w-full h-12 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-white border-[#5865F2]/50 hover:border-[#5865F2]"
             onClick={handleDiscordSignIn}
             disabled={isGoogleLoading || isDiscordLoading}
           >
@@ -129,10 +131,10 @@ export default function LoginForm() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-slate-700" />
+              <span className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-900 px-2 text-slate-400">Or continue with</span>
+              <span className="bg-zinc-900 px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
@@ -145,7 +147,7 @@ export default function LoginForm() {
                 type="email"
                 placeholder="m@example.com"
                 required
-                className="bg-slate-950 border-slate-800"
+                className="bg-zinc-900/50 border-white/10 focus-visible:ring-primary/20 focus-visible:border-primary/50"
               />
             </div>
             <div className="space-y-2">
@@ -155,7 +157,7 @@ export default function LoginForm() {
                 name="password"
                 type="password"
                 required
-                className="bg-slate-950 border-slate-800"
+                className="bg-zinc-900/50 border-white/10 focus-visible:ring-primary/20 focus-visible:border-primary/50"
               />
             </div>
             <SubmitButton text={isLogin ? 'Sign In' : 'Sign Up'} />
@@ -165,7 +167,7 @@ export default function LoginForm() {
       <CardFooter className="flex justify-center">
         <Button
           variant="link"
-          className="text-slate-400 hover:text-white"
+          className="text-muted-foreground hover:text-white"
           onClick={() => setIsLogin(!isLogin)}
         >
           {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
