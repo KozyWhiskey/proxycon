@@ -32,7 +32,6 @@ export default async function Dashboard() {
     start_date: e.start_date,
     end_date: e.end_date,
     is_active: e.is_active,
-    // @ts-expect-error
     role: e.event_members[0]?.role
   })) || [];
 
@@ -111,8 +110,7 @@ export default async function Dashboard() {
 
   userMatches?.forEach((m) => {
     // Check if match is tournament or casual
-    // @ts-expect-error
-    const isTournament = !!m.match?.tournament_id;
+    const isTournament = !!(m.match as any)?.tournament_id;
     
     if (isTournament) {
       if (m.result === 'win') tournamentWins++;
@@ -145,10 +143,8 @@ export default async function Dashboard() {
     .limit(5);
 
   const casualWinDetails = casualWinDetailsRaw?.map(d => ({
-    // @ts-expect-error
-    gameType: d.match?.game_type || 'Casual',
-    // @ts-expect-error
-    createdAt: d.match?.created_at || new Date().toISOString(),
+    gameType: (d.match as any)?.game_type || 'Casual',
+    createdAt: (d.match as any)?.created_at || new Date().toISOString(),
     boardGameName: null,
     opponents: []
   })) || [];
@@ -190,10 +186,8 @@ export default async function Dashboard() {
                   {/* Show Active Tournament if exists, otherwise placeholder or null */}
                   {activeTournamentData ? (
                     <ActiveTournament 
-                      // @ts-expect-error
-                      tournament={activeTournamentData} 
-                      // @ts-expect-error
-                      currentMatch={currentMatch}
+                      tournament={activeTournamentData as any} 
+                      currentMatch={currentMatch as any}
                       currentProfileId={user.id}
                     />
                   ) : (
@@ -221,8 +215,7 @@ export default async function Dashboard() {
 
           <section className="hidden md:block">
              <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Recent Activity</h2>
-             {/* @ts-expect-error */}
-             <Feed matches={feedMatches || []} />
+             <Feed matches={(feedMatches as any) || []} />
           </section>
         </div>
 
@@ -245,8 +238,7 @@ export default async function Dashboard() {
           {/* Mobile Only Feed (Shown below stats on mobile) */}
           <section className="md:hidden">
              <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Recent Activity</h2>
-             {/* @ts-expect-error */}
-             <Feed matches={feedMatches || []} />
+             <Feed matches={(feedMatches as any) || []} />
           </section>
         </div>
       </div>
