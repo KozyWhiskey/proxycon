@@ -32,12 +32,12 @@ interface FeedProps {
 export default function Feed({ matches }: FeedProps) {
   if (matches.length === 0) {
     return (
-      <Card className="bg-slate-900 border-slate-800">
+      <Card className="glass-panel">
         <CardHeader>
-          <CardTitle className="text-slate-100">The Feed</CardTitle>
+          <CardTitle className="font-heading">Activity Feed</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-400">No recent matches. Start playing to see activity here!</p>
+          <p className="text-muted-foreground italic">No recent matches. Start playing to see activity here!</p>
         </CardContent>
       </Card>
     );
@@ -63,7 +63,7 @@ export default function Feed({ matches }: FeedProps) {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
+    const diffHours = Math.floor(diffMs / 36000000);
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) return 'Just now';
@@ -74,9 +74,9 @@ export default function Feed({ matches }: FeedProps) {
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardHeader>
-        <CardTitle className="text-slate-100">The Feed</CardTitle>
+    <Card className="glass-panel">
+      <CardHeader className="border-b border-white/5 mb-4">
+        <CardTitle className="font-heading tracking-wide">Activity Feed</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {matches.map((match, index) => (
@@ -85,12 +85,17 @@ export default function Feed({ matches }: FeedProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
-            className="pb-4 border-b border-slate-800 last:border-0 last:pb-0"
+            className="pb-4 border-b border-white/5 last:border-0 last:pb-0"
           >
-            <p className="text-slate-100 mb-1">{formatMatchResult(match)}</p>
-            <p className="text-xs text-slate-500">{formatDate(match.created_at)}</p>
+            <p className="text-foreground mb-1 text-sm font-medium">{formatMatchResult(match)}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono">{formatDate(match.created_at)}</p>
+              {match.round_number && (
+                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-bold uppercase">Round {match.round_number}</span>
+              )}
+            </div>
             {/* Placeholder for AI-generated roast */}
-            <p className="text-sm text-muted-foreground italic mt-2">
+            <p className="text-xs text-muted-foreground italic mt-3 opacity-60">
               {/* AI roast will go here */}
             </p>
           </motion.div>
@@ -99,4 +104,3 @@ export default function Feed({ matches }: FeedProps) {
     </Card>
   );
 }
-

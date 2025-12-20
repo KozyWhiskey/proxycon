@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { fixMatchResultWithGames } from '@/app/admin/actions';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, RefreshCw } from 'lucide-react';
 
 interface Match {
   id: string;
@@ -153,30 +153,31 @@ export default function FixMatchResult() {
 
   if (isLoading) {
     return (
-      <Card className="bg-slate-900 border-slate-800">
-        <CardContent className="p-6">
-          <p className="text-slate-400 text-center">Loading matches...</p>
+      <Card className="glass-panel">
+        <CardContent className="p-12 flex flex-col items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground text-center italic">Scanning historical records...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardHeader>
-        <CardTitle className="text-slate-100">Fix Match Result</CardTitle>
-        <CardDescription className="text-slate-400">
-          Change the result and game scores of a match
+    <Card className="glass-panel">
+      <CardHeader className="border-b border-white/5 pb-6">
+        <CardTitle className="text-xl text-foreground font-heading tracking-wide">Fix Match Result</CardTitle>
+        <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">
+          System Administration Override
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6 pt-8">
         <div className="space-y-2">
-          <Label className="text-slate-100">Select Match</Label>
+          <Label className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest px-1 font-heading">Select Match</Label>
           <Select value={selectedMatchId} onValueChange={setSelectedMatchId}>
-            <SelectTrigger className="w-full h-12 bg-slate-800 border-slate-700 text-slate-100">
+            <SelectTrigger className="w-full h-12 bg-white/5 border-white/10 text-foreground">
               <SelectValue placeholder="Choose a match..." />
             </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-800">
+            <SelectContent>
               {matches.map((match) => {
                 const participants = match.participants
                   .map((p) => p.profile?.display_name || p.profile?.username || 'Unknown')
@@ -197,14 +198,18 @@ export default function FixMatchResult() {
         {selectedMatch && selectedMatch.participants.length >= 2 && (
           <>
             {/* Current Results */}
-            <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <p className="text-sm text-slate-400 mb-2">Current Results:</p>
-              <div className="space-y-1">
+            <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+              <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mb-3">Currently Stored:</p>
+              <div className="space-y-2">
                 {selectedMatch.participants.map((p) => (
-                  <div key={p.profile_id} className="text-slate-100 flex justify-between">
-                    <span>{p.profile?.display_name || p.profile?.username || 'Unknown'}</span>
-                    <span className="text-slate-400">
-                      {p.result || 'pending'} ({p.games_won} games)
+                  <div key={p.profile_id} className="text-foreground flex justify-between items-center">
+                    <span className="text-sm font-medium">{p.profile?.display_name || p.profile?.username || 'Unknown'}</span>
+                    <span className={`text-xs uppercase font-bold px-2 py-0.5 rounded border ${
+                      p.result === 'win' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                      p.result === 'loss' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                      'bg-zinc-800 text-muted-foreground border-white/5'
+                    }`}>
+                      {p.result || 'pending'} <span className="opacity-40 mx-1">•</span> {p.games_won}
                     </span>
                   </div>
                 ))}
@@ -213,11 +218,11 @@ export default function FixMatchResult() {
 
             {/* Game Score Inputs */}
             <div className="space-y-4">
-              <Label className="text-slate-100">New Game Scores</Label>
+              <Label className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest px-1 font-heading">Set Correct Scores</Label>
               
               {/* Player 1 */}
-              <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
-                <span className="text-slate-100 font-medium">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-foreground font-medium text-sm">
                   {selectedMatch.participants[0]?.profile?.display_name || 
                    selectedMatch.participants[0]?.profile?.username || 'Player 1'}
                 </span>
@@ -226,19 +231,19 @@ export default function FixMatchResult() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
                     onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="text-2xl font-bold text-slate-100 w-8 text-center">
+                  <span className="text-2xl font-bold text-primary w-8 text-center tabular-nums">
                     {player1Games}
                   </span>
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
                     onClick={() => setPlayer1Games(Math.min(2, player1Games + 1))}
                   >
                     <Plus className="h-4 w-4" />
@@ -247,8 +252,8 @@ export default function FixMatchResult() {
               </div>
 
               {/* Player 2 */}
-              <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
-                <span className="text-slate-100 font-medium">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-foreground font-medium text-sm">
                   {selectedMatch.participants[1]?.profile?.display_name || 
                    selectedMatch.participants[1]?.profile?.username || 'Player 2'}
                 </span>
@@ -257,19 +262,19 @@ export default function FixMatchResult() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
                     onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="text-2xl font-bold text-slate-100 w-8 text-center">
+                  <span className="text-2xl font-bold text-primary w-8 text-center tabular-nums">
                     {player2Games}
                   </span>
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 bg-slate-700 border-slate-600 hover:bg-slate-600"
+                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
                     onClick={() => setPlayer2Games(Math.min(2, player2Games + 1))}
                   >
                     <Plus className="h-4 w-4" />
@@ -280,10 +285,10 @@ export default function FixMatchResult() {
 
             {/* Result Preview */}
             {resultPreview && (
-              <div className={`p-4 rounded-lg border text-center font-semibold ${
+              <div className={`p-4 rounded-lg border text-center font-bold uppercase tracking-widest text-xs ${
                 resultPreview.type === 'draw' 
-                  ? 'bg-amber-900/30 border-amber-700 text-amber-400'
-                  : 'bg-emerald-900/30 border-emerald-700 text-emerald-400'
+                  ? 'bg-primary/10 border-primary/20 text-primary'
+                  : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
               }`}>
                 {resultPreview.text}
               </div>
@@ -294,9 +299,9 @@ export default function FixMatchResult() {
         <Button
           onClick={handleSubmit}
           disabled={!selectedMatchId || !selectedMatch || selectedMatch.participants.length < 2 || isSubmitting}
-          className="w-full h-12 bg-rose-500 hover:bg-rose-600 text-white font-semibold disabled:opacity-50"
+          className="w-full h-14 bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(225,29,72,0.3)] hover:shadow-[0_0_20px_rgba(225,29,72,0.5)] disabled:opacity-50 font-heading"
         >
-          {isSubmitting ? 'Updating...' : 'Update Match Result'}
+          {isSubmitting ? 'Correcting Record...' : 'Overwrite Match Result'}
         </Button>
       </CardContent>
     </Card>

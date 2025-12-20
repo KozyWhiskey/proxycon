@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Trophy, Users, RefreshCw, Clock, ArrowLeft, Smartphone, Play, Pause, Minus, Plus, Check } from 'lucide-react';
+import { Trophy, Users, RefreshCw, Clock, ArrowLeft, Smartphone, Play, Pause, Minus, Plus, Check, History } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import {
@@ -142,14 +142,14 @@ function MatchResultEntry({
   const getResultPreview = () => {
     if (player1Games === player2Games) {
       if (player1Games === 0) {
-        return { text: 'Set scores', color: 'text-slate-500', type: 'none' };
+        return { text: 'Set scores', color: 'text-muted-foreground', type: 'none' };
       }
-      return { text: 'Draw', color: 'text-blue-400', type: 'draw' };
+      return { text: 'Draw', color: 'text-primary', type: 'draw' };
     }
     if (player1Games > player2Games) {
-      return { text: `${pairing.player1!.name} wins`, color: 'text-emerald-400', type: 'player1' };
+      return { text: `${pairing.player1!.name} wins`, color: 'text-emerald-500', type: 'player1' };
     }
-    return { text: `${pairing.player2!.name} wins`, color: 'text-emerald-400', type: 'player2' };
+    return { text: `${pairing.player2!.name} wins`, color: 'text-emerald-500', type: 'player2' };
   };
 
   const result = getResultPreview();
@@ -195,7 +195,7 @@ function MatchResultEntry({
     return (
       <Button
         onClick={() => setIsExpanded(true)}
-        className="w-full mt-3 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-medium"
+        className="w-full mt-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
       >
         Report Result
       </Button>
@@ -203,23 +203,23 @@ function MatchResultEntry({
   }
 
   return (
-    <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
+    <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
       {/* Score Entry */}
       <div className="grid grid-cols-3 gap-2 items-center">
         {/* Player 1 Score */}
         <div className="text-center">
-          <p className="text-sm text-slate-400 mb-2 truncate">{pairing.player1.name}</p>
+          <p className="text-sm text-muted-foreground mb-2 truncate">{pairing.player1.name}</p>
           <div className="flex items-center justify-center gap-1">
             <Button
               type="button"
               onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
               disabled={isSubmitting || player1Games === 0}
               size="sm"
-              className="h-10 w-10 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-100 disabled:opacity-30"
+              className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-foreground disabled:opacity-30"
             >
               <Minus className="w-4 h-4" />
             </Button>
-            <span className="text-3xl font-bold text-yellow-500 w-12 text-center tabular-nums">
+            <span className="text-3xl font-bold text-primary w-12 text-center tabular-nums">
               {player1Games}
             </span>
             <Button
@@ -227,7 +227,7 @@ function MatchResultEntry({
               onClick={() => setPlayer1Games(player1Games + 1)}
               disabled={isSubmitting}
               size="sm"
-              className="h-10 w-10 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-100"
+              className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-foreground"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -236,23 +236,23 @@ function MatchResultEntry({
 
         {/* VS */}
         <div className="text-center">
-          <span className="text-slate-600 text-lg">—</span>
+          <span className="text-muted-foreground/30 text-lg">—</span>
         </div>
 
         {/* Player 2 Score */}
         <div className="text-center">
-          <p className="text-sm text-slate-400 mb-2 truncate">{pairing.player2.name}</p>
+          <p className="text-sm text-muted-foreground mb-2 truncate">{pairing.player2.name}</p>
           <div className="flex items-center justify-center gap-1">
             <Button
               type="button"
               onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
               disabled={isSubmitting || player2Games === 0}
               size="sm"
-              className="h-10 w-10 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-100 disabled:opacity-30"
+              className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-foreground disabled:opacity-30"
             >
               <Minus className="w-4 h-4" />
             </Button>
-            <span className="text-3xl font-bold text-yellow-500 w-12 text-center tabular-nums">
+            <span className="text-3xl font-bold text-primary w-12 text-center tabular-nums">
               {player2Games}
             </span>
             <Button
@@ -260,7 +260,7 @@ function MatchResultEntry({
               onClick={() => setPlayer2Games(player2Games + 1)}
               disabled={isSubmitting}
               size="sm"
-              className="h-10 w-10 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-100"
+              className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-foreground"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -270,9 +270,9 @@ function MatchResultEntry({
 
       {/* Result Preview & Submit */}
       <div className="flex items-center gap-2">
-        <div className={`flex-1 text-center py-2 px-3 rounded-lg bg-slate-800/50 ${result.color}`}>
+        <div className={`flex-1 text-center py-2 px-3 rounded-lg bg-white/5 border border-white/5 ${result.color}`}>
           <span className="text-sm font-medium">{result.text}</span>
-          {canSubmit && <span className="text-slate-500 ml-2">({player1Games}-{player2Games})</span>}
+          {canSubmit && <span className="text-muted-foreground ml-2">({player1Games}-{player2Games})</span>}
         </div>
         {canSubmit && (
           <Button
@@ -294,7 +294,7 @@ function MatchResultEntry({
             setPlayer2Games(0);
           }}
           variant="ghost"
-          className="text-slate-400 hover:text-slate-100"
+          className="text-muted-foreground hover:text-foreground"
         >
           Cancel
         </Button>
@@ -792,28 +792,28 @@ export default function TournamentDashboard({ params }: PageProps) {
   }, [tournamentId, fetchDashboardData]);
 
   const getTimerColor = () => {
-    if (timerStatus === 'not_started') return 'text-slate-400';
-    if (timerStatus === 'paused') return 'text-yellow-400';
-    if (timerStatus === 'expired') return 'text-red-500';
+    if (timerStatus === 'not_started') return 'text-muted-foreground';
+    if (timerStatus === 'paused') return 'text-primary';
+    if (timerStatus === 'expired') return 'text-rose-500';
     
     const [mins] = timerDisplay.split(':').map(Number);
-    if (mins > 10) return 'text-emerald-400';
-    if (mins > 5) return 'text-yellow-400';
-    return 'text-red-500';
+    if (mins > 10) return 'text-emerald-500';
+    if (mins > 5) return 'text-primary';
+    return 'text-rose-500';
   };
 
   const getMatchResultDisplay = (pairing: PairingDisplay) => {
     if (pairing.isBye) {
       return (
-        <span className="text-slate-400 text-lg">Bye</span>
+        <span className="text-muted-foreground text-lg italic">Bye</span>
       );
     }
 
     if (pairing.status === 'pending') {
       return (
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" />
-          <span className="text-yellow-500 text-lg font-medium">In Progress</span>
+        <div className="flex items-center gap-2 justify-center">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-primary text-lg font-medium">In Progress</span>
         </div>
       );
     }
@@ -824,7 +824,7 @@ export default function TournamentDashboard({ params }: PageProps) {
 
     if (p1.result === 'draw') {
       return (
-        <span className="text-slate-300 text-lg">
+        <span className="text-muted-foreground text-lg">
           Draw ({p1.gamesWon}-{p2.gamesWon})
         </span>
       );
@@ -834,7 +834,7 @@ export default function TournamentDashboard({ params }: PageProps) {
     const loser = p1.result === 'win' ? p2 : p1;
 
     return (
-      <span className="text-emerald-400 text-lg font-medium">
+      <span className="text-emerald-500 text-lg font-medium">
         {winner.name} won ({winner.gamesWon}-{loser.gamesWon})
       </span>
     );
@@ -842,10 +842,10 @@ export default function TournamentDashboard({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-yellow-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-400 text-xl">Loading tournament data...</p>
+          <RefreshCw className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-xl">Loading tournament data...</p>
         </div>
       </div>
     );
@@ -853,9 +853,9 @@ export default function TournamentDashboard({ params }: PageProps) {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-400 text-2xl">Tournament not found</p>
+          <p className="text-muted-foreground text-2xl">Tournament not found</p>
         </div>
       </div>
     );
@@ -875,7 +875,7 @@ export default function TournamentDashboard({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 lg:p-6">
+    <div className="min-h-screen bg-background p-4 lg:p-6">
       {/* Compact Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between gap-4 mb-3">
@@ -884,20 +884,20 @@ export default function TournamentDashboard({ params }: PageProps) {
               asChild
               variant="ghost"
               size="sm"
-              className="text-slate-400 hover:text-slate-100 hover:bg-slate-800 shrink-0"
+              className="text-muted-foreground hover:text-foreground hover:bg-white/5 shrink-0"
             >
               <Link href={`/tournament/${tournamentId}`}>
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 <Smartphone className="w-4 h-4" />
               </Link>
             </Button>
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-100 truncate">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground truncate font-heading">
               {tournament.name}
             </h1>
           </div>
           
           {/* Compact Timer Card */}
-          <Card className="bg-slate-900/90 border-slate-700 shrink-0">
+          <Card className="glass-panel shrink-0">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <Clock className={`w-5 h-5 ${getTimerColor()}`} />
@@ -905,7 +905,7 @@ export default function TournamentDashboard({ params }: PageProps) {
                   <span className={`text-2xl lg:text-3xl font-mono font-bold ${getTimerColor()} tabular-nums leading-none`}>
                     {timerDisplay}
                   </span>
-                  <span className="text-xs text-slate-500 mt-0.5">
+                  <span className="text-xs text-muted-foreground/60 mt-0.5">
                     {timerStatus === 'not_started' && 'Not started'}
                     {timerStatus === 'running' && 'Running'}
                     {timerStatus === 'paused' && 'Paused'}
@@ -939,7 +939,7 @@ export default function TournamentDashboard({ params }: PageProps) {
                         onClick={handlePauseTimer}
                         disabled={isTimerLoading}
                         size="sm"
-                        className="bg-yellow-500 hover:bg-yellow-600 text-slate-950 h-9 px-3 text-xs font-medium"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-3 text-xs font-medium"
                       >
                         {isTimerLoading ? (
                           <>
@@ -983,21 +983,21 @@ export default function TournamentDashboard({ params }: PageProps) {
         
         {/* Tournament Info Bar */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-slate-300">
-            <Trophy className="w-4 h-4 text-yellow-500" />
+          <div className="flex items-center gap-2 text-foreground">
+            <Trophy className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium">
               Round {currentRound} of {tournament.max_rounds}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-slate-300">
-            <Users className="w-4 h-4 text-cyan-500" />
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Users className="w-4 h-4 text-primary" />
             <span className="text-sm">{totalPlayers} Players</span>
           </div>
-          <span className="text-sm capitalize px-2 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300">
+          <span className="text-xs uppercase tracking-wider px-2 py-1 rounded-md bg-white/5 border border-white/10 text-muted-foreground">
             {tournament.format}
           </span>
           {tournament.status === 'completed' && (
-            <span className="text-sm px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <span className="text-xs uppercase tracking-wider px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
               Completed
             </span>
           )}
@@ -1007,11 +1007,11 @@ export default function TournamentDashboard({ params }: PageProps) {
       {/* Main Content - Two Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Current Round Pairings */}
-        <Card className="bg-slate-900/80 border-slate-800 backdrop-blur">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-2xl text-slate-100 flex items-center gap-3">
-              <span className="text-yellow-500">Round {currentRound}</span>
-              <span className="text-slate-400">Pairings</span>
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-white/5">
+            <CardTitle className="text-2xl text-foreground flex items-center gap-3 font-heading">
+              <span className="text-primary">Round {currentRound}</span>
+              <span className="text-muted-foreground/40">Pairings</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -1021,19 +1021,19 @@ export default function TournamentDashboard({ params }: PageProps) {
                   key={pairing.matchId}
                   className={`p-4 rounded-xl border ${
                     pairing.status === 'pending'
-                      ? 'bg-yellow-500/5 border-yellow-500/30'
-                      : 'bg-slate-800/50 border-slate-700/50'
+                      ? 'bg-primary/5 border-primary/20'
+                      : 'bg-white/5 border-white/5'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
                     {/* Player 1 */}
                     <div className="flex-1 text-right">
-                      <p className={`text-2xl font-semibold ${
-                        pairing.player1?.result === 'win' ? 'text-emerald-400' : 'text-slate-100'
+                      <p className={`text-2xl font-semibold font-heading ${
+                        pairing.player1?.result === 'win' ? 'text-emerald-500' : 'text-foreground'
                       }`}>
                         {pairing.player1?.name}
                       </p>
-                      <p className="text-slate-400 text-sm mt-1">
+                      <p className="text-muted-foreground text-sm mt-1">
                         {pairing.player1?.record}
                       </p>
                     </div>
@@ -1041,12 +1041,12 @@ export default function TournamentDashboard({ params }: PageProps) {
                     {/* VS / Result */}
                     <div className="flex-shrink-0 text-center px-4">
                       {pairing.isBye ? (
-                        <span className="text-slate-500 text-xl font-medium">BYE</span>
+                        <span className="text-muted-foreground/30 text-xl font-medium italic">BYE</span>
                       ) : pairing.status === 'pending' ? (
-                        <span className="text-yellow-500 text-xl font-bold">VS</span>
+                        <span className="text-primary text-xl font-bold">VS</span>
                       ) : (
                         <div className="text-sm">
-                          <span className="text-slate-400">
+                          <span className="text-muted-foreground">
                             {pairing.player1?.gamesWon} - {pairing.player2?.gamesWon}
                           </span>
                         </div>
@@ -1057,23 +1057,23 @@ export default function TournamentDashboard({ params }: PageProps) {
                     <div className="flex-1 text-left">
                       {pairing.player2 ? (
                         <>
-                          <p className={`text-2xl font-semibold ${
-                            pairing.player2?.result === 'win' ? 'text-emerald-400' : 'text-slate-100'
+                          <p className={`text-2xl font-semibold font-heading ${
+                            pairing.player2?.result === 'win' ? 'text-emerald-500' : 'text-foreground'
                           }`}>
                             {pairing.player2?.name}
                           </p>
-                          <p className="text-slate-400 text-sm mt-1">
+                          <p className="text-muted-foreground text-sm mt-1">
                             {pairing.player2?.record}
                           </p>
                         </>
                       ) : (
-                        <p className="text-slate-500 text-2xl">—</p>
+                        <p className="text-muted-foreground/20 text-2xl">—</p>
                       )}
                     </div>
                   </div>
 
                   {/* Match Status */}
-                  <div className="mt-3 pt-3 border-t border-slate-700/50 text-center">
+                  <div className="mt-3 pt-3 border-t border-white/5 text-center">
                     {getMatchResultDisplay(pairing)}
                   </div>
 
@@ -1090,7 +1090,7 @@ export default function TournamentDashboard({ params }: PageProps) {
 
               {pairings.length === 0 && (
                 <div className="text-center py-8">
-                  <p className="text-slate-500 text-xl">No pairings for this round yet</p>
+                  <p className="text-muted-foreground text-xl italic">No pairings for this round yet</p>
                 </div>
               )}
             </div>
@@ -1098,65 +1098,65 @@ export default function TournamentDashboard({ params }: PageProps) {
         </Card>
 
         {/* Right Column - Standings */}
-        <Card className="bg-slate-900/80 border-slate-800 backdrop-blur">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-2xl text-slate-100 flex items-center gap-3">
-              <Trophy className="w-6 h-6 text-yellow-500" />
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-white/5">
+            <CardTitle className="text-2xl text-foreground flex items-center gap-3 font-heading">
+              <Trophy className="w-6 h-6 text-primary" />
               <span>Standings</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-700 hover:bg-transparent">
-                  <TableHead className="text-slate-400 text-base w-16">#</TableHead>
-                  <TableHead className="text-slate-400 text-base">Player</TableHead>
-                  <TableHead className="text-slate-400 text-base text-center">Record</TableHead>
-                  <TableHead className="text-slate-400 text-base text-center">Points</TableHead>
-                  <TableHead className="text-slate-400 text-base text-center">OMW%</TableHead>
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="text-muted-foreground text-base w-16">#</TableHead>
+                  <TableHead className="text-muted-foreground text-base">Player</TableHead>
+                  <TableHead className="text-muted-foreground text-base text-center">Record</TableHead>
+                  <TableHead className="text-muted-foreground text-base text-center">Points</TableHead>
+                  <TableHead className="text-muted-foreground text-base text-center">OMW%</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {standings.map((standing) => (
                   <TableRow
                     key={standing.playerId}
-                    className={`border-slate-700/50 ${
-                      standing.rank <= 3 ? 'bg-yellow-500/5' : ''
+                    className={`border-white/5 ${
+                      standing.rank <= 3 ? 'bg-primary/5' : ''
                     }`}
                   >
                     <TableCell className="font-bold text-xl">
                       {standing.rank === 1 && (
-                        <span className="text-yellow-400">🥇</span>
+                        <span className="text-primary">🥇</span>
                       )}
                       {standing.rank === 2 && (
-                        <span className="text-slate-300">🥈</span>
+                        <span className="text-zinc-300">🥈</span>
                       )}
                       {standing.rank === 3 && (
-                        <span className="text-amber-600">🥉</span>
+                        <span className="text-amber-700">🥉</span>
                       )}
                       {standing.rank > 3 && (
-                        <span className="text-slate-400">{standing.rank}</span>
+                        <span className="text-muted-foreground/40">{standing.rank}</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className={`text-xl font-medium ${
-                        standing.rank === 1 ? 'text-yellow-400' : 'text-slate-100'
+                      <span className={`text-xl font-medium font-heading ${
+                        standing.rank === 1 ? 'text-primary' : 'text-foreground'
                       }`}>
                         {standing.playerName}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className="text-lg text-slate-300">
+                      <span className="text-lg text-foreground/80 font-mono">
                         {standing.wins}-{standing.losses}-{standing.draws}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className="text-xl font-bold text-yellow-500">
+                      <span className="text-xl font-bold text-primary font-mono">
                         {standing.points}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className="text-lg text-cyan-400">
+                      <span className="text-lg text-primary font-mono opacity-80">
                         {formatOMWPercentage(standing.omwPercentage)}
                       </span>
                     </TableCell>
@@ -1166,7 +1166,7 @@ export default function TournamentDashboard({ params }: PageProps) {
                 {standings.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
-                      <p className="text-slate-500 text-xl">No standings yet</p>
+                      <p className="text-muted-foreground text-xl italic">No standings yet</p>
                     </TableCell>
                   </TableRow>
                 )}
@@ -1174,9 +1174,9 @@ export default function TournamentDashboard({ params }: PageProps) {
             </Table>
 
             {/* Point System Legend */}
-            <div className="mt-4 pt-4 border-t border-slate-700">
-              <p className="text-sm text-slate-500 text-center">
-                Win = 3pts • Draw = 1pt • Loss = 0pts • OMW% = Opponent Match Win %
+            <div className="mt-4 pt-4 border-t border-white/5">
+              <p className="text-xs text-muted-foreground/40 text-center uppercase tracking-widest">
+                Win 3pt • Draw 1pt • Loss 0pt
               </p>
             </div>
           </CardContent>
@@ -1185,55 +1185,55 @@ export default function TournamentDashboard({ params }: PageProps) {
 
       {/* Match Results Feed */}
       <div className="mt-6">
-        <Card className="bg-slate-900/80 border-slate-800 backdrop-blur">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-xl text-slate-100 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-white/5">
+            <CardTitle className="text-xl text-foreground flex items-center gap-2 font-heading">
+              <History className="w-5 h-5 text-primary" />
               <span>Match Results</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {matchFeed.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-slate-500">No completed matches yet</p>
+                <p className="text-muted-foreground italic">No completed matches yet</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {matchFeed.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800/70 transition-colors"
+                    className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         {item.isBye ? (
-                          <p className="text-slate-100 font-medium">
-                            <span className="text-emerald-400">{item.winner}</span>
-                            <span className="text-slate-500 ml-2">received a bye</span>
+                          <p className="text-foreground">
+                            <span className="text-emerald-500 font-medium">{item.winner}</span>
+                            <span className="text-muted-foreground ml-2">received a bye</span>
                           </p>
                         ) : item.isDraw ? (
-                          <p className="text-slate-100">
+                          <p className="text-foreground">
                             <span className="font-medium">{item.player1.name}</span>
-                            <span className="text-slate-500 mx-2">drew with</span>
+                            <span className="text-muted-foreground/40 mx-2">drew with</span>
                             <span className="font-medium">{item.player2?.name}</span>
-                            <span className="text-blue-400 ml-2">
+                            <span className="text-primary ml-2 font-mono">
                               ({item.player1.gamesWon}-{item.player2?.gamesWon})
                             </span>
                           </p>
                         ) : (
-                          <p className="text-slate-100">
-                            <span className="text-emerald-400 font-semibold">{item.winner}</span>
-                            <span className="text-slate-500 mx-2">beat</span>
+                          <p className="text-foreground">
+                            <span className="text-emerald-500 font-semibold">{item.winner}</span>
+                            <span className="text-muted-foreground/40 mx-2">beat</span>
                             <span className="font-medium">
                               {item.winner === item.player1.name ? item.player2?.name : item.player1.name}
                             </span>
-                            <span className="text-yellow-500 ml-2">
+                            <span className="text-primary ml-2 font-mono">
                               ({item.winner === item.player1.name ? item.player1.gamesWon : item.player2?.gamesWon}-
                               {item.winner === item.player1.name ? item.player2?.gamesWon : item.player1.gamesWon})
                             </span>
                           </p>
                         )}
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-muted-foreground/30 mt-1 uppercase tracking-wider">
                           Round {item.round_number} • {formatFeedTime(item.completedAt)}
                         </p>
                       </div>
@@ -1247,24 +1247,25 @@ export default function TournamentDashboard({ params }: PageProps) {
       </div>
 
       {/* Footer with refresh info */}
-      <div className="mt-4 flex items-center justify-between text-slate-500 text-xs flex-wrap gap-2">
+      <div className="mt-4 flex items-center justify-between text-muted-foreground/40 text-[10px] uppercase tracking-widest flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <RefreshCw className="w-3 h-3" />
           <span>Auto-refreshes every 10 seconds</span>
         </div>
-        <div className="text-slate-600">
+        <div>
           Last updated: {lastUpdated.toLocaleTimeString()}
         </div>
         <Button
           onClick={() => fetchDashboardData()}
           variant="ghost"
           size="sm"
-          className="text-slate-400 hover:text-slate-100 h-7 text-xs"
+          className="text-muted-foreground/60 hover:text-foreground h-7 px-2"
         >
           <RefreshCw className="w-3 h-3 mr-1" />
           Refresh
         </Button>
       </div>
-    </div>
-  );
-}
+        </div>
+      );
+    }
+    

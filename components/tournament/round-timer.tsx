@@ -50,20 +50,20 @@ function EditDurationDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100">
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
           <Edit className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-slate-900 border-slate-800">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-slate-100">Edit Round Duration</DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogTitle>Edit Round Duration</DialogTitle>
+          <DialogDescription>
             Change the duration for this round.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-slate-300">
+            <Label htmlFor="duration">
               Duration (minutes)
             </Label>
             <Input
@@ -72,7 +72,6 @@ function EditDurationDialog({
               min="1"
               value={newDuration}
               onChange={(e) => setNewDuration(e.target.value)}
-              className="bg-slate-800 border-slate-700 text-slate-100"
             />
           </div>
         </div>
@@ -83,7 +82,7 @@ function EditDurationDialog({
           <Button
             onClick={handleUpdate}
             disabled={isLoading}
-            className="bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+            variant="default"
           >
             {isLoading ? 'Updating...' : 'Update'}
           </Button>
@@ -110,20 +109,20 @@ export default function RoundTimer({
   }, [displayTime]);
 
   const getTimeColor = () => {
-    if (status === 'initial') return 'text-green-400';
-    if (status === 'expired') return 'text-red-400';
+    if (status === 'initial') return 'text-emerald-500';
+    if (status === 'expired') return 'text-rose-500';
     const minutes = timeValue / 60;
-    if (minutes > 10) return 'text-green-400';
-    if (minutes > 5) return 'text-yellow-400';
-    return 'text-red-400';
+    if (minutes > 10) return 'text-emerald-500';
+    if (minutes > 5) return 'text-primary';
+    return 'text-rose-500';
   };
 
   return (
-    <div className="bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent border-2 border-yellow-500/30 rounded-lg p-6 shadow-lg">
+    <div className="glass-panel p-6 shadow-lg backdrop-blur-md">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-100">Round {roundNumber} Timer</h3>
-          <p className="text-sm text-slate-400">Duration: {currentDuration} minutes</p>
+          <h3 className="text-lg font-semibold text-foreground font-heading">Round {roundNumber} Timer</h3>
+          <p className="text-sm text-muted-foreground">Duration: {currentDuration} minutes</p>
         </div>
         <EditDurationDialog
           currentDuration={currentDuration}
@@ -133,20 +132,20 @@ export default function RoundTimer({
       </div>
 
       <div className="text-center mb-6">
-        <div className={`text-6xl font-mono font-bold ${getTimeColor()} mb-2`}>
+        <div className={`text-6xl font-mono font-bold ${getTimeColor()} mb-2 text-glow`}>
           {displayTime}
         </div>
         {status === 'expired' && (
-          <p className="text-red-400 text-sm font-medium">Time Expired</p>
+          <p className="text-destructive text-sm font-medium">Time Expired</p>
         )}
         {status === 'running' && timeValue > 0 && timeValue <= 300 && (
-          <p className="text-yellow-400 text-sm">Less than 5 minutes remaining</p>
+          <p className="text-primary text-sm">Less than 5 minutes remaining</p>
         )}
         {status === 'initial' && (
-          <p className="text-slate-400 text-sm mt-2">Timer not started</p>
+          <p className="text-muted-foreground text-sm mt-2">Timer not started</p>
         )}
         {status === 'paused' && (
-          <p className="text-yellow-400 text-sm mt-2">Paused</p>
+          <p className="text-primary text-sm mt-2">Paused</p>
         )}
       </div>
 
@@ -155,7 +154,8 @@ export default function RoundTimer({
           <Button
             onClick={actions.handleStart}
             disabled={isLoading}
-            className="flex-1 h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold"
+            className="flex-1 h-12"
+            variant="default"
           >
             <Play className="w-5 h-5 mr-2" />
             Start Round
@@ -166,7 +166,8 @@ export default function RoundTimer({
           <Button
             onClick={actions.handlePause}
             disabled={isLoading}
-            className="flex-1 h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold"
+            className="flex-1 h-12"
+            variant="secondary"
           >
             <Pause className="w-5 h-5 mr-2" />
             Pause
@@ -177,7 +178,8 @@ export default function RoundTimer({
           <Button
             onClick={actions.handleResume}
             disabled={isLoading}
-            className="flex-1 h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold"
+            className="flex-1 h-12"
+            variant="default"
           >
             <Play className="w-5 h-5 mr-2" />
             Resume
@@ -187,4 +189,3 @@ export default function RoundTimer({
     </div>
   );
 }
-

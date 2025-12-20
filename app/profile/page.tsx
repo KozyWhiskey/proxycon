@@ -18,7 +18,7 @@ export default async function ProfilePage() {
     .eq('owner_id', user.id);
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen bg-background pb-24">
       <PageHeader
         title="My Profile"
         subtitle="Manage your identity and decks"
@@ -26,14 +26,14 @@ export default async function ProfilePage() {
         backLabel="Home"
       />
 
-      <div className="max-w-3xl mx-auto p-4 space-y-8">
+      <div className="max-w-3xl mx-auto p-4 space-y-8 mt-4 md:mt-8">
         {/* Profile Settings */}
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-xl text-slate-100">Personal Details</CardTitle>
-            <CardDescription>Update how you appear to others.</CardDescription>
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-white/5 pb-6">
+            <CardTitle className="text-xl text-foreground font-heading tracking-wide">Personal Details</CardTitle>
+            <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">Update how you appear to others.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-8">
             <ProfileForm
               userName={profile.username}
               userNickname={profile.display_name}
@@ -44,19 +44,19 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Decks Section */}
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-xl text-slate-100">My Decks</CardTitle>
-            <CardDescription>Manage your library of {deckCount || 0} decks.</CardDescription>
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-white/5 pb-6">
+            <CardTitle className="text-xl text-foreground font-heading tracking-wide">My Decks</CardTitle>
+            <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">Manage your library of {deckCount || 0} decks.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 justify-between px-4">
+          <CardContent className="pt-8">
+            <Button asChild variant="outline" className="w-full h-14 bg-white/5 border-white/10 hover:bg-white/10 justify-between px-6 group">
               <Link href="/decks">
-                <span className="flex items-center gap-2">
-                  <Swords className="w-5 h-5 text-yellow-500" />
-                  Manage Decks
+                <span className="flex items-center gap-3">
+                  <Swords className="w-5 h-5 text-primary group-hover:drop-shadow-[0_0_8px_rgba(186,147,43,0.5)] transition-all" />
+                  <span className="font-heading font-bold uppercase tracking-widest text-sm">Manage Decks</span>
                 </span>
-                <ArrowRight className="w-5 h-5 text-slate-500" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </Link>
             </Button>
           </CardContent>

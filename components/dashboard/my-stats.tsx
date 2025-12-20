@@ -66,38 +66,38 @@ export default function MyStats({
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="text-slate-100">My Stats</CardTitle>
+        <CardTitle className="font-heading">My Stats</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Tournament Placements - Major Focus */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-heading">
             Tournament Victories
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {/* 1st Place */}
-            <div className="bg-linear-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-lg p-4 text-center">
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center group transition-colors hover:bg-primary/15">
+              <div className="text-[10px] text-muted-foreground mb-2 uppercase tracking-widest font-heading font-bold">
                 1st Place
               </div>
-              <div className="text-5xl font-bold text-yellow-500 leading-none">
+              <div className="text-5xl font-bold text-primary leading-none text-glow">
                 {tournamentFirstPlace}
               </div>
             </div>
             {/* 2nd Place */}
-            <div className="bg-linear-to-br from-slate-700/20 to-slate-600/10 border border-slate-600/30 rounded-lg p-4 text-center">
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-center group transition-colors hover:bg-white/10">
+              <div className="text-[10px] text-muted-foreground mb-2 uppercase tracking-widest font-heading font-bold">
                 2nd Place
               </div>
-              <div className="text-5xl font-bold text-slate-300 leading-none">
+              <div className="text-5xl font-bold text-zinc-300 leading-none">
                 {tournamentSecondPlace}
               </div>
             </div>
             {/* 3rd Place */}
-            <div className="bg-linear-to-br from-amber-700/20 to-amber-800/10 border border-amber-700/30 rounded-lg p-4 text-center">
-              <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide">
+            <div className="bg-amber-900/10 border border-amber-900/30 rounded-lg p-4 text-center group transition-colors hover:bg-amber-900/15">
+              <div className="text-[10px] text-muted-foreground mb-2 uppercase tracking-widest font-heading font-bold">
                 3rd Place
               </div>
               <div className="text-5xl font-bold text-amber-600 leading-none">
@@ -109,21 +109,21 @@ export default function MyStats({
 
         {/* Tournament Record - Secondary Focus */}
         {tournamentTotalMatches > 0 && (
-          <div className="pt-4 border-t border-slate-800">
+          <div className="pt-4 border-t border-white/5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-heading">
                   Tournament Record
                 </p>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-2xl font-bold text-foreground font-mono">
                   {tournamentWins}-{tournamentLosses}-{tournamentDraws}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-heading">
                   Win Rate
                 </p>
-                <p className="text-2xl font-bold text-yellow-500">
+                <p className="text-2xl font-bold text-primary text-glow font-mono">
                   {tournamentWinRate}%
                 </p>
               </div>
@@ -133,11 +133,11 @@ export default function MyStats({
 
         {/* Casual Wins - List View */}
         {casualWins > 0 && (
-          <div className="pt-4 border-t border-slate-800">
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-3">
+          <div className="pt-4 border-t border-white/5">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3 font-heading">
               Casual Wins ({casualWins})
             </p>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
               {casualWinDetails.map((win, index) => {
                 const showOpponents =
                   win.gameType === 'commander' &&
@@ -151,25 +151,25 @@ export default function MyStats({
                 return (
                   <div
                     key={index}
-                    className="flex items-center justify-between py-2 px-3 bg-slate-800/50 rounded-md border border-slate-700/50"
+                    className="flex items-center justify-between py-2 px-3 bg-white/5 rounded-md border border-white/5 hover:bg-white/10 transition-colors"
                   >
-                    <div className="flex items-center gap-2 flex-wrap text-slate-200">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-sm font-semibold">
+                    <div className="flex items-center gap-2 flex-wrap text-foreground">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary border-glow"></div>
+                      <span className="text-sm font-semibold font-heading tracking-wide">
                         {formatGameType(win.gameType)}
                       </span>
                       {showOpponents && (
-                        <span className="text-sm text-slate-400">
+                        <span className="text-xs text-muted-foreground">
                           vs {win.opponents?.join(', ')}
                         </span>
                       )}
                       {showBoardGameName && (
-                        <span className="text-sm text-slate-400">
+                        <span className="text-xs text-muted-foreground">
                           {win.boardGameName}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-[10px] text-muted-foreground font-mono">
                       {formatDate(win.createdAt)}
                     </span>
                   </div>

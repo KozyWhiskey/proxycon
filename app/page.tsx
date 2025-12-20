@@ -1,102 +1,255 @@
-import { createClient } from '@/utils/supabase/server';
-import { requireProfile } from '@/lib/get-current-user';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Trophy } from 'lucide-react';
-import Link from 'next/link';
-import UserHeader from '@/components/dashboard/user-header';
-import QuickActions from '@/components/dashboard/quick-actions';
+import { Suspense } from "react";
+import { createClient } from "@/utils/supabase/server";
+import { requireProfile } from "@/lib/get-current-user";
+import ActiveTournament from "@/components/dashboard/active-tournament";
+import ActiveEvents from "@/components/dashboard/active-events";
+import MyStats from "@/components/dashboard/my-stats";
+import QuickActions from "@/components/dashboard/quick-actions";
+import UserHeader from "@/components/dashboard/user-header";
+import Feed from "@/components/dashboard/feed";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
-export default async function Home() {
+export default async function Dashboard() {
   const supabase = await createClient();
-  
-  // Auth & Profile Check
   const { user, profile } = await requireProfile();
 
-  // Calculate total wins (V3: count match_participants where result = 'win')
-  // This is expensive at scale, but fine for now. V3 suggests storing this in event_members,
-  // but for a global stat we'd need a rollup or just a count query.
-  const { count: totalWins } = await supabase
-    .from('match_participants')
-    .select('*', { count: 'exact', head: true })
-    .eq('profile_id', user.id)
-    .eq('result', 'win');
+  // --- 1. Fetch Active Events ---
+  const { data: activeEventsRaw } = await supabase
+    .from('events')
+    .select(`
+      id, name, start_date, end_date, is_active,
+      event_members!inner(role)
+    `)
+    .eq('event_members.profile_id', user.id)
+    .eq('is_active', true)
+    .order('start_date', { ascending: false })
+    .limit(3);
 
-  // Get next active event (if any) to show a quick link
-  const { data: activeEventMember } = await supabase
-    .from('event_members')
-    .select('event_id, events(id, name, start_date)')
-    .eq('profile_id', user.id)
-    .eq('events.is_active', true)
+  const activeEvents = activeEventsRaw?.map(e => ({
+    id: e.id,
+    name: e.name,
+    start_date: e.start_date,
+    end_date: e.end_date,
+    is_active: e.is_active,
+    // @ts-expect-error
+    role: e.event_members[0]?.role
+  })) || [];
+
+  // --- 2. Fetch Active Tournament ---
+  // Find tournaments where the user is a participant and status is active/pending
+  const { data: activeTournamentData } = await supabase
+    .from('tournaments')
+    .select(`
+      id, name, format, status,
+      tournament_participants!inner(profile_id)
+    `)
+    .eq('tournament_participants.profile_id', user.id)
+    .in('status', ['active', 'pending'])
+    .order('created_at', { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .single();
 
-  // TypeScript workaround because Supabase types might be inferred deeply
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activeEvent = (activeEventMember as any)?.events;
+  let currentMatch = null;
+  if (activeTournamentData) {
+    // If there is an active tournament, find the user's current match
+    const { data: matchData } = await supabase
+      .from('matches')
+      .select(`
+        id, round_number,
+        match_participants!inner(
+          id, profile_id, result,
+          profile:profiles(id, display_name, username)
+        )
+      `)
+      .eq('tournament_id', activeTournamentData.id)
+      .eq('match_participants.profile_id', user.id)
+      .order('round_number', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (matchData) {
+        // We need to fetch the *full* match participants, not just the user's
+        // The previous query inner joined on the user, so it only returns the user's participant row?
+        // Actually, Supabase inner join filters the parent rows, but the nested select might return all if configured correctly.
+        // However, standard SQL behavior would filter. To be safe, let's fetch the match details separately.
+        
+        const { data: fullMatchData } = await supabase
+        .from('matches')
+        .select(`
+            id, round_number,
+            participants:match_participants(
+            id, profile_id, result,
+            profile:profiles(id, display_name, username)
+            )
+        `)
+        .eq('id', matchData.id)
+        .single();
+        
+        if (fullMatchData) {
+             // Map to the shape expected by ActiveTournament
+             // The component expects `participants` array on the match object
+             currentMatch = fullMatchData;
+        }
+    }
+  }
+
+  // --- 3. Fetch Stats ---
+  // A simplified stats fetch for the dashboard
+  
+  // Get all completed matches for the user
+  const { data: userMatches } = await supabase
+    .from('match_participants')
+    .select('result, match:matches(tournament_id, game_type)')
+    .eq('profile_id', user.id)
+    .not('result', 'is', null);
+
+  let tournamentWins = 0;
+  let tournamentLosses = 0;
+  let tournamentDraws = 0;
+  let casualWins = 0;
+
+  userMatches?.forEach((m) => {
+    // Check if match is tournament or casual
+    // @ts-expect-error
+    const isTournament = !!m.match?.tournament_id;
+    
+    if (isTournament) {
+      if (m.result === 'win') tournamentWins++;
+      else if (m.result === 'loss') tournamentLosses++;
+      else if (m.result === 'draw') tournamentDraws++;
+    } else {
+      if (m.result === 'win') casualWins++;
+    }
+  });
+
+  const totalTournamentMatches = tournamentWins + tournamentLosses + tournamentDraws;
+  const tournamentWinRate = totalTournamentMatches > 0 
+    ? ((tournamentWins / totalTournamentMatches) * 100).toFixed(1) 
+    : "0.0";
+
+  // Fetch casual win details (limit 5)
+  const { data: casualWinDetailsRaw } = await supabase
+    .from('match_participants')
+    .select(`
+      created_at,
+      match:matches!inner(
+        game_type,
+        created_at
+      )
+    `)
+    .eq('profile_id', user.id)
+    .eq('result', 'win')
+    .is('match.tournament_id', null)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  const casualWinDetails = casualWinDetailsRaw?.map(d => ({
+    // @ts-expect-error
+    gameType: d.match?.game_type || 'Casual',
+    // @ts-expect-error
+    createdAt: d.match?.created_at || new Date().toISOString(),
+    boardGameName: null,
+    opponents: []
+  })) || [];
+
+  // --- 4. Fetch Feed ---
+  // Recent 5 matches system-wide
+  const { data: feedMatches } = await supabase
+    .from('matches')
+    .select(`
+      id, tournament_id, round_number, game_type, created_at,
+      participants:match_participants(
+        id, player_id:profile_id, result,
+        player:profiles(id, name:username, nickname:display_name)
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .limit(5);
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
-      {/* User Header */}
-      <div className="sticky top-0 z-10">
-        <UserHeader
-          displayName={profile.display_name || 'Player'}
-          username={profile.username}
-          avatarUrl={profile.avatar_url}
-        />
-      </div>
+    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">
+      {/* 1. Header Section */}
+      <header className="flex flex-col gap-2">
+         <UserHeader 
+           displayName={profile.display_name || profile.username || 'Player'}
+           username={profile.username}
+           avatarUrl={profile.avatar_url}
+         />
+         <Separator className="bg-white/10 mt-4" />
+      </header>
 
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
+      {/* 2. Main Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
-        {/* Status Card */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-slate-900 border-slate-800">
-            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-              <Trophy className="w-8 h-8 text-yellow-500 mb-2" />
-              <div className="text-3xl font-bold text-slate-100">{totalWins || 0}</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Wins</div>
-            </CardContent>
-          </Card>
-           
-           {/* Placeholder for Rank or other global stat */}
-           <Card className="bg-slate-900 border-slate-800">
-            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-              <div className="text-3xl font-bold text-slate-100">-</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">Global Rank</div>
-            </CardContent>
-          </Card>
+        {/* Left Column: Actions & Active Status (Desktop: 8 cols) */}
+        <div className="md:col-span-8 flex flex-col gap-6">
+          <section className="flex flex-col gap-6">
+             <Suspense fallback={<Skeleton className="h-[200px] w-full rounded-xl bg-white/5" />}>
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Show Active Tournament if exists, otherwise placeholder or null */}
+                  {activeTournamentData ? (
+                    <ActiveTournament 
+                      // @ts-expect-error
+                      tournament={activeTournamentData} 
+                      // @ts-expect-error
+                      currentMatch={currentMatch}
+                      currentProfileId={user.id}
+                    />
+                  ) : (
+                    // If no tournament, maybe show events prominent? 
+                    // For now, let's keep the logic simple: Always ActiveTournament (it handles null state)
+                    <ActiveTournament 
+                      tournament={null} 
+                      currentMatch={null}
+                      currentProfileId={user.id}
+                    />
+                  )}
+                  
+                  {/* Show Active Events if any */}
+                  {activeEvents.length > 0 && (
+                    <ActiveEvents events={activeEvents} />
+                  )}
+               </div>
+            </Suspense>
+          </section>
+
+          <section>
+             <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Quick Actions</h2>
+             <QuickActions />
+          </section>
+
+          <section className="hidden md:block">
+             <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Recent Activity</h2>
+             {/* @ts-expect-error */}
+             <Feed matches={feedMatches || []} />
+          </section>
         </div>
 
-        {/* Active Event Banner (if exists) */}
-        {activeEvent && (
-          <div className="bg-gradient-to-r from-yellow-500/10 to-transparent p-4 rounded-lg border border-yellow-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-yellow-500 uppercase font-bold mb-1">Happening Now</p>
-                <h3 className="text-lg font-bold text-slate-100">{activeEvent.name}</h3>
-              </div>
-              <Button asChild size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-slate-950">
-                <Link href={`/events/${activeEvent.id}`}>
-                  View Event
-                </Link>
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Right Column: Stats (Desktop: 4 cols) */}
+        <div className="md:col-span-4 flex flex-col gap-6">
+          <section>
+             <MyStats 
+               casualWins={casualWins}
+               casualWinDetails={casualWinDetails}
+               tournamentFirstPlace={0} // Placeholder for now as calculation is complex
+               tournamentSecondPlace={0}
+               tournamentThirdPlace={0}
+               tournamentWins={tournamentWins}
+               tournamentLosses={tournamentLosses}
+               tournamentDraws={tournamentDraws}
+               tournamentWinRate={tournamentWinRate}
+             />
+          </section>
 
-        {/* Quick Actions */}
-        <QuickActions />
-
-        {/* Recent Activity / Feed Placeholder */}
-        <div>
-          <h2 className="text-lg font-semibold text-slate-100 mb-3">Recent Activity</h2>
-          <Card className="bg-slate-900 border-slate-800 opacity-50">
-            <CardContent className="p-6 text-center">
-              <p className="text-slate-500">No recent activity to show.</p>
-            </CardContent>
-          </Card>
+          {/* Mobile Only Feed (Shown below stats on mobile) */}
+          <section className="md:hidden">
+             <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Recent Activity</h2>
+             {/* @ts-expect-error */}
+             <Feed matches={feedMatches || []} />
+          </section>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -41,28 +41,28 @@ export default function JoinEventDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800">
+        <Button variant="outline" className="border-white/10 text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10">
           <UserPlus className="w-4 h-4 mr-2" />
           Join Event
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-md">
+      <DialogContent className="glass-panel sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Join Existing Event</DialogTitle>
+          <DialogTitle className="font-heading">Join Existing Event</DialogTitle>
           <DialogDescription>Enter the invite code shared by the event organizer.</DialogDescription>
         </DialogHeader>
         <form action={handleJoin} className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="inviteCode" className="text-slate-100">Invite Code</Label>
+                <Label htmlFor="inviteCode" className="text-foreground">Invite Code</Label>
                 <Input 
                     id="inviteCode" 
                     name="inviteCode" 
                     placeholder="XYZ123" 
                     required 
-                    className="bg-slate-950 border-slate-800 uppercase tracking-widest text-center text-lg"
+                    className="bg-white/5 border-white/10 uppercase tracking-widest text-center text-lg"
                 />
             </div>
-            <Button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black" disabled={isJoining}>
+            <Button type="submit" className="w-full" variant="default" disabled={isJoining}>
                 {isJoining ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Join Event
             </Button>

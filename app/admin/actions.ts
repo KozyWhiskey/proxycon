@@ -2,11 +2,108 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { Profile, Event } from '@/lib/types';
 
 interface AdminActionResult {
   success: boolean;
   message?: string;
 }
+
+// --- USER MANAGEMENT ---
+
+export async function getUsers(): Promise<{ success: boolean; data?: Profile[]; message?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, data: data as Profile[] };
+  } catch (error) {
+    return { success: false, message: 'Failed to fetch users' };
+  }
+}
+
+export async function updateUserRole(userId: string, role: 'user' | 'admin'): Promise<AdminActionResult> {
+  try {
+    const supabase = await createClient();
+    
+    // Check if current user is admin (security check)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'Not authenticated' };
+
+    const { data: currentUserProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (currentUserProfile?.role !== 'admin') {
+      return { success: false, message: 'Unauthorized' };
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('id', userId);
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath('/admin');
+    return { success: true, message: 'User role updated' };
+  } catch (error) {
+    return { success: false, message: 'Failed to update user role' };
+  }
+}
+
+// --- EVENT MANAGEMENT ---
+
+export async function getEvents(): Promise<{ success: boolean; data?: Event[]; message?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_date', { ascending: false });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, data: data as Event[] };
+  } catch (error) {
+    return { success: false, message: 'Failed to fetch events' };
+  }
+}
+
+export async function updateEvent(eventId: string, data: Partial<Event>): Promise<AdminActionResult> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('events')
+      .update(data)
+      .eq('id', eventId);
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath('/admin');
+    revalidatePath('/events');
+    return { success: true, message: 'Event updated' };
+  } catch (error) {
+    return { success: false, message: 'Failed to update event' };
+  }
+}
+
+// --- MATCH MANAGEMENT (Existing Logic) ---
 
 export async function fixMatchResult(
   matchId: string,
@@ -170,62 +267,4 @@ export async function fixMatchResultWithGames(
       error instanceof Error ? error.message : 'An unexpected error occurred';
     return { success: false, message: errorMessage };
   }
-}
-
-export async function addPlayer(data: {
-  name: string;
-  nickname: string | null;
-  avatar_url: string | null;
-  color: string | null;
-}): Promise<AdminActionResult> {
-  // Deprecated in V3
-  return { success: false, message: 'Please create users via the Sign Up page or Supabase Dashboard.' };
-}
-
-export async function updatePlayer(
-  playerId: string, // profile_id
-  data: {
-    name: string; // username
-    nickname: string | null; // display_name
-    avatar_url: string | null;
-    color: string | null; // not supported in V3 profiles yet
-  }
-): Promise<AdminActionResult> {
-  try {
-    const supabase = await createClient();
-
-    if (!data.name || !data.name.trim()) {
-      return { success: false, message: 'Username is required' };
-    }
-
-    const updateData = {
-      username: data.name.trim(),
-      display_name: data.nickname?.trim() || null,
-      avatar_url: data.avatar_url?.trim() || null,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', playerId);
-
-    if (error) {
-      return { success: false, message: `Failed to update profile: ${error.message}` };
-    }
-
-    revalidatePath('/');
-    revalidatePath('/admin');
-    return { success: true, message: 'Profile updated successfully' };
-  } catch (error) {
-    console.error('Error in updatePlayer:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unexpected error occurred';
-    return { success: false, message: errorMessage };
-  }
-}
-
-export async function deletePlayer(playerId: string): Promise<AdminActionResult> {
-   // Deprecated in V3 - too risky to delete profiles/users from simple admin UI
-   return { success: false, message: 'Please delete users via Supabase Dashboard.' };
 }

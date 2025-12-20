@@ -11,7 +11,8 @@ This document provides a comprehensive overview of the application's page struct
 
 ### Authentication & Onboarding
 - **`/login`**: The entry point for unauthenticated users. Supports Email/Password login and account creation.
-- **`app/login/page.tsx`**
+- **`/onboarding`**: Mandatory setup flow for new users to create their profile (Username, Avatar).
+- **`app/login/page.tsx`, `app/onboarding/page.tsx`**
 
 ### Global Context (The "Player Status Sheet")
 - **`/` (Home)**: The personal hub for the logged-in user. Displays total career wins, a link to the currently active event, and quick action buttons.
@@ -39,12 +40,17 @@ This document provides a comprehensive overview of the application's page struct
 ### Player Resources
 - **`/decks`**: Personal deck library. Users can create and manage their decks here to track performance stats.
 - **`/profile`**: User settings and profile management (Name, Avatar).
-- **`app/decks/page.tsx`, `app/profile/page.tsx`**
+- **`/stats`**: Detailed personal statistics, history, and analytics.
+- **`app/decks/page.tsx`, `app/profile/page.tsx`, `app/stats/page.tsx`**
 
 ### Community & Players
 - **`/players`**: The Global Player Directory. Lists all registered users with summary stats (Win %, Title Count).
 - **`/players/[id]`**: Public Player Profile. Shows detailed stats, deck library, and recent match history.
 - **`app/players/page.tsx`, `app/players/[id]/page.tsx`**
+
+### Admin & System
+- **`/admin`**: System-wide administration ("God Mode"). Fix match results, manage global settings, and override data.
+- **`app/admin/page.tsx`**
 
 ---
 

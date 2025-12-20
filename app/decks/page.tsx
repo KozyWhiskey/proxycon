@@ -26,9 +26,9 @@ export default async function DecksPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-950 p-4 text-slate-100">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">My Decks</h1>
+      <main className="min-h-screen p-4 text-foreground bg-background">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold mb-4 font-heading">My Decks</h1>
           <p>Error loading decks: {error}</p>
         </div>
       </main>
@@ -36,7 +36,7 @@ export default async function DecksPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen pb-24 bg-background">
       <PageHeader
         title="My Decks"
         subtitle="Manage your deck library"
@@ -45,12 +45,12 @@ export default async function DecksPage() {
         actions={
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-yellow-500 hover:bg-yellow-600 text-black">
+              <Button variant="default">
                 <Plus className="w-4 h-4 mr-2" />
                 New Deck
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-5xl">
+            <DialogContent className="sm:max-w-5xl">
               <DialogHeader>
                 <DialogTitle>Create New Deck</DialogTitle>
               </DialogHeader>
@@ -60,17 +60,17 @@ export default async function DecksPage() {
         }
       />
 
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
         {decks && decks.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {decks.map((deck) => (
               <DeckCard key={deck.id} deck={deck} />
             ))}
           </div>
         ) : (
-          <Card className="bg-slate-900 border-slate-800 text-center py-8">
+          <Card className="text-center py-8 glass-panel">
             <CardContent>
-              <p className="text-slate-400">No decks found. Create your first one!</p>
+              <p className="text-muted-foreground italic">No decks found. Create your first one!</p>
             </CardContent>
           </Card>
         )}

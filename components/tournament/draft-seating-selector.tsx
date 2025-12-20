@@ -204,18 +204,18 @@ export default function DraftSeatingSelector({
 
   return (
     <div className="space-y-6">
-      <Card className="bg-slate-900 border-slate-800">
+      <Card className="glass-panel">
         <CardHeader>
-          <CardTitle className="text-slate-100">Assign Seats</CardTitle>
+          <CardTitle>Assign Seats</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <p className="text-slate-400 mb-1">
+              <p className="text-muted-foreground mb-1">
                 Click on a seat to assign a player. Seats are numbered 1 through {numPlayers}.
                 In Round 1, players will be paired with the player across from them.
               </p>
-              <p className="text-slate-400 text-sm">
+              <p className="text-muted-foreground text-sm">
                 {participantsWithSeats.length} of {numPlayers} seats assigned
               </p>
             </div>
@@ -223,7 +223,7 @@ export default function DraftSeatingSelector({
               variant="outline" 
               onClick={handleRandomize} 
               disabled={isSubmitting}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800 shrink-0"
+              className="shrink-0"
             >
               <Shuffle className="w-4 h-4 mr-2" />
               Randomize
@@ -232,9 +232,9 @@ export default function DraftSeatingSelector({
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-900 border-slate-800">
+      <Card className="glass-panel">
         <CardHeader>
-          <CardTitle className="text-slate-100">Draft Table</CardTitle>
+          <CardTitle>Draft Table</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
@@ -250,14 +250,14 @@ export default function DraftSeatingSelector({
                     disabled={isSubmitting}
                     className={`w-24 h-24 rounded-lg border-2 transition-all ${
                       isTaken
-                        ? 'bg-yellow-500/20 border-yellow-500'
-                        : 'bg-slate-800 border-slate-700 hover:border-yellow-500/50 hover:bg-slate-700 cursor-pointer'
+                        ? 'bg-primary/20 border-primary border-glow'
+                        : 'bg-white/5 border-white/10 hover:border-primary/50 hover:bg-white/10 cursor-pointer'
                     }`}
                   >
                     <div className="flex flex-col items-center justify-center h-full">
-                      <span className="text-2xl font-bold text-slate-100">{seatNum}</span>
+                      <span className="text-2xl font-bold font-heading text-foreground">{seatNum}</span>
                       {isTaken && participant && (
-                        <span className="text-xs text-slate-400 truncate w-full px-1">
+                        <span className="text-xs text-muted-foreground truncate w-full px-1">
                           {participant.profile?.display_name || participant.profile?.username || 'Player'}
                         </span>
                       )}
@@ -268,7 +268,7 @@ export default function DraftSeatingSelector({
             </div>
 
             <div className="flex items-center justify-center">
-              <div className="h-1 w-full bg-slate-700 rounded"></div>
+              <div className="h-1 w-full bg-white/10 rounded"></div>
             </div>
 
             <div className="flex flex-wrap justify-center gap-4">
@@ -283,14 +283,14 @@ export default function DraftSeatingSelector({
                     disabled={isSubmitting}
                     className={`w-24 h-24 rounded-lg border-2 transition-all ${
                       isTaken
-                        ? 'bg-yellow-500/20 border-yellow-500'
-                        : 'bg-slate-800 border-slate-700 hover:border-yellow-500/50 hover:bg-slate-700 cursor-pointer'
+                        ? 'bg-primary/20 border-primary border-glow'
+                        : 'bg-white/5 border-white/10 hover:border-primary/50 hover:bg-white/10 cursor-pointer'
                     }`}
                   >
                     <div className="flex flex-col items-center justify-center h-full">
-                      <span className="text-2xl font-bold text-slate-100">{seatNum}</span>
+                      <span className="text-2xl font-bold font-heading text-foreground">{seatNum}</span>
                       {isTaken && participant && (
-                        <span className="text-xs text-slate-400 truncate w-full px-1">
+                        <span className="text-xs text-muted-foreground truncate w-full px-1">
                           {participant.profile?.display_name || participant.profile?.username || 'Player'}
                         </span>
                       )}
@@ -304,16 +304,17 @@ export default function DraftSeatingSelector({
       </Card>
 
       {allSeatsAssignedLocal && (
-        <Card className="bg-slate-900 border-yellow-500/20">
+        <Card className="glass-panel border-primary/50">
           <CardContent className="pt-6">
             <Button
               onClick={handleStartDraft}
               disabled={isSubmitting}
-              className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold disabled:opacity-50"
+              className="w-full h-12 font-semibold disabled:opacity-50"
+              variant="default"
             >
               {isSubmitting ? 'Starting Draft...' : 'Start Draft'}
             </Button>
-            <p className="text-sm text-slate-400 text-center mt-2">
+            <p className="text-sm text-muted-foreground text-center mt-2">
               All players have selected their seats. Click to start Round 1.
             </p>
           </CardContent>
@@ -321,9 +322,9 @@ export default function DraftSeatingSelector({
       )}
 
       {!allSeatsAssignedLocal && (
-        <Card className="bg-slate-900 border-slate-800">
+        <Card className="glass-panel">
           <CardContent className="pt-6">
-            <p className="text-slate-400 text-center">
+            <p className="text-muted-foreground text-center">
               {participantsWithSeats.length} of {numPlayers} seats assigned
             </p>
           </CardContent>
@@ -331,12 +332,12 @@ export default function DraftSeatingSelector({
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-slate-100">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-slate-100">
+            <DialogTitle>
               Assign Seat {selectedSeat}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription>
               {currentSeatPlayer
                 ? `${currentSeatPlayer.profile?.display_name || currentSeatPlayer.profile?.username || 'Player'} is currently in this seat.`
                 : 'Select a player to assign to this seat.'}
@@ -347,7 +348,8 @@ export default function DraftSeatingSelector({
               <Button
                 onClick={() => handleClearSeat(currentSeatPlayer.profile_id)}
                 disabled={isSubmitting}
-                className="w-full bg-red-500/10 border-2 border-red-500 text-red-500 hover:bg-red-500/20"
+                className="w-full"
+                variant="destructive"
               >
                 Clear Seat
               </Button>
@@ -355,20 +357,21 @@ export default function DraftSeatingSelector({
 
             {availablePlayers.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-sm text-slate-400 font-semibold">Available Players:</p>
+                <p className="text-sm text-muted-foreground font-semibold">Available Players:</p>
                 {availablePlayers.map((participant) => (
                   <Button
                     key={participant.id}
                     onClick={() => handleAssignPlayer(participant.profile_id)}
                     disabled={isSubmitting}
-                    className="w-full bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700"
+                    className="w-full"
+                    variant="outline"
                   >
                     {participant.profile?.display_name || participant.profile?.username || 'Player'}
                   </Button>
                 ))}
               </div>
             ) : (
-              <p className="text-slate-400 text-center">
+              <p className="text-muted-foreground text-center">
                 {currentSeatPlayer
                   ? 'All other players are already assigned to seats.'
                   : 'All players are already assigned to seats.'}

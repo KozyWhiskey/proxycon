@@ -37,7 +37,7 @@ export default function DeckCard({ deck }: DeckCardProps) {
 
   return (
     <>
-      <Card className="bg-slate-900 border-slate-800 relative overflow-hidden group min-h-[160px]">
+      <Card className="glass-panel relative overflow-hidden group min-h-[160px] border-white/10 hover:border-primary/50 transition-colors">
         {deck.image_url && (
           <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
             <Image
@@ -46,22 +46,22 @@ export default function DeckCard({ deck }: DeckCardProps) {
               fill
               className="object-cover object-top"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-transparent" />
           </div>
         )}
         <div className="relative z-10 flex flex-col h-full justify-between">
           <CardHeader>
-            <CardTitle className="text-xl text-slate-100 flex items-center gap-2 drop-shadow-md">
-              <Swords className="w-5 h-5 text-yellow-500" />
+            <CardTitle className="text-xl text-foreground flex items-center gap-2 drop-shadow-md font-heading tracking-wide">
+              <Swords className="w-5 h-5 text-primary" />
               {deck.name}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex justify-between items-end">
             <div>
-              <p className="text-slate-300 font-medium text-sm drop-shadow-md">
+              <p className="text-muted-foreground font-medium text-sm drop-shadow-md">
                 {deck.format}
                 {deck.commander_name && (
-                  <span className="block text-xs text-slate-400 font-normal mt-0.5">
+                  <span className="block text-xs text-muted-foreground/80 font-normal mt-0.5">
                     {deck.commander_name}
                   </span>
                 )}
@@ -77,7 +77,7 @@ export default function DeckCard({ deck }: DeckCardProps) {
                         color === 'B' ? 'bg-[#150b00]' : 
                         color === 'R' ? 'bg-[#d3202a]' : 
                         'bg-[#00733e]'
-                      } border border-slate-700 shadow-sm`}
+                      } border border-white/20 shadow-sm`}
                       title={color}
                     />
                   ))}
@@ -88,7 +88,7 @@ export default function DeckCard({ deck }: DeckCardProps) {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-8 w-8 text-slate-400 hover:text-white border-slate-700 bg-slate-900/50 backdrop-blur-sm"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground border-white/10 bg-black/20 backdrop-blur-sm hover:bg-black/40"
                 onClick={() => setIsEditOpen(true)}
               >
                 <Edit2 className="w-4 h-4" />
@@ -96,7 +96,7 @@ export default function DeckCard({ deck }: DeckCardProps) {
               <Button 
                 variant="destructive" 
                 size="icon" 
-                className="h-8 w-8 bg-red-900/50 hover:bg-red-900 backdrop-blur-sm"
+                className="h-8 w-8 bg-destructive/50 hover:bg-destructive backdrop-blur-sm shadow-none"
                 onClick={() => setIsDeleteOpen(true)}
               >
                 <Trash2 className="w-4 h-4" />
@@ -108,7 +108,7 @@ export default function DeckCard({ deck }: DeckCardProps) {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-5xl">
+        <DialogContent className="sm:max-w-5xl">
           <DialogHeader>
             <DialogTitle>Edit Deck</DialogTitle>
           </DialogHeader>
@@ -124,10 +124,10 @@ export default function DeckCard({ deck }: DeckCardProps) {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Deck</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription>
               Are you sure you want to delete <strong>{deck.name}</strong>? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -136,7 +136,6 @@ export default function DeckCard({ deck }: DeckCardProps) {
               variant="outline"
               onClick={() => setIsDeleteOpen(false)}
               disabled={isDeleting}
-              className="bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700"
             >
               Cancel
             </Button>
@@ -144,7 +143,6 @@ export default function DeckCard({ deck }: DeckCardProps) {
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-rose-600 hover:bg-rose-700"
             >
               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
             </Button>

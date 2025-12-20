@@ -33,7 +33,7 @@ export default function PageHeader({
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-slate-950 border-b border-slate-800">
+    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-white/10">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {/* Back/Home Button */}
@@ -42,7 +42,7 @@ export default function PageHeader({
               onClick={handleBack}
               variant="ghost"
               size="icon"
-              className="h-12 w-12 flex-shrink-0 text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+              className="h-12 w-12 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-white/5"
               aria-label={backLabel}
             >
               {backHref === '/' ? (
@@ -55,11 +55,11 @@ export default function PageHeader({
 
           {/* Title Section */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 truncate">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate font-heading">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-sm text-slate-400 mt-0.5 truncate">{subtitle}</p>
+              <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>
             )}
           </div>
         </div>
@@ -74,4 +74,3 @@ export default function PageHeader({
     </div>
   );
 }
-

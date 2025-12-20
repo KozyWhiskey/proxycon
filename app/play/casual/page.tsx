@@ -68,7 +68,7 @@ export default async function CasualPlayPage({ searchParams }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen bg-background pb-24">
       <PageHeader
         title="Casual Play"
         subtitle="Log games outside of tournaments"

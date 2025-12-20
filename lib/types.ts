@@ -6,6 +6,7 @@ export interface Profile {
   id: string; // references auth.users.id
   username: string | null; // @handle
   display_name: string | null; // "Jace Beleren"
+  role: 'user' | 'admin'; // RBAC role
   avatar_url: string | null;
   bio: string | null;
   favorite_card_image: string | null;

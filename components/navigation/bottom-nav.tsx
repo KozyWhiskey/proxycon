@@ -37,7 +37,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 border-t border-white/10 backdrop-blur-md pb-safe">
       <div className="max-w-2xl mx-auto">
         <div className="grid grid-cols-5 h-16">
           {navItems.map((item) => {
@@ -49,14 +49,14 @@ export default function BottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 transition-colors',
+                  'flex flex-col items-center justify-center gap-1 transition-all duration-200',
                   isActive
-                    ? 'text-yellow-500 bg-yellow-500/10'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
                 )}
               >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs font-medium">{item.label}</span>
+                <Icon className={cn("w-6 h-6", isActive && "drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]")} />
+                <span className={cn("text-[10px] font-medium font-heading tracking-wide", isActive ? "text-primary" : "text-muted-foreground")}>{item.label}</span>
               </Link>
             );
           })}

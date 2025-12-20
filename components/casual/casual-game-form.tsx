@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { logCasualMatch } from '@/app/play/actions'; // We will update this action
+import { logCasualMatch } from '@/app/play/actions'; 
 import { Loader2, Users, User, Swords } from 'lucide-react';
-import { Profile, Deck } from '@/lib/types'; // Updated import
+import { Profile, Deck } from '@/lib/types';
 
 interface CasualGameFormProps {
-  players: Profile[]; // Changed to Profile[]
+  players: Profile[];
   allDecks: Deck[];
   eventId?: string;
 }
@@ -22,13 +22,13 @@ type GameFormat = 'commander' | '1v1' | '2hg' | 'ffa' | 'limited';
 export default function CasualGameForm({ players, allDecks, eventId }: CasualGameFormProps) {
   const router = useRouter();
   const [format, setFormat] = useState<GameFormat>('commander');
-  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]); // Changed to selectedProfiles
+  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]);
   const [selectedDecks, setSelectedDecks] = useState<Record<string, string>>({});
-  const [winnerProfileIds, setWinnerProfileIds] = useState<string[]>([]); // Changed to winnerProfileIds
+  const [winnerProfileIds, setWinnerProfileIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper to toggle profile selection
-  const toggleProfile = (profileId: string) => { // Changed to profileId
+  const toggleProfile = (profileId: string) => {
     setSelectedProfiles((prev) => {
       if (prev.includes(profileId)) {
         return prev.filter((id) => id !== profileId);
@@ -41,11 +41,11 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
     });
   };
 
-  const handleDeckChange = (profileId: string, deckId: string) => { // Changed to profileId
+  const handleDeckChange = (profileId: string, deckId: string) => {
     setSelectedDecks((prev) => ({ ...prev, [profileId]: deckId }));
   };
 
-  const toggleWinner = (profileId: string) => { // Changed to profileId
+  const toggleWinner = (profileId: string) => {
     if (format === '2hg') {
         // In 2HG, we select a team
         setWinnerProfileIds(prev => prev.includes(profileId) ? prev.filter(id => id !== profileId) : [...prev, profileId]);
@@ -56,11 +56,11 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
   };
 
   const handleSubmit = async () => {
-    if (selectedProfiles.length < 2) { // Changed to selectedProfiles
+    if (selectedProfiles.length < 2) {
       toast.error('Select at least 2 players');
       return;
     }
-    if (winnerProfileIds.length === 0) { // Changed to winnerProfileIds
+    if (winnerProfileIds.length === 0) {
       toast.error('Select a winner');
       return;
     }
@@ -69,9 +69,9 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
 
     const result = await logCasualMatch({
       format,
-      profileIds: selectedProfiles, // Changed to profileIds
+      profileIds: selectedProfiles,
       deckIds: selectedDecks,
-      winnerProfileIds: winnerProfileIds, // Changed to winnerProfileIds
+      winnerProfileIds: winnerProfileIds,
       eventId,
     });
 
@@ -95,7 +95,7 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
         <Button
           type="button"
           variant={format === 'commander' ? 'default' : 'outline'}
-          onClick={() => { setFormat('commander'); setSelectedProfiles([]); setWinnerProfileIds([]); }} // Changed to setSelectedProfiles, setWinnerProfileIds
+          onClick={() => { setFormat('commander'); setSelectedProfiles([]); setWinnerProfileIds([]); }}
           className="h-20 flex flex-col gap-2"
         >
           <Users className="w-6 h-6" />
@@ -104,7 +104,7 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
         <Button
           type="button"
           variant={format === '1v1' ? 'default' : 'outline'}
-          onClick={() => { setFormat('1v1'); setSelectedProfiles([]); setWinnerProfileIds([]); }} // Changed to setSelectedProfiles, setWinnerProfileIds
+          onClick={() => { setFormat('1v1'); setSelectedProfiles([]); setWinnerProfileIds([]); }}
           className="h-20 flex flex-col gap-2"
         >
           <User className="w-6 h-6" />
@@ -113,7 +113,7 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
         <Button
           type="button"
           variant={format === '2hg' ? 'default' : 'outline'}
-          onClick={() => { setFormat('2hg'); setSelectedProfiles([]); setWinnerProfileIds([]); }} // Changed to setSelectedProfiles, setWinnerProfileIds
+          onClick={() => { setFormat('2hg'); setSelectedProfiles([]); setWinnerProfileIds([]); }}
           className="h-20 flex flex-col gap-2"
         >
           <Swords className="w-6 h-6" />
@@ -122,7 +122,7 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
         <Button
           type="button"
           variant={format === 'ffa' ? 'default' : 'outline'}
-          onClick={() => { setFormat('ffa'); setSelectedProfiles([]); setWinnerProfileIds([]); }} // Changed to setSelectedProfiles, setWinnerProfileIds
+          onClick={() => { setFormat('ffa'); setSelectedProfiles([]); setWinnerProfileIds([]); }}
           className="h-20 flex flex-col gap-2"
         >
           <Users className="w-6 h-6" />
@@ -131,7 +131,7 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
         <Button
           type="button"
           variant={format === 'limited' ? 'default' : 'outline'}
-          onClick={() => { setFormat('limited'); setSelectedProfiles([]); setWinnerProfileIds([]); }} // Changed to setSelectedProfiles, setWinnerProfileIds
+          onClick={() => { setFormat('limited'); setSelectedProfiles([]); setWinnerProfileIds([]); }}
           className="h-20 flex flex-col gap-2"
         >
           <Swords className="w-6 h-6" />
@@ -140,9 +140,9 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
       </div>
 
       {/* Player Selection */}
-      <Card className="bg-slate-900 border-slate-800">
+      <Card className="glass-panel">
         <CardHeader>
-          <CardTitle className="text-lg text-slate-100">Select Players</CardTitle>
+          <CardTitle className="text-lg font-heading">Select Players</CardTitle>
           <CardDescription>
             {format === '1v1' ? 'Select 2 players' : format === '2hg' ? 'Select 4 players' : 'Select players'}
           </CardDescription>
@@ -153,14 +153,14 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
               <Button
                 key={profile.id}
                 type="button"
-                variant={selectedProfiles.includes(profile.id) ? 'default' : 'outline'} // Changed to selectedProfiles
+                variant={selectedProfiles.includes(profile.id) ? 'default' : 'outline'}
                 className={`justify-start px-2 h-auto py-2 ${
-                  selectedProfiles.includes(profile.id) ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-slate-700'
+                  selectedProfiles.includes(profile.id) ? 'bg-primary hover:bg-primary/90' : 'bg-white/5 border-white/10 hover:bg-white/10'
                 }`}
-                onClick={() => toggleProfile(profile.id)} // Changed to toggleProfile
+                onClick={() => toggleProfile(profile.id)}
               >
                 <div className="flex items-center gap-2 overflow-hidden w-full">
-                  <div className="w-6 h-6 rounded-full bg-slate-800 flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-zinc-800 flex-shrink-0 border border-white/10">
                     {profile.avatar_url && (
                         <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover"/>
                     )}
@@ -174,29 +174,29 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
       </Card>
 
       {/* Deck & Winner Selection */}
-      {selectedProfiles.length > 0 && ( // Changed to selectedProfiles
-        <Card className="bg-slate-900 border-slate-800">
+      {selectedProfiles.length > 0 && (
+        <Card className="glass-panel">
           <CardHeader>
-            <CardTitle className="text-lg text-slate-100">Decks & Result</CardTitle>
+            <CardTitle className="text-lg font-heading">Decks & Result</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedProfiles.map((profileId) => { // Changed to selectedProfiles, profileId
-              const profile = players.find((p) => p.id === profileId); // Changed to profile
+            {selectedProfiles.map((profileId) => {
+              const profile = players.find((p) => p.id === profileId);
               if (!profile) return null;
-              const isWinner = winnerProfileIds.includes(profileId); // Changed to winnerProfileIds, profileId
+              const isWinner = winnerProfileIds.includes(profileId);
               
               // Filter decks for this player
               const playerDecks = allDecks.filter(d => d.owner_id === profileId);
 
               return (
-                <div key={profileId} className="flex flex-col gap-2 p-3 bg-slate-950/50 rounded-lg border border-slate-800">
+                <div key={profileId} className="flex flex-col gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-200">{profile.display_name || profile.username || 'Player'}</span>
+                    <span className="font-medium text-foreground">{profile.display_name || profile.username || 'Player'}</span>
                     <Button
                       size="sm"
                       variant={isWinner ? 'default' : 'ghost'}
-                      onClick={() => toggleWinner(profileId)} // Changed to toggleWinner, profileId
-                      className={isWinner ? 'bg-emerald-500 hover:bg-emerald-600 text-black' : 'text-slate-500'}
+                      onClick={() => toggleWinner(profileId)}
+                      className={isWinner ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'text-muted-foreground hover:text-foreground'}
                     >
                       {isWinner ? 'Winner 🏆' : 'Select as Winner'}
                     </Button>
@@ -204,12 +204,12 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
                   
                    <Select 
                     value={selectedDecks[profileId] || ''} 
-                    onValueChange={(val) => handleDeckChange(profileId, val)} // Changed to profileId
+                    onValueChange={(val) => handleDeckChange(profileId, val)}
                    >
-                    <SelectTrigger className="h-8 text-xs bg-slate-900 border-slate-700">
+                    <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10">
                         <SelectValue placeholder="Select Deck (Optional)" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-800">
+                    <SelectContent>
                         {playerDecks.length > 0 ? (
                             playerDecks.map(deck => (
                                 <SelectItem key={deck.id} value={deck.id}>{deck.name}</SelectItem>
@@ -228,8 +228,8 @@ export default function CasualGameForm({ players, allDecks, eventId }: CasualGam
 
       <Button 
         onClick={handleSubmit} 
-        disabled={isSubmitting || selectedProfiles.length < 2 || winnerProfileIds.length === 0} // Changed to selectedProfiles, winnerProfileIds
-        className="w-full h-12 text-lg bg-green-600 hover:bg-green-700 text-white"
+        disabled={isSubmitting || selectedProfiles.length < 2 || winnerProfileIds.length === 0}
+        className="w-full h-12 text-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] font-heading tracking-wide"
       >
         {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Log Match'}
       </Button>

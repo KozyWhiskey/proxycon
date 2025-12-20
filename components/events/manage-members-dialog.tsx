@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 // Removed ScrollArea
-import { Users, UserPlus, Search, X, Loader2, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Search, X, Loader2, Trash2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { addEventMember, removeEventMember, searchProfiles } from '@/app/events/actions';
 import { useRouter } from 'next/navigation';
@@ -115,77 +115,79 @@ export default function ManageMembersDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 border-slate-700">
+        <Button variant="outline" size="sm" className="h-9 bg-white/5 border-white/10 hover:bg-white/10">
           <Users className="w-4 h-4 mr-2" />
           Members
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl bg-slate-900 border-slate-800 text-slate-100">
-        <DialogHeader>
-          <DialogTitle>Manage Event Members</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-2xl glass-panel">
+        <DialogHeader className="border-b border-white/5 pb-4">
+          <DialogTitle className="font-heading text-xl">Manage Event Members</DialogTitle>
+          <DialogDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">
             {eventName} • {members.length} Members
           </DialogDescription>
         </DialogHeader>
 
         {inviteCode && (
-          <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex items-center justify-between">
+          <div className="bg-white/5 p-4 rounded-lg border border-white/5 flex items-center justify-between mt-4">
             <div>
-              <p className="text-sm font-medium text-slate-400">Invite Code</p>
-              <p className="text-xl font-mono text-yellow-500 font-bold tracking-wider">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Invite Code</p>
+              <p className="text-2xl font-mono text-primary font-bold tracking-widest text-glow">
                 {inviteCode}
               </p>
             </div>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
+              className="bg-white/5 border-white/10 h-10 px-4"
               onClick={() => {
                 navigator.clipboard.writeText(inviteCode);
                 toast.success('Code copied to clipboard');
               }}
             >
+              <Copy className="w-4 h-4 mr-2" />
               Copy
             </Button>
           </div>
         )}
 
-        <div className="space-y-6 mt-4">
+        <div className="space-y-6 mt-6">
           {canManage && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-slate-400">Add Members</h3>
+              <h3 className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest font-heading">Add Members</h3>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/40" />
                 <Input
                   placeholder="Search by username or name..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9 bg-slate-950 border-slate-800"
+                  className="pl-9 h-11"
                 />
               </div>
               
               {isSearching && (
                  <div className="flex justify-center p-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
                  </div>
               )}
 
               {searchResults.length > 0 && (
-                <div className="bg-slate-950 border border-slate-800 rounded-md overflow-hidden max-h-48 overflow-y-auto">
+                <div className="bg-zinc-950 border border-white/10 rounded-md overflow-hidden max-h-48 overflow-y-auto">
                   {searchResults.map((result) => (
                     <div
                       key={result.id}
-                      className="flex items-center justify-between p-3 hover:bg-slate-900 transition-colors"
+                      className="flex items-center justify-between p-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-8 w-8 border border-white/10">
                           <AvatarImage src={result.avatar_url || undefined} />
-                          <AvatarFallback>{result.display_name?.[0]}</AvatarFallback>
+                          <AvatarFallback className="bg-white/5 text-xs">{result.display_name?.[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium text-slate-200">
+                          <p className="text-sm font-medium text-foreground">
                             {result.display_name}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-[10px] text-muted-foreground/60 font-mono">
                             @{result.username}
                           </p>
                         </div>
@@ -195,8 +197,9 @@ export default function ManageMembersDialog({
                         variant="secondary"
                         disabled={isPending}
                         onClick={() => handleAddMember(result)}
+                        className="h-8"
                       >
-                        <UserPlus className="h-4 w-4 mr-2" />
+                        <UserPlus className="h-3.5 w-3.5 mr-1.5" />
                         Add
                       </Button>
                     </div>
@@ -207,33 +210,33 @@ export default function ManageMembersDialog({
           )}
 
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-slate-400">Current Members</h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+            <h3 className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest font-heading">Current Members</h3>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
               {members.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg border border-slate-800/50"
+                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border border-slate-800">
+                    <Avatar className="h-10 w-10 border border-white/10 shadow-lg">
                       <AvatarImage src={member.avatar_url || undefined} />
-                      <AvatarFallback>{member.display_name?.[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-zinc-800 text-sm">{member.display_name?.[0]}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium text-slate-200">
+                      <p className="text-sm font-medium text-foreground">
                         {member.display_name}
                         {member.role === 'owner' && (
-                          <span className="ml-2 text-xs bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded">
+                          <span className="ml-2 text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
                             Owner
                           </span>
                         )}
                         {member.role === 'admin' && (
-                           <span className="ml-2 text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">
+                           <span className="ml-2 text-[10px] bg-zinc-800 text-muted-foreground border border-white/5 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
                             Admin
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-slate-500">@{member.username}</p>
+                      <p className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-wider">@{member.username}</p>
                     </div>
                   </div>
                   
@@ -241,7 +244,7 @@ export default function ManageMembersDialog({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="text-slate-600 hover:text-red-500 hover:bg-red-950/20"
+                      className="text-muted-foreground/40 hover:text-rose-500 hover:bg-rose-500/10 h-8 w-8"
                       onClick={() => handleRemoveMember(member.id)}
                       disabled={isPending}
                     >

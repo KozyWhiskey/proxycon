@@ -47,12 +47,12 @@ export default function ActiveTournament({
 
   if (!tournament) {
     return (
-      <Card className="bg-slate-900 border-slate-800">
+      <Card className="glass-panel">
         <CardHeader>
-          <CardTitle className="text-slate-100">Active Tournament</CardTitle>
+          <CardTitle className="font-heading">Active Tournament</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-400">No tournament currently active.</p>
+          <p className="text-muted-foreground italic">No tournament currently active.</p>
         </CardContent>
       </Card>
     );
@@ -83,44 +83,44 @@ export default function ActiveTournament({
 
   return (
     <Card 
-      className="bg-slate-900 border-slate-800 border-yellow-500/20 hover:border-yellow-500/40 transition-colors cursor-pointer"
+      className="glass-panel border-primary/40 hover:border-primary transition-all duration-300 cursor-pointer group"
       onClick={handleCardClick}
     >
       <CardHeader>
-        <CardTitle className="text-slate-100 flex items-center gap-2">
-          <span className="text-yellow-500">
+        <CardTitle className="flex items-center gap-2 font-heading tracking-wide">
+          <span className="text-primary text-glow group-hover:drop-shadow-[0_0_8px_rgba(231,153,9,0.5)] transition-all">
             {isPending ? 'Tournament Pending' : 'Active Tournament'}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <p className="text-sm text-slate-400 mb-1">Tournament</p>
-          <p className="text-lg font-semibold text-slate-100">{tournament.name}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-heading">Tournament</p>
+          <p className="text-lg font-semibold text-foreground font-heading tracking-wide">{tournament.name}</p>
           {!isPending && currentMatch && (
-            <p className="text-sm text-slate-400 mt-1">Round {currentMatch.round_number}</p>
+            <p className="text-xs text-primary mt-1 font-mono uppercase tracking-wider">Round {currentMatch.round_number}</p>
           )}
         </div>
         
         {isPending && (
            <div>
-            <p className="text-sm text-slate-400 mb-1">Status</p>
-            <p className="text-lg text-slate-100">Drafting / Setup</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-heading">Status</p>
+            <p className="text-lg text-foreground font-heading">Drafting / Setup</p>
           </div>
         )}
 
         {!isPending && !currentMatch && (
            <div>
-            <p className="text-sm text-slate-400 mb-1">Status</p>
-            <p className="text-lg text-slate-100">Waiting for next round</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-heading">Status</p>
+            <p className="text-lg text-foreground font-heading">Waiting for next round</p>
           </div>
         )}
 
         {!isPending && currentMatch && opponent && (
           <div>
-            <p className="text-sm text-slate-400 mb-1">Your Match</p>
-            <p className="text-lg text-slate-100">
-              You vs. {opponent.profile.display_name || opponent.profile.username}
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-heading">Your Match</p>
+            <p className="text-lg text-foreground font-heading">
+              You <span className="text-muted-foreground/40 font-sans mx-1">vs.</span> {opponent.profile.display_name || opponent.profile.username}
             </p>
           </div>
         )}
@@ -128,7 +128,8 @@ export default function ActiveTournament({
         {!isPending && currentMatch && !isCompleted && (
           <Button 
             onClick={handleButtonClick}
-            className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+            className="w-full h-12 font-heading tracking-widest"
+            variant="default"
           >
             Enter Result
           </Button>
@@ -137,14 +138,15 @@ export default function ActiveTournament({
         {isPending && (
            <Button 
             onClick={handleButtonClick}
-            className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+            className="w-full h-12 font-heading tracking-widest"
+            variant="default"
           >
             Go to Lobby
           </Button>
         )}
 
         {isCompleted && (
-          <p className="text-sm text-slate-400">Match completed</p>
+          <p className="text-xs text-emerald-500 font-bold uppercase tracking-widest">Match completed</p>
         )}
       </CardContent>
     </Card>

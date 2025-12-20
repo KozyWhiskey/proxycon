@@ -96,7 +96,7 @@ export default function ClaimProfile({ players }: { players: Player[] }) {
         <CardHeader>
           <CardTitle>New to ProxyCon?</CardTitle>
           <CardDescription>
-            If you haven't played before, create a fresh profile to start tracking your stats.
+            If you haven&apos;t played before, create a fresh profile to start tracking your stats.
           </CardDescription>
         </CardHeader>
         <CardContent>

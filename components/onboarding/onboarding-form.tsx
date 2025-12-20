@@ -41,47 +41,47 @@ export default function OnboardingForm() {
   }
 
   return (
-    <Card className="w-full max-w-md bg-slate-900 border-slate-800">
+    <Card className="w-full max-w-md glass-panel">
       <CardHeader>
-        <CardTitle className="text-2xl text-center text-white">Setup Your Profile</CardTitle>
-        <CardDescription className="text-center text-slate-400">
+        <CardTitle className="text-2xl text-center text-foreground font-heading">Setup Your Profile</CardTitle>
+        <CardDescription className="text-center text-muted-foreground">
           Create your player identity to start tracking stats.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-white">Username</Label>
+            <Label htmlFor="username" className="text-foreground">Username</Label>
             <Input
               id="username"
               placeholder="@jace_beleren"
               required
-              className="bg-slate-950 border-slate-800 text-white"
+              className="bg-white/5 border-white/10 text-foreground"
               value={formData.username}
               onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
             />
-            <p className="text-xs text-slate-500">Your unique handle for the league.</p>
+            <p className="text-xs text-muted-foreground">Your unique handle for the league.</p>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="displayName" className="text-white">Display Name</Label>
+            <Label htmlFor="displayName" className="text-foreground">Display Name</Label>
             <Input
               id="displayName"
               placeholder="Jace Beleren"
               required
-              className="bg-slate-950 border-slate-800 text-white"
+              className="bg-white/5 border-white/10 text-foreground"
               value={formData.displayName}
               onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
             />
-            <p className="text-xs text-slate-500">How you'll appear in tournament brackets.</p>
+            <p className="text-xs text-muted-foreground">How you'll appear in tournament brackets.</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="favoriteCard" className="text-white">Favorite Card (Optional)</Label>
+            <Label htmlFor="favoriteCard" className="text-foreground">Favorite Card (Optional)</Label>
             <Input
               id="favoriteCard"
               placeholder="Jace, the Mind Sculptor"
-              className="bg-slate-950 border-slate-800 text-white"
+              className="bg-white/5 border-white/10 text-foreground"
               value={formData.favoriteCard}
               onChange={(e) => setFormData(prev => ({ ...prev, favoriteCard: e.target.value }))}
             />
@@ -90,7 +90,8 @@ export default function OnboardingForm() {
         <CardFooter>
           <Button 
             type="submit" 
-            className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+            className="w-full"
+            variant="default"
             disabled={isLoading}
           >
             {isLoading ? (

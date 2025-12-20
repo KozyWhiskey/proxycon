@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
-import BottomNav from "@/components/navigation/bottom-nav";
+import { Inter, Chakra_Petch } from "next/font/google";
 import "./globals.css";
+import { AppShell } from "@/components/layout/app-shell";
+import { Toaster } from "@/components/ui/toaster";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-inter" 
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const chakra = Chakra_Petch({
+  weight: ['300', '400', '500', '600', '700'],
   subsets: ["latin"],
+  variable: "--font-heading"
 });
 
 export const metadata: Metadata = {
-  title: "ProxyCon 2025",
-  description: "Companion app for ProxyCon 2025 - Tournament tracking and prize management",
+  title: "ProxyCon | Tournament Companion",
+  description: "Track events, decks, and tournaments for Magic the Gathering.",
 };
 
 export default function RootLayout({
@@ -26,12 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950`}
-      >
-        {children}
-        <BottomNav />
-        <Toaster position="top-center" theme="dark" />
+      <body className={`${inter.variable} ${chakra.variable} font-sans antialiased bg-background text-foreground selection:bg-primary/30 selection:text-primary-foreground`}>
+        <AppShell>
+          {children}
+        </AppShell>
+        <Toaster />
       </body>
     </html>
   );

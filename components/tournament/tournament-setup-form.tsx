@@ -86,14 +86,14 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="text-slate-100">Tournament Setup</CardTitle>
+        <CardTitle className="font-heading">Tournament Setup</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-slate-100">
+            <Label htmlFor="name">
               Tournament Name
             </Label>
             <Input
@@ -102,17 +102,17 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
               value={tournamentName}
               onChange={(e) => setTournamentName(e.target.value)}
               placeholder="e.g., Friday Night Draft"
-              className="h-12 bg-slate-800 border-slate-700 text-slate-100"
+              className="h-12"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="format" className="text-slate-100">
+            <Label htmlFor="format">
               Format
             </Label>
             <Select value={format} onValueChange={setFormat}>
-              <SelectTrigger className="h-12 bg-slate-800 border-slate-700 text-slate-100">
+              <SelectTrigger className="h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -123,11 +123,11 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="rounds" className="text-slate-100">
+            <Label htmlFor="rounds">
               Number of Rounds
             </Label>
             <Select value={maxRounds} onValueChange={setMaxRounds}>
-              <SelectTrigger className="h-12 bg-slate-800 border-slate-700 text-slate-100">
+              <SelectTrigger className="h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -140,7 +140,7 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-slate-100">
+            <Label htmlFor="duration">
               Round Duration (minutes)
             </Label>
             <Input
@@ -151,58 +151,10 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
               value={roundDuration}
               onChange={(e) => setRoundDuration(e.target.value)}
               placeholder="50"
-              className="h-12 bg-slate-800 border-slate-700 text-slate-100"
+              className="h-12"
               required
             />
           </div>
-
-          {/* Tournament Prizes Section (Removed for V3) */}
-          {/*
-          <div className="space-y-4 pt-4 border-t border-slate-800">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
-              <Label className="text-slate-100 text-base">Tournament Prizes (Optional)</Label>
-            </div>
-            <p className="text-sm text-slate-400">
-              Define prizes for the top 3 finishers. Leave blank if no prizes.
-            </p>
-            
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🥇</span>
-                <Input
-                  type="text"
-                  value={prize1st}
-                  onChange={(e) => setPrize1st(e.target.value)}
-                  placeholder="1st Place Prize (e.g., Booster Box)"
-                  className="h-12 bg-slate-800 border-slate-700 text-slate-100 flex-1"
-                />
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🥈</span>
-                <Input
-                  type="text"
-                  value={prize2nd}
-                  onChange={(e) => setPrize2nd(e.target.value)}
-                  placeholder="2nd Place Prize"
-                  className="h-12 bg-slate-800 border-slate-700 text-slate-100 flex-1"
-                />
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🥉</span>
-                <Input
-                  type="text"
-                  value={prize3rd}
-                  onChange={(e) => setPrize3rd(e.target.value)}
-                  placeholder="3rd Place Prize"
-                  className="h-12 bg-slate-800 border-slate-700 text-slate-100 flex-1"
-                />
-              </div>
-            </div>
-          </div>
-          */}
 
           <PlayerSelector
             players={players}
@@ -213,7 +165,8 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
           <Button
             type="submit"
             disabled={isSubmitting || selectedPlayers.length < 2}
-            className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-semibold disabled:opacity-50"
+            className="w-full h-12 font-semibold disabled:opacity-50"
+            variant="default"
           >
             {isSubmitting ? 'Creating...' : 'Start Tournament'}
           </Button>

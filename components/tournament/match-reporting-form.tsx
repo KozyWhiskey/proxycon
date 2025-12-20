@@ -65,14 +65,14 @@ export default function MatchReportingForm({
   const getResultPreview = () => {
     if (player1Games === player2Games) {
       if (player1Games === 0) {
-        return { text: 'Enter game scores', color: 'text-slate-400', type: 'none' };
+        return { text: 'Enter game scores', color: 'text-muted-foreground', type: 'none' };
       }
-      return { text: `Draw (${player1Games}-${player2Games})`, color: 'text-blue-400', type: 'draw' };
+      return { text: `Draw (${player1Games}-${player2Games})`, color: 'text-primary', type: 'draw' };
     }
     if (player1Games > player2Games) {
-      return { text: `${player1Name} wins ${player1Games}-${player2Games}`, color: 'text-green-400', type: 'player1' };
+      return { text: `${player1Name} wins ${player1Games}-${player2Games}`, color: 'text-emerald-500', type: 'player1' };
     }
-    return { text: `${player2Name} wins ${player2Games}-${player1Games}`, color: 'text-green-400', type: 'player2' };
+    return { text: `${player2Name} wins ${player2Games}-${player1Games}`, color: 'text-emerald-500', type: 'player2' };
   };
 
   const result = getResultPreview();
@@ -125,7 +125,7 @@ export default function MatchReportingForm({
       <div className="grid grid-cols-3 gap-4 items-center">
         {/* Player 1 */}
         <div className="text-center space-y-3">
-          <p className="text-slate-100 font-semibold text-lg truncate px-2">
+          <p className="text-foreground font-semibold text-lg truncate px-2 font-heading">
             {player1Name}
           </p>
           <div className="flex items-center justify-center gap-2">
@@ -133,32 +133,34 @@ export default function MatchReportingForm({
               type="button"
               onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
               disabled={isSubmitting || player1Games === 0}
-              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 disabled:opacity-30"
+              variant="outline"
+              className="h-12 w-12 rounded-full border-white/10"
             >
               <Minus className="w-5 h-5" />
             </Button>
-            <span className="text-5xl font-bold text-yellow-500 w-16 text-center tabular-nums">
+            <span className="text-5xl font-bold text-primary text-glow w-16 text-center tabular-nums">
               {player1Games}
             </span>
             <Button
               type="button"
               onClick={() => setPlayer1Games(player1Games + 1)}
               disabled={isSubmitting}
-              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100"
+              variant="outline"
+              className="h-12 w-12 rounded-full border-white/10"
             >
               <Plus className="w-5 h-5" />
             </Button>
           </div>
-          <p className="text-xs text-slate-500">Games Won</p>
+          <p className="text-xs text-muted-foreground">Games Won</p>
 
           {player1ProfileId && userDecks.length > 0 && (
             <div className="mt-4">
               <Select onValueChange={setPlayer1DeckId} value={player1DeckId || ''}>
-                <SelectTrigger className="w-full bg-slate-950 border-slate-800">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Deck" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-800">
-                  <SelectItem value="" className="text-slate-400">No Deck Selected</SelectItem>
+                <SelectContent>
+                  <SelectItem value="" className="text-muted-foreground">No Deck Selected</SelectItem>
                   {userDecks.map((deck) => (
                     <SelectItem key={deck.id} value={deck.id}>
                       {deck.name}
@@ -169,18 +171,18 @@ export default function MatchReportingForm({
             </div>
           )}
            {player1ProfileId && userDecks.length === 0 && (
-             <p className="text-xs text-slate-500 mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
+             <p className="text-xs text-muted-foreground mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
            )}
         </div>
 
         {/* VS Divider */}
         <div className="text-center">
-          <span className="text-3xl font-bold text-slate-600">vs</span>
+          <span className="text-3xl font-bold text-muted-foreground font-heading">vs</span>
         </div>
 
         {/* Player 2 */}
         <div className="text-center space-y-3">
-          <p className="text-slate-100 font-semibold text-lg truncate px-2">
+          <p className="text-foreground font-semibold text-lg truncate px-2 font-heading">
             {player2Name}
           </p>
           <div className="flex items-center justify-center gap-2">
@@ -188,31 +190,33 @@ export default function MatchReportingForm({
               type="button"
               onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
               disabled={isSubmitting || player2Games === 0}
-              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 disabled:opacity-30"
+              variant="outline"
+              className="h-12 w-12 rounded-full border-white/10"
             >
               <Minus className="w-5 h-5" />
             </Button>
-            <span className="text-5xl font-bold text-yellow-500 w-16 text-center tabular-nums">
+            <span className="text-5xl font-bold text-primary text-glow w-16 text-center tabular-nums">
               {player2Games}
             </span>
             <Button
               type="button"
               onClick={() => setPlayer2Games(player2Games + 1)}
               disabled={isSubmitting}
-              className="h-12 w-12 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100"
+              variant="outline"
+              className="h-12 w-12 rounded-full border-white/10"
             >
               <Plus className="w-5 h-5" />
             </Button>
           </div>
-          <p className="text-xs text-slate-500">Games Won</p>
+          <p className="text-xs text-muted-foreground">Games Won</p>
           {player2ProfileId && userDecks.length > 0 && (
             <div className="mt-4">
               <Select onValueChange={setPlayer2DeckId} value={player2DeckId || ''}>
-                <SelectTrigger className="w-full bg-slate-950 border-slate-800">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Deck" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-800">
-                  <SelectItem value="" className="text-slate-400">No Deck Selected</SelectItem>
+                <SelectContent>
+                  <SelectItem value="" className="text-muted-foreground">No Deck Selected</SelectItem>
                   {userDecks.map((deck) => (
                     <SelectItem key={deck.id} value={deck.id}>
                       {deck.name}
@@ -223,14 +227,14 @@ export default function MatchReportingForm({
             </div>
           )}
           {player2ProfileId && userDecks.length === 0 && (
-             <p className="text-xs text-slate-500 mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
+             <p className="text-xs text-muted-foreground mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
            )}
         </div>
       </div>
 
       {/* Result Preview */}
-      <div className={`text-center p-4 bg-slate-800/50 rounded-lg border border-slate-700 ${result.color}`}>
-        <p className="text-lg font-medium">{result.text}</p>
+      <div className={`text-center p-4 bg-white/5 rounded-lg border border-white/10 ${result.color}`}>
+        <p className="text-lg font-medium font-heading">{result.text}</p>
       </div>
 
       {/* Submit Button */}
@@ -238,11 +242,8 @@ export default function MatchReportingForm({
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className={`w-full h-14 font-semibold text-lg disabled:opacity-50 ${
-            result.type === 'draw'
-              ? 'bg-blue-500 hover:bg-blue-600 text-white'
-              : 'bg-yellow-500 hover:bg-yellow-600 text-slate-950'
-          }`}
+          className="w-full h-14 font-semibold text-lg disabled:opacity-50"
+          variant={result.type === 'draw' ? 'secondary' : 'default'}
         >
           {isSubmitting ? 'Submitting...' : 'Submit Result'}
         </Button>
@@ -250,10 +251,10 @@ export default function MatchReportingForm({
 
       {/* Points Information */}
       <div className="text-center space-y-1">
-        <p className="text-xs text-slate-500">
-          Win: 3 points • Draw: 2 points each • Loss: 1 point
+        <p className="text-xs text-muted-foreground uppercase tracking-widest">
+          Win: 3pts • Draw: 1pt • Loss: 0pts
         </p>
-        <p className="text-xs text-slate-600">
+        <p className="text-[10px] text-muted-foreground/40">
           Game wins are used as a tiebreaker
         </p>
       </div>

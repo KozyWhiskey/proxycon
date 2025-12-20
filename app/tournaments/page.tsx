@@ -147,18 +147,18 @@ export default async function TournamentsPage() {
   // If no events, show empty state
   if (eventIds.length === 0) {
     return (
-      <main className="min-h-screen bg-slate-950 pb-24">
+      <main className="min-h-screen pb-24 bg-background">
         <PageHeader
           title="Tournaments"
           subtitle="View and manage tournaments"
           backHref="/"
           backLabel="Home"
         />
-        <div className="max-w-2xl mx-auto p-4">
-          <Card className="bg-slate-900 border-slate-800">
+        <div className="max-w-7xl mx-auto p-4">
+          <Card className="glass-panel">
             <CardContent className="pt-6 text-center">
-              <p className="text-slate-400 mb-2">You haven't joined any events yet.</p>
-              <p className="text-sm text-slate-500">Join an event to see tournaments.</p>
+              <p className="text-muted-foreground mb-2">You haven&apos;t joined any events yet.</p>
+              <p className="text-sm text-muted-foreground/60">Join an event to see tournaments.</p>
             </CardContent>
           </Card>
         </div>
@@ -175,17 +175,17 @@ export default async function TournamentsPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-950 pb-24">
+      <main className="min-h-screen pb-24 bg-background">
         <PageHeader
           title="Tournaments"
           subtitle="View and manage tournaments"
           backHref="/"
           backLabel="Home"
         />
-        <div className="max-w-2xl mx-auto p-4">
-          <Card className="bg-slate-900 border-slate-800">
+        <div className="max-w-7xl mx-auto p-4">
+          <Card className="glass-panel border-destructive/50">
             <CardContent className="pt-6">
-              <p className="text-slate-400">Error loading tournaments. Please try again later.</p>
+              <p className="text-destructive">Error loading tournaments. Please try again later.</p>
             </CardContent>
           </Card>
         </div>
@@ -210,14 +210,14 @@ export default async function TournamentsPage() {
   const completedTournaments = tournamentsWithStandings.filter((t) => t.status === 'completed');
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen pb-24 bg-background">
       <PageHeader
         title="Tournaments"
         subtitle="Your Event Tournaments"
         backHref="/"
         backLabel="Home"
       />
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
         <TournamentManagementList
           pendingTournaments={pendingTournaments}
           activeTournaments={activeTournaments}

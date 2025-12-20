@@ -26,6 +26,7 @@ Extends Supabase `auth.users`. This is the "Global User".
 |--------|------|-------------|-------------|
 | `id` | UUID | PRIMARY KEY, FK → auth.users.id | Unique user identifier |
 | `username` | TEXT | UNIQUE | Global handle (e.g., "@jace") |
+| `role` | TEXT | DEFAULT 'user', CHECK ('user', 'admin') | RBAC Role |
 | `display_name` | TEXT | NULLABLE | Public name (e.g., "Jace Beleren") |
 | `avatar_url` | TEXT | NULLABLE | Profile picture |
 | `favorite_card_image` | TEXT | NULLABLE | URL to favorite card image |

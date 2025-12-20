@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logout } from '@/app/user/actions';
-import { LogOut, User, Edit2 } from 'lucide-react';
+import { LogOut, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserHeaderProps {
@@ -39,33 +40,33 @@ export default function UserHeader({
   };
 
   return (
-    <div className="flex items-center justify-between w-full p-4 bg-slate-900 border-b border-slate-800">
+    <div className="flex items-center justify-between w-full p-4 glass-panel rounded-lg">
       <div 
-        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer group"
+        className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer group"
         onClick={handleProfileClick}
       >
-        <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shrink-0 transition-colors group-hover:bg-yellow-500/30">
-          {avatarUrl ? (
-             <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-          ) : (
-             <User className="w-5 h-5 text-yellow-500" />
-          )}
-        </div>
+        <Avatar className="w-12 h-12 border-2 border-primary/20 group-hover:border-primary/50 transition-colors shadow-lg shadow-primary/10">
+          <AvatarImage src={avatarUrl || ''} />
+          <AvatarFallback className="bg-primary/10 text-primary font-heading text-lg">
+            {displayName.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-slate-400">Playing as</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Playing as</p>
           <div className="flex items-center gap-2">
-            <p className="text-lg font-semibold text-slate-100 truncate group-hover:text-yellow-500 transition-colors">
+            <p className="text-xl font-semibold text-foreground truncate group-hover:text-primary transition-colors font-heading tracking-wide text-glow">
               {displayName}
             </p>
-            <Edit2 className="w-3 h-3 text-slate-500 group-hover:text-yellow-500 transition-colors" />
+            <Edit2 className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
           </div>
-          {username && <p className="text-xs text-slate-500">@{username}</p>}
+          {username && <p className="text-xs text-muted-foreground/80">@{username}</p>}
         </div>
       </div>
       <Button
         onClick={handleLogout}
         variant="ghost"
-        className="h-12 px-4 text-slate-400 hover:text-slate-100 hover:bg-slate-800 shrink-0"
+        className="h-10 w-10 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
         aria-label="Logout"
       >
         <LogOut className="w-5 h-5" />

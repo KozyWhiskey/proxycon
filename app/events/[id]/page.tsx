@@ -235,7 +235,7 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
   }));
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen bg-background pb-24">
       {/* User Header */}
       <div className="sticky top-0 z-10">
         <UserHeader
@@ -245,11 +245,11 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
-        <div className="flex justify-between items-start">
+      <div className="max-w-7xl mx-auto p-4 space-y-8 mt-4">
+        <div className="flex justify-between items-center px-1">
           <div>
-            <h1 className="text-4xl font-bold text-slate-100 mb-2">{event?.name || 'Event Dashboard'}</h1>
-            <p className="text-slate-400 text-sm">ProxyCon Platform</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 font-heading tracking-tight">{event?.name || 'Event Dashboard'}</h1>
+            <p className="text-muted-foreground/60 text-xs uppercase tracking-[0.2em] font-heading">Event Context</p>
           </div>
           <ManageMembersDialog 
             eventId={eventId}
@@ -260,45 +260,65 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
           />
         </div>
         
-        {/* MyStats will need to be refactored to use V3 schema */}
-        <MyStats
-          casualWins={casualWins}
-          casualWinDetails={casualWinDetails}
-          tournamentFirstPlace={tournamentFirstPlace}
-          tournamentSecondPlace={tournamentSecondPlace}
-          tournamentThirdPlace={tournamentThirdPlace}
-          tournamentWins={tournamentWins}
-          tournamentLosses={tournamentLosses}
-          tournamentDraws={tournamentDraws}
-          tournamentWinRate={tournamentWinRate}
-        />
-        
-        <QuickActions eventId={eventId} />
-        
-        {tournamentsWithMatches.length > 0 ? (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-slate-100">Active Tournaments</h2>
-            {tournamentsWithMatches.map(({ tournament, currentMatch }) => (
-              <ActiveTournament
-                key={tournament.id}
-                tournament={tournament}
-                currentMatch={currentMatch}
-                currentProfileId={currentProfileId} // Use currentProfileId
-              />
-            ))}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          {/* Main Content Area */}
+          <div className="md:col-span-8 space-y-8">
+            <section>
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Quick Actions</h2>
+              <QuickActions eventId={eventId} />
+            </section>
+
+            <section>
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Active Tournaments</h2>
+              <div className="space-y-4">
+                {tournamentsWithMatches.length > 0 ? (
+                  tournamentsWithMatches.map(({ tournament, currentMatch }) => (
+                    <ActiveTournament
+                      key={tournament.id}
+                      tournament={tournament}
+                      currentMatch={currentMatch}
+                      currentProfileId={currentProfileId}
+                    />
+                  ))
+                ) : (
+                  <ActiveTournament
+                    tournament={null}
+                    currentMatch={null}
+                    currentProfileId={currentProfileId}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section className="hidden md:block">
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Match Feed</h2>
+              <Feed matches={formattedMatches} />
+            </section>
           </div>
-        ) : (
-          <div className="space-y-4">
-             <h2 className="text-2xl font-bold text-slate-100">Active Tournaments</h2>
-             <ActiveTournament
-                tournament={null}
-                currentMatch={null}
-                currentProfileId={currentProfileId} // Use currentProfileId
+
+          {/* Sidebar Stats Area */}
+          <div className="md:col-span-4 space-y-8">
+            <section>
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Event Stats</h2>
+              <MyStats
+                casualWins={casualWins}
+                casualWinDetails={casualWinDetails}
+                tournamentFirstPlace={tournamentFirstPlace}
+                tournamentSecondPlace={tournamentSecondPlace}
+                tournamentThirdPlace={tournamentThirdPlace}
+                tournamentWins={tournamentWins}
+                tournamentLosses={tournamentLosses}
+                tournamentDraws={tournamentDraws}
+                tournamentWinRate={tournamentWinRate}
               />
+            </section>
+
+            <section className="md:hidden">
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Match Feed</h2>
+              <Feed matches={formattedMatches} />
+            </section>
           </div>
-        )}
-        
-        <Feed matches={formattedMatches} /> {/* Feed needs V3 data */}
+        </div>
       </div>
     </main>
   );
