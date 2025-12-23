@@ -7,6 +7,7 @@ import Feed from '@/components/dashboard/feed';
 import UserHeader from '@/components/dashboard/user-header';
 import QuickActions from '@/components/dashboard/quick-actions';
 import ManageMembersDialog from '@/components/events/manage-members-dialog';
+import EventPlayerList from '@/components/events/event-player-list';
 import { getEventMembers } from '@/app/events/actions';
 import {
   calculateStandings,
@@ -311,6 +312,11 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
                 tournamentDraws={tournamentDraws}
                 tournamentWinRate={tournamentWinRate}
               />
+            </section>
+
+            <section>
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Players</h2>
+              <EventPlayerList members={members} />
             </section>
 
             <section className="md:hidden">

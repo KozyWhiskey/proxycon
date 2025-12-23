@@ -25,8 +25,14 @@ export default async function NewTournamentPage({ searchParams }: PageProps) {
     
     if (membersError) error = membersError;
     
-    // Ensure m.profiles is treated as a single Profile object or null
-    players = members?.map(m => (m.profiles && Array.isArray(m.profiles) && m.profiles.length > 0) ? m.profiles[0] as Profile : null).filter((p): p is Profile => p !== null) || [];
+    // Correctly handle m.profiles which is an object (Many-to-One)
+    players = members?.map(m => {
+      if (!m.profiles) return null;
+      if (Array.isArray(m.profiles)) {
+        return m.profiles.length > 0 ? (m.profiles[0] as Profile) : null;
+      }
+      return m.profiles as unknown as Profile;
+    }).filter((p): p is Profile => p !== null) || [];
   } else {
     // Fetch all profiles (Global)
     const { data: profiles, error: profilesError } = await supabase
