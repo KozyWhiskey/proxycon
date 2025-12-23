@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Swords, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { TrophyCase } from '@/components/profile/trophy-case';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -16,6 +17,24 @@ export default async function ProfilePage() {
     .from('decks')
     .select('*', { count: 'exact', head: true })
     .eq('owner_id', user.id);
+
+  // Fetch badges
+  const { data: rawBadges } = await supabase
+    .from('profile_badges')
+    .select(`
+      awarded_at,
+      badges (id, slug, name, description, icon_url),
+      events (name)
+    `)
+    .eq('profile_id', user.id)
+    .order('awarded_at', { ascending: false });
+
+  // Transform for UI
+  const badges = rawBadges?.map((item: any) => ({
+    ...item.badges,
+    awarded_at: item.awarded_at,
+    event_name: item.events?.name
+  })) || [];
 
   return (
     <main className="min-h-screen bg-background pb-24">
@@ -61,6 +80,9 @@ export default async function ProfilePage() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Trophy Case */}
+        <TrophyCase badges={badges} />
       </div>
     </main>
   );

@@ -27,7 +27,7 @@ ProxyCon 2025 is a **multi-event platform** that handles:
 - **Styling**: Tailwind CSS + Shadcn UI (Dark theme: Slate)
 - **Database**: Supabase (Cloud PostgreSQL)
 - **Auth**: Supabase Auth
-- **AI**: Vercel AI SDK with Google Gemini
+- **AI**: Vercel AI SDK with OpenAI (GPT-4o) & Google Gemini
 - **API**: Scryfall API
 
 ## 🚀 Getting Started
@@ -76,6 +76,11 @@ ProxyCon 2025 is a **multi-event platform** that handles:
 - **Deck Tracker**: 
   - **Scryfall Integration**: Search cards, auto-populate details.
   - **Art Selection**: Choose specific prints/art for your Commander.
+  - **Rich Card Data**: Displays mana symbols, set symbols, and rich oracle text.
+- **Achievements & Badges**:
+  - **Trophy Case**: Profile section showcasing earned badges.
+  - **Automated Awards**: Unlock badges for win streaks ("The Hot Hand") and participation ("Iron Man").
+  - **AI Director**: "The Snarky Director" (powered by OpenAI) analyzes match results and Commander choices to generate unique, funny, and sometimes mean achievements (e.g., "The Arithmetic Nerd" for Atraxa players).
 - **Tournament Engine**: 
   - Swiss-style brackets using MTG tiebreakers (Points > OMW% > GW%).
   - Draft seat selection.
@@ -99,4 +104,4 @@ ProxyCon 2025 is a **multi-event platform** that handles:
 ---
 
 **Status**: Active Development (V3 Platform)  
-**Last Updated**: December 18, 2025
+**Last Updated**: December 22, 2025

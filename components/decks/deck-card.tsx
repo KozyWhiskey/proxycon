@@ -11,14 +11,18 @@ import DeckForm from './deck-form';
 import { deleteDeck } from '@/app/decks/actions';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { ManaCost } from '@/components/ui/mana-symbol';
+import { DeckInspector } from './deck-inspector';
 
 interface DeckCardProps {
   deck: Deck;
+  isOwner?: boolean;
 }
 
-export default function DeckCard({ deck }: DeckCardProps) {
+export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -37,7 +41,10 @@ export default function DeckCard({ deck }: DeckCardProps) {
 
   return (
     <>
-      <Card className="glass-panel relative overflow-hidden group min-h-[160px] border-white/10 hover:border-primary/50 transition-colors">
+      <Card 
+        className="glass-panel relative overflow-hidden group min-h-[160px] border-white/10 hover:border-primary/50 transition-colors cursor-pointer"
+        onClick={() => setIsInspectorOpen(true)}
+      >
         {deck.image_url && (
           <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
             <Image
@@ -58,14 +65,23 @@ export default function DeckCard({ deck }: DeckCardProps) {
           </CardHeader>
           <CardContent className="flex justify-between items-end">
             <div>
-              <p className="text-muted-foreground font-medium text-sm drop-shadow-md">
-                {deck.format}
-                {deck.commander_name && (
+              <p className="text-muted-foreground font-medium text-sm drop-shadow-md flex flex-wrap gap-2 items-center">
+                <span>{deck.format}</span>
+                 {deck.mana_cost && <ManaCost manaCost={deck.mana_cost} size={14} className="opacity-80" />}
+                 {deck.set_code && (
+                   <img 
+                    src={`https://svgs.scryfall.io/sets/${deck.set_code.toLowerCase()}.svg`} 
+                    alt={deck.set_name || deck.set_code}
+                    className="w-4 h-4 invert opacity-70"
+                    title={deck.set_name || deck.set_code}
+                   />
+                 )}
+              </p>
+              {deck.commander_name && (
                   <span className="block text-xs text-muted-foreground/80 font-normal mt-0.5">
                     {deck.commander_name}
                   </span>
                 )}
-              </p>
               {deck.colors && deck.colors.length > 0 && (
                 <div className="flex gap-1 mt-2">
                   {deck.colors.map((color: string) => (
@@ -84,27 +100,47 @@ export default function DeckCard({ deck }: DeckCardProps) {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-8 w-8 text-muted-foreground hover:text-foreground border-white/10 bg-black/20 backdrop-blur-sm hover:bg-black/40"
-                onClick={() => setIsEditOpen(true)}
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="icon" 
-                className="h-8 w-8 bg-destructive/50 hover:bg-destructive backdrop-blur-sm shadow-none"
-                onClick={() => setIsDeleteOpen(true)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
+            {isOwner && (
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground border-white/10 bg-black/20 backdrop-blur-sm hover:bg-black/40"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditOpen(true);
+                  }}
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="icon" 
+                  className="h-8 w-8 bg-destructive/50 hover:bg-destructive backdrop-blur-sm shadow-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDeleteOpen(true);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </div>
       </Card>
+
+      {/* Inspector Dialog */}
+      <Dialog open={isInspectorOpen} onOpenChange={setIsInspectorOpen}>
+        <DeckInspector 
+          deck={deck} 
+          onEdit={() => {
+            setIsInspectorOpen(false);
+            setIsEditOpen(true);
+          }}
+          isOwner={isOwner}
+        />
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

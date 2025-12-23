@@ -24,8 +24,11 @@ import { Loader2, Search, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Deck } from '@/lib/types';
 import { searchCards, getCardPrints, ScryfallCard } from '@/lib/scryfall';
+import { deleteDeck } from '@/app/decks/actions'; // This seems unused here, but keeping imports consistent
+import { Textarea } from '@/components/ui/textarea';
+import { ManaCost } from '@/components/ui/mana-symbol';
+import { RichTextDisplay } from './rich-text-display';
 import Image from 'next/image';
-import { Textarea } from '@/components/ui/textarea'; // Assuming this exists or using standard
 
 interface DeckFormProps {
   initialData?: Deck;
@@ -47,6 +50,12 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   const [commanderName, setCommanderName] = useState(initialData?.commander_name || '');
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
   const [description, setDescription] = useState(initialData?.description || '');
+  const [manaCost, setManaCost] = useState(initialData?.mana_cost || '');
+  const [typeLine, setTypeLine] = useState(initialData?.type_line || '');
+  const [oracleText, setOracleText] = useState(initialData?.oracle_text || '');
+  const [expansionCode, setExpansionCode] = useState(initialData?.set_code || '');
+  const [expansionName, setExpansionName] = useState(initialData?.set_name || '');
+  const [imageUris, setImageUris] = useState<ScryfallCard['image_uris']>(initialData?.image_uris || undefined);
 
   // Search State
   const [searchResults, setSearchResults] = useState<ScryfallCard[]>([]);
@@ -56,6 +65,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   const [printResults, setPrintResults] = useState<ScryfallCard[]>([]);
   const [isPrintsOpen, setIsPrintsOpen] = useState(false);
   const [isLoadingPrints, setIsLoadingPrints] = useState(false);
+  const [isFullArtOpen, setIsFullArtOpen] = useState(false);
 
   const handleColorChange = (color: string, checked: boolean) => {
     setColors((prev) =>
@@ -113,8 +123,14 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
     
     const art = card.image_uris?.art_crop || card.image_uris?.normal || '';
     setImageUrl(art);
+    setImageUris(card.image_uris);
+    setManaCost(card.mana_cost || '');
+    setTypeLine(card.type_line || '');
+    setOracleText(card.oracle_text || '');
+    setExpansionCode(card.set || '');
+    setExpansionName(card.set_name || '');
 
-    // Format description
+    // Format description (Legacy fallback)
     const desc = `${card.mana_cost || ''} — ${card.type_line || ''}\n\n${card.oracle_text || ''}`;
     setDescription(desc);
 
@@ -139,6 +155,12 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
     if (commanderName) formData.append('commanderName', commanderName);
     if (imageUrl) formData.append('imageUrl', imageUrl);
     if (description) formData.append('description', description);
+    if (manaCost) formData.append('manaCost', manaCost);
+    if (typeLine) formData.append('typeLine', typeLine);
+    if (oracleText) formData.append('oracleText', oracleText);
+    if (expansionCode) formData.append('setCode', expansionCode);
+    if (expansionName) formData.append('setName', expansionName);
+    if (imageUris) formData.append('imageUris', JSON.stringify(imageUris));
 
     let res;
     if (initialData?.id) {
@@ -173,7 +195,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   fill 
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                    <Button 
                     type="button"
                     variant="secondary"
@@ -183,6 +205,15 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                    >
                      {isLoadingPrints ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                      Change Art
+                   </Button>
+                   <Button
+                    type="button"
+                    variant="outline" 
+                    onClick={() => setIsFullArtOpen(true)}
+                    className="gap-2 shadow-xl bg-black/40 border-white/20 hover:bg-black/60 text-white"
+                   >
+                     <Search className="w-4 h-4" />
+                     View Full Art
                    </Button>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
@@ -271,7 +302,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     fill 
                     className="object-cover object-top"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                     <Button 
                       type="button"
                       variant="secondary"
@@ -282,6 +313,15 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       {isLoadingPrints ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                       Change Art
                     </Button>
+                     <Button
+                      type="button"
+                      variant="outline" 
+                      onClick={() => setIsFullArtOpen(true)}
+                      className="gap-2 shadow-xl bg-black/40 border-white/20 hover:bg-black/60 text-white"
+                     >
+                       <Search className="w-4 h-4" />
+                       View Full Art
+                     </Button>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                     <p className="text-lg font-bold text-white drop-shadow-md text-center font-heading">{commanderName}</p>
@@ -314,15 +354,26 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description" className="font-medium">Oracle Text / Stats</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Card text, stats, or notes..."
-                className="bg-zinc-900/50 border-white/10 text-muted-foreground min-h-[150px] font-mono text-sm focus-visible:ring-primary/20"
-              />
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                  <Label htmlFor="description" className="font-medium">Oracle Text / Stats</Label>
+                  {manaCost && <ManaCost manaCost={manaCost} size={18} />}
+              </div>
+              
+              {oracleText ? (
+                 <div className="bg-zinc-900/50 border border-white/10 rounded-md p-4 min-h-[150px]">
+                    {typeLine && <p className="font-bold text-sm mb-2 border-b border-white/5 pb-2">{typeLine}</p>}
+                    <RichTextDisplay text={oracleText} />
+                 </div>
+              ) : (
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Card text, stats, or notes..."
+                  className="bg-zinc-900/50 border-white/10 text-muted-foreground min-h-[150px] font-mono text-sm focus-visible:ring-primary/20"
+                />
+              )}
             </div>
 
             <div className="pt-4">
@@ -406,6 +457,22 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               </div>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Full Art Dialog */}
+      <Dialog open={isFullArtOpen} onOpenChange={setIsFullArtOpen}>
+        <DialogContent className="max-w-[90vh] h-[90vh] p-0 overflow-hidden bg-transparent border-none shadow-none flex items-center justify-center">
+            {imageUris?.border_crop || imageUris?.large || imageUris?.normal || imageUrl ? (
+              <div className="relative w-full h-full max-h-[85vh] aspect-[2.5/3.5]">
+                <Image
+                  src={imageUris?.border_crop || imageUris?.large || imageUris?.normal || imageUrl}
+                  alt={commanderName}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            ) : null}
         </DialogContent>
       </Dialog>
     </>

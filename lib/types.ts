@@ -36,12 +36,24 @@ export interface EventMember {
 
 export interface Deck {
   id: string;
-  owner_id: string; // references profiles.id
+  owner_id: string;
   name: string;
-  format: string; // 'commander', 'modern', etc.
-  colors: string[] | null; // ['W', 'U', 'B', 'R', 'G']
+  format: string;
+  colors: string[] | null;
   commander_name: string | null;
+  mana_cost?: string | null;
+  type_line?: string | null;
+  oracle_text?: string | null;
   image_url: string | null;
+  image_uris?: {
+    normal?: string;
+    art_crop?: string;
+    large?: string;
+    png?: string;
+    border_crop?: string;
+  } | null;
+  set_code?: string | null;
+  set_name?: string | null;
   description: string | null;
   created_at: string;
 }

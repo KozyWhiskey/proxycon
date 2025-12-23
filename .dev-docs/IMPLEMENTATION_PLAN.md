@@ -16,7 +16,7 @@ We will follow this plan sequentially. Each feature must be implemented and test
   - [x] Tournament Ranking & Draft Seats (`04.5-feature-tournament-ranking-draft-seats.md`) ✅ **COMPLETED**
 - [x] **Phase 4: Casual Play & AI Integration**
   - [x] Casual Mode (`05-feature-casual-mode.md`) ✅ **COMPLETED** - With Event Linking
-  - [ ] AI Commentary (`06-feature-ai-commentary.md`) ⏸️ **SKIPPED** (for now)
+  - [x] AI Gamification ("The Snarky Director") ✅ **COMPLETED** - Dynamic Commander Roasts
 - [x] **Phase 5: Economy**
   - [x] Prize Wall (`07-feature-prize-wall.md`) ✅ **COMPLETED** - Replaced by Tournament Prizes
 - [ ] **Phase 6: Polish & Administration**

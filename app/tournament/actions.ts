@@ -6,10 +6,13 @@ import { revalidatePath } from 'next/cache';
 import {
   generateSwissPairings,
   convertDbMatchToMatchResult,
+  calculateStandings,
+  sortStandings,
   BYE_GAMES_WON,
   type MatchResult,
 } from '@/lib/swiss-pairing';
 import { TimerData, TimerControlResult } from '@/lib/types';
+import { checkAndAwardBadges, awardBadge, checkAndAwardCommanderBadge } from '@/lib/badges';
 
 interface CreateTournamentResult {
   success: boolean;
@@ -71,6 +74,7 @@ interface SubmitResultResult {
   success: boolean;
   message?: string;
   nextRoundGenerated?: boolean;
+  awardedBadges?: any[];
 }
 
 export async function submitResultWithGames(
@@ -93,6 +97,15 @@ export async function submitResultWithGames(
 
     await supabase.from('match_participants').update({ result: p1Result, games_won: player1Games, deck_id: player1DeckId }).eq('match_id', matchId).eq('profile_id', player1Id);
     await supabase.from('match_participants').update({ result: p2Result, games_won: player2Games, deck_id: player2DeckId }).eq('match_id', matchId).eq('profile_id', player2Id);
+
+    // Badge Check
+    const { data: tournamentBadge } = await supabase.from('tournaments').select('event_id').eq('id', tournamentId).single();
+    if (tournamentBadge) {
+      await Promise.all([
+        checkAndAwardBadges(player1Id, tournamentBadge.event_id),
+        checkAndAwardBadges(player2Id, tournamentBadge.event_id)
+      ]);
+    }
 
     const nextRoundGenerated = await checkAndGenerateNextRound(supabase, matchId, tournamentId);
     revalidatePath(`/tournament/${tournamentId}`);
@@ -149,13 +162,8 @@ async function checkAndGenerateNextRound(supabase: any, matchId: string, tournam
 
 async function generateNextRound(tournamentId: string, currentRound: number) {
   const supabase = await createClient();
-  const { data: tournament } = await supabase.from('tournaments').select('format, max_rounds').eq('id', tournamentId).single();
+  const { data: tournament } = await supabase.from('tournaments').select('format, max_rounds, event_id').eq('id', tournamentId).single();
   
-  if (currentRound >= (tournament?.max_rounds || 3)) {
-    await supabase.from('tournaments').update({ status: 'completed' }).eq('id', tournamentId);
-    return;
-  }
-
   const { data: tps } = await supabase.from('tournament_participants').select('profile_id').eq('tournament_id', tournamentId);
   const profileIds = tps?.map(p => p.profile_id) || [];
 
@@ -170,6 +178,25 @@ async function generateNextRound(tournamentId: string, currentRound: number) {
       history.push(convertDbMatchToMatchResult(m.id, m.round_number, p.map((x: any) => ({ playerId: x.profile_id, result: x.result }))));
     }
   });
+
+  if (currentRound >= (tournament?.max_rounds || 3)) {
+    await supabase.from('tournaments').update({ status: 'completed' }).eq('id', tournamentId);
+    
+    // Award 'Champion' badge to the winner
+    try {
+      const standingsMap = calculateStandings(profileIds, history);
+      const sortedStandings = sortStandings(Array.from(standingsMap.values()));
+      
+      if (sortedStandings.length > 0) {
+        const winner = sortedStandings[0];
+        await awardBadge(supabase, winner.playerId, 'champion', tournament?.event_id || null);
+      }
+    } catch (e) {
+      console.error('Error awarding champion badge:', e);
+    }
+    
+    return;
+  }
 
   const { pairings } = generateSwissPairings(profileIds, history);
   const nextRound = currentRound + 1;
@@ -359,18 +386,54 @@ export async function submitResultWithGamesNoRedirect(
     const supabase = await createClient();
     
     let p1Result = 'loss', p2Result = 'loss';
-    if (player1Games > player2Games) { p1Result = 'win'; p2Result = 'loss'; }
-    else if (player2Games > player1Games) { p1Result = 'loss'; p2Result = 'win'; }
+    let winnerId: string | null = null;
+    let winnerDeckId: string | null = null;
+
+    if (player1Games > player2Games) { 
+      p1Result = 'win'; 
+      p2Result = 'loss'; 
+      winnerId = player1Id;
+      winnerDeckId = player1DeckId;
+    }
+    else if (player2Games > player1Games) { 
+      p1Result = 'loss'; 
+      p2Result = 'win'; 
+      winnerId = player2Id;
+      winnerDeckId = player2DeckId;
+    }
     else { p1Result = 'draw'; p2Result = 'draw'; }
 
     await supabase.from('match_participants').update({ result: p1Result, games_won: player1Games, deck_id: player1DeckId }).eq('match_id', matchId).eq('profile_id', player1Id);
     await supabase.from('match_participants').update({ result: p2Result, games_won: player2Games, deck_id: player2DeckId }).eq('match_id', matchId).eq('profile_id', player2Id);
 
+    // Badge Check
+    let awardedBadges: any[] = [];
+    const { data: tournamentBadge } = await supabase.from('tournaments').select('event_id').eq('id', tournamentId).single();
+    if (tournamentBadge) {
+      const [b1, b2] = await Promise.all([
+        checkAndAwardBadges(player1Id, tournamentBadge.event_id),
+        checkAndAwardBadges(player2Id, tournamentBadge.event_id)
+      ]);
+      awardedBadges = [...b1, ...b2];
+    }
+
+    // Badge Check (AI Commander) - Only if there is a winner and they used a deck
+    if (winnerId && winnerDeckId) {
+      try {
+        const aiBadge = await checkAndAwardCommanderBadge(winnerId, winnerDeckId);
+        if (aiBadge) {
+          awardedBadges.push(aiBadge);
+        }
+      } catch (e) {
+        console.error('AI Badge Error:', e);
+      }
+    }
+
     const nextRoundGenerated = await checkAndGenerateNextRound(supabase, matchId, tournamentId);
     revalidatePath(`/tournament/${tournamentId}`);
     revalidatePath(`/tournament/${tournamentId}/dashboard`);
 
-    return { success: true, nextRoundGenerated };
+    return { success: true, nextRoundGenerated, awardedBadges };
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
   }

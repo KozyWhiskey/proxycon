@@ -7,6 +7,7 @@ import MyStats from "@/components/dashboard/my-stats";
 import QuickActions from "@/components/dashboard/quick-actions";
 import UserHeader from "@/components/dashboard/user-header";
 import Feed from "@/components/dashboard/feed";
+import { TrophyCase } from "@/components/profile/trophy-case";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
@@ -163,6 +164,23 @@ export default async function Dashboard() {
     .order('created_at', { ascending: false })
     .limit(5);
 
+  // --- 5. Fetch Badges ---
+  const { data: rawBadges } = await supabase
+    .from('profile_badges')
+    .select(`
+      awarded_at,
+      badges (id, slug, name, description, icon_url),
+      events (name)
+    `)
+    .eq('profile_id', user.id)
+    .order('awarded_at', { ascending: false });
+
+  const badges = rawBadges?.map((item: any) => ({
+    ...item.badges,
+    awarded_at: item.awarded_at,
+    event_name: item.events?.name
+  })) || [];
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">
       {/* 1. Header Section */}
@@ -209,12 +227,10 @@ export default async function Dashboard() {
           </section>
 
           <section>
-             <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Quick Actions</h2>
              <QuickActions />
           </section>
 
           <section className="hidden md:block">
-             <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Recent Activity</h2>
              <Feed matches={(feedMatches as any) || []} />
           </section>
         </div>
@@ -235,9 +251,12 @@ export default async function Dashboard() {
              />
           </section>
 
+          <section>
+            <TrophyCase badges={badges} variant="dashboard" />
+          </section>
+
           {/* Mobile Only Feed (Shown below stats on mobile) */}
           <section className="md:hidden">
-             <h2 className="text-xl font-heading font-semibold text-muted-foreground mb-4 px-1">Recent Activity</h2>
              <Feed matches={(feedMatches as any) || []} />
           </section>
         </div>

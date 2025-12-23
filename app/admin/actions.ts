@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Profile, Event } from '@/lib/types';
+import { Badge, awardBadge as awardBadgeInternal } from '@/lib/badges';
 
 interface AdminActionResult {
   success: boolean;
@@ -267,4 +268,63 @@ export async function fixMatchResultWithGames(
       error instanceof Error ? error.message : 'An unexpected error occurred';
     return { success: false, message: errorMessage };
   }
+}
+
+// --- BADGE MANAGEMENT ---
+
+export async function getAllBadges(): Promise<{ success: boolean; data?: Badge[]; message?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('badges').select('*').order('name');
+    if (error) return { success: false, message: error.message };
+    return { success: true, data: data as Badge[] };
+  } catch (error) {
+    return { success: false, message: 'Failed to fetch badges' };
+  }
+}
+
+export async function awardBadgeManually(userId: string, badgeSlug: string): Promise<AdminActionResult> {
+  try {
+    const supabase = await createClient();
+    
+    // Check admin (re-verify for security in this specific action)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'Not authenticated' };
+
+    const { data: currentUserProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (currentUserProfile?.role !== 'admin') {
+      return { success: false, message: 'Unauthorized' };
+    }
+
+    // Award badge (globally, so eventId = null)
+    const result = await awardBadgeInternal(supabase, userId, badgeSlug, null);
+    
+    if (!result) return { success: false, message: 'Failed to award badge (already owned or invalid slug)' };
+
+    revalidatePath('/admin');
+    return { success: true, message: 'Badge awarded' };
+  } catch (error) {
+    return { success: false, message: 'Error awarding badge' };
+  }
+}
+
+export async function searchUsers(query: string): Promise<{ success: boolean; data?: any[]; message?: string }> {
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, username, display_name, avatar_url')
+            .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+            .limit(10);
+        
+        if (error) return { success: false, message: error.message };
+        return { success: true, data };
+    } catch (e) {
+        return { success: false, message: 'Search failed' };
+    }
 }

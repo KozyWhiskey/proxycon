@@ -83,7 +83,13 @@ Global library of user decks.
 | `format` | TEXT | NOT NULL | Deck format ('commander', 'modern', etc.) |
 | `colors` | TEXT[] | NULLABLE | Array of colors ['W', 'U', 'B', 'R', 'G'] |
 | `commander_name` | TEXT | NULLABLE | Name of the commander |
-| `image_url` | TEXT | NULLABLE | URL to deck art/image |
+| `mana_cost` | TEXT | NULLABLE | Mana cost string (e.g., '{3}{U}{U}') |
+| `type_line` | TEXT | NULLABLE | Full type line (e.g., 'Legendary Creature — Human Wizard') |
+| `oracle_text` | TEXT | NULLABLE | Card rules text |
+| `image_url` | TEXT | NULLABLE | URL to deck art (legacy/primary display) |
+| `image_uris` | JSONB | NULLABLE | JSON object containing full Scryfall image URIs (normal, art_crop, large) |
+| `set_code` | TEXT | NULLABLE | Scryfall set code (e.g., 'mh3') |
+| `set_name` | TEXT | NULLABLE | Full expansion name (e.g., 'Modern Horizons 3') |
 | `description` | TEXT | NULLABLE | Deck description/notes |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
 
@@ -147,6 +153,39 @@ Who played in the match and what happened.
 | `result` | TEXT | CHECK ('win', 'loss', 'draw') | Match result |
 | `games_won` | INTEGER | DEFAULT 0 | Number of games won (e.g. 2 in a 2-1 win) |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
+
+---
+
+## 5. Achievements & Badges
+
+### `public.badges`
+Catalog of all available achievements.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | Unique badge identifier |
+| `slug` | TEXT | UNIQUE, NOT NULL | Programmatic identifier (e.g., 'hot-hand') |
+| `name` | TEXT | NOT NULL | Display name |
+| `description` | TEXT | NOT NULL | Badge description |
+| `icon_url` | TEXT | NULLABLE | Emoji or URL for badge icon |
+| `category` | TEXT | CHECK ('automated', 'manual', 'event') | Badge category |
+| `generated_by` | TEXT | CHECK ('system', 'ai') | Origin of the badge |
+| `metadata` | JSONB | NULLABLE | Stores context (commander_name, etc.) |
+| `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
+
+### `public.profile_badges`
+Badges awarded to users.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | Unique record identifier |
+| `profile_id` | UUID | FK → profiles.id | Recipient of the badge |
+| `badge_id` | UUID | FK → badges.id | The badge awarded |
+| `event_id` | UUID | FK → events.id, NULLABLE | Optional event context |
+| `is_unique` | BOOLEAN | DEFAULT FALSE | If true, this is a one-off "God Mode" feat |
+| `custom_title` | TEXT | NULLABLE | Override title for unique feats |
+| `custom_description` | TEXT | NULLABLE | Override description for unique feats |
+| `awarded_at` | TIMESTAMP | DEFAULT NOW() | When the badge was earned |
 
 ---
 

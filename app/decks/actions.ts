@@ -28,6 +28,13 @@ export async function createDeck(formData: FormData): Promise<DeckActionResult> 
   const commanderName = formData.get('commanderName') as string | null;
   const imageUrl = formData.get('imageUrl') as string | null;
   const description = formData.get('description') as string | null;
+  const manaCost = formData.get('manaCost') as string | null;
+  const typeLine = formData.get('typeLine') as string | null;
+  const oracleText = formData.get('oracleText') as string | null;
+  const setCode = formData.get('setCode') as string | null;
+  const setName = formData.get('setName') as string | null;
+  const imageUrisStr = formData.get('imageUris') as string | null;
+  const imageUris = imageUrisStr ? JSON.parse(imageUrisStr) : null;
 
   if (!name || !format) {
     return { success: false, message: 'Name and Format are required.' };
@@ -44,6 +51,12 @@ export async function createDeck(formData: FormData): Promise<DeckActionResult> 
       commander_name: commanderName || null,
       image_url: imageUrl || null,
       description: description || null,
+      mana_cost: manaCost || null,
+      type_line: typeLine || null,
+      oracle_text: oracleText || null,
+      set_code: setCode || null,
+      set_name: setName || null,
+      image_uris: imageUris,
     })
     .select('id')
     .single();
@@ -73,6 +86,13 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
   const commanderName = formData.get('commanderName') as string | null;
   const imageUrl = formData.get('imageUrl') as string | null;
   const description = formData.get('description') as string | null;
+  const manaCost = formData.get('manaCost') as string | null;
+  const typeLine = formData.get('typeLine') as string | null;
+  const oracleText = formData.get('oracleText') as string | null;
+  const setCode = formData.get('setCode') as string | null;
+  const setName = formData.get('setName') as string | null;
+  const imageUrisStr = formData.get('imageUris') as string | null;
+  const imageUris = imageUrisStr ? JSON.parse(imageUrisStr) : null;
 
   if (!name || !format) {
     return { success: false, message: 'Name and Format are required.' };
@@ -87,6 +107,12 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
       commander_name: commanderName || null,
       image_url: imageUrl || null,
       description: description || null,
+      mana_cost: manaCost || null,
+      type_line: typeLine || null,
+      oracle_text: oracleText || null,
+      set_code: setCode || null,
+      set_name: setName || null,
+      image_uris: imageUris,
     })
     .eq('id', deckId)
     .eq('owner_id', authData.user.id); // Ensure ownership

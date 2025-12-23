@@ -4,7 +4,8 @@ import PageHeader from '@/components/ui/page-header';
 import FixMatchResult from '@/components/admin/fix-match-result';
 import UserManager from '@/components/admin/user-manager';
 import EventManager from '@/components/admin/event-manager';
-import { AlertTriangle, Users, Calendar, Trophy } from 'lucide-react';
+import BadgeManager from '@/components/admin/badge-manager';
+import { AlertTriangle, Users, Calendar, Trophy, Award } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -46,7 +47,7 @@ export default async function AdminPage() {
         </Card>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -58,6 +59,10 @@ export default async function AdminPage() {
             <TabsTrigger value="matches">
               <Trophy className="w-4 h-4 mr-2" />
               Matches
+            </TabsTrigger>
+            <TabsTrigger value="badges">
+              <Award className="w-4 h-4 mr-2" />
+              Badges
             </TabsTrigger>
           </TabsList>
 
@@ -73,6 +78,12 @@ export default async function AdminPage() {
              <div className="max-w-2xl">
                <FixMatchResult />
              </div>
+          </TabsContent>
+
+          <TabsContent value="badges" className="mt-6">
+            <div className="max-w-xl">
+              <BadgeManager />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

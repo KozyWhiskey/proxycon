@@ -1,7 +1,7 @@
 # Page Structure and User Experience Workflow
 
 **Last Updated:** December 2025
-**Platform:** V2 (Multi-Event Architecture)
+**Platform:** V3 (Multi-Event Architecture)
 
 This document provides a comprehensive overview of the application's page structure and the intended user experience workflows.
 
@@ -15,7 +15,7 @@ This document provides a comprehensive overview of the application's page struct
 - **`app/login/page.tsx`, `app/onboarding/page.tsx`**
 
 ### Global Context (The "Player Status Sheet")
-- **`/` (Home)**: The personal hub for the logged-in user. Displays total career wins, a link to the currently active event, and quick action buttons.
+- **`/` (Home)**: The personal hub for the logged-in user. Displays total career wins, active event links, quick action buttons, and the **Trophy Case** showcasing earned badges.
 - **`app/page.tsx`**
 
 ### Event Management
@@ -39,7 +39,7 @@ This document provides a comprehensive overview of the application's page struct
 
 ### Player Resources
 - **`/decks`**: Personal deck library. Users can create and manage their decks here to track performance stats.
-- **`/profile`**: User settings and profile management (Name, Avatar).
+- **`/profile`**: User settings and profile management (Name, Avatar, and full **Trophy Case**).
 - **`/stats`**: Detailed personal statistics, history, and analytics.
 - **`app/decks/page.tsx`, `app/profile/page.tsx`, `app/stats/page.tsx`**
 
@@ -49,7 +49,7 @@ This document provides a comprehensive overview of the application's page struct
 - **`app/players/page.tsx`, `app/players/[id]/page.tsx`**
 
 ### Admin & System
-- **`/admin`**: System-wide administration ("God Mode"). Fix match results, manage global settings, and override data.
+- **`/admin`**: System-wide administration ("God Mode"). Fix match results, manage global settings, and **manually award badges**.
 - **`app/admin/page.tsx`**
 
 ---

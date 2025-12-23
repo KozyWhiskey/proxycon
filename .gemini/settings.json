@@ -2,11 +2,9 @@
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
-      "stdio": true
+      "args": ["-y", "@upstash/context7-mcp@latest"]
     },
     "supabase": {
-      "type": "http",
       "url": "https://mcp.supabase.com/mcp"
     },
     "next-devtools": {

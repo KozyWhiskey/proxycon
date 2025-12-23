@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { getGlobalStats } from '@/lib/stats';
+import { getCurrentUser } from '@/lib/get-current-user';
 import PageHeader from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Swords, Activity, History, TrendingUp } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import DeckList from '@/components/decks/deck-list';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -30,6 +32,8 @@ interface MatchWithParticipants {
 export default async function PlayerDetailPage({ params }: PageProps) {
   const { id: playerId } = await params;
   const supabase = await createClient();
+  const authData = await getCurrentUser();
+  const isOwner = authData?.user?.id === playerId;
 
   // 1. Get Global Stats to find this player's aggregate data
   const { playerStats } = await getGlobalStats(supabase);
@@ -164,43 +168,7 @@ export default async function PlayerDetailPage({ params }: PageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {!decks || decks.length === 0 ? (
-                  <p className="text-muted-foreground text-sm italic">No decks created yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {decks.map((deck) => (
-                      <div key={deck.id} className="flex items-start gap-4 p-3 bg-white/5 rounded-lg border border-white/5">
-                        {/* Deck Image / Placeholder */}
-                        <div className="flex-shrink-0 w-16 h-24 rounded bg-zinc-900 overflow-hidden relative border border-white/10">
-                          {deck.image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img 
-                              src={deck.image_url} 
-                              alt={deck.name} 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Swords className="w-6 h-6 text-muted-foreground/40" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-foreground truncate">{deck.name}</div>
-                          <div className="text-xs text-primary font-medium mb-1">
-                            {deck.format || 'Casual'} • {deck.commander_name || 'No Commander'}
-                          </div>
-                          {deck.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-                              {deck.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <DeckList decks={decks || []} isOwner={isOwner} variant="list" />
               </CardContent>
             </Card>
           </div>

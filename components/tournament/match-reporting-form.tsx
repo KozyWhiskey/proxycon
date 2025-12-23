@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { submitResultWithGames } from '@/app/tournament/actions';
+import { useRouter } from 'next/navigation';
+import { submitResultWithGamesNoRedirect } from '@/app/tournament/actions';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Minus, Plus } from 'lucide-react';
@@ -45,6 +46,7 @@ export default function MatchReportingForm({
   player1ProfileId,
   player2ProfileId,
 }: MatchReportingFormProps) {
+  const router = useRouter();
   const [player1Games, setPlayer1Games] = useState(0);
   const [player2Games, setPlayer2Games] = useState(0);
   const [player1DeckId, setPlayer1DeckId] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export default function MatchReportingForm({
       const p1Id = player1.profile_id;
       const p2Id = player2.profile_id;
 
-      const response = await submitResultWithGames(
+      const response = await submitResultWithGamesNoRedirect(
         matchId,
         p1Id, player1Games, player1DeckId,
         p2Id, player2Games, player2DeckId,
@@ -101,18 +103,31 @@ export default function MatchReportingForm({
       if (!response.success) {
         toast.error(response.message || 'Failed to submit result');
         setIsSubmitting(false);
-      }
-      // If successful, the server action will redirect
-    } catch (error) {
-      // Check if this is a redirect error (expected behavior)
-      if (error && typeof error === 'object' && 'digest' in error) {
-        const digest = (error as { digest?: string }).digest;
-        if (digest?.startsWith('NEXT_REDIRECT')) {
-          // This is expected - redirect() throws to perform redirect
-          return;
-        }
+        return;
       }
 
+      // Show badges
+      if (response.awardedBadges && response.awardedBadges.length > 0) {
+        response.awardedBadges.forEach((badge) => {
+          toast(`Badge Unlocked: ${badge.name}`, {
+            description: badge.description,
+            icon: badge.icon_url || '🏆',
+            duration: 5000,
+          });
+        });
+      } else {
+        toast.success('Result submitted');
+      }
+
+      // Handle Redirect
+      if (response.nextRoundGenerated) {
+        router.push(`/tournament/${tournamentId}?roundGenerated=true`);
+      } else {
+        router.push(`/tournament/${tournamentId}`);
+      }
+      router.refresh();
+
+    } catch (error) {
       console.error('Error submitting result:', error);
       toast.error('An unexpected error occurred');
       setIsSubmitting(false);

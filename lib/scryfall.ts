@@ -3,14 +3,19 @@ export interface ScryfallCard {
   oracle_id?: string;
   name: string;
   image_uris?: {
-    normal: string;
-    art_crop: string;
+    normal?: string;
+    art_crop?: string;
+    large?: string;
+    png?: string;
+    border_crop?: string;
   };
   color_identity: string[];
   mana_cost?: string;
   type_line?: string;
   oracle_text?: string;
+  flavor_text?: string;
   set_name?: string;
+  set?: string;
   collector_number?: string;
 }
 
@@ -37,7 +42,9 @@ export async function searchCard(query: string): Promise<ScryfallCard | null> {
       mana_cost: data.mana_cost,
       type_line: data.type_line,
       oracle_text: data.oracle_text,
+      flavor_text: data.flavor_text,
       set_name: data.set_name,
+      set: data.set,
       collector_number: data.collector_number,
     };
   } catch (error) {
@@ -71,7 +78,9 @@ export async function searchCards(query: string): Promise<ScryfallCard[]> {
       mana_cost: data.mana_cost,
       type_line: data.type_line,
       oracle_text: data.oracle_text,
+      flavor_text: data.flavor_text,
       set_name: data.set_name,
+      set: data.set,
       collector_number: data.collector_number,
     }));
   } catch (error) {
@@ -107,7 +116,9 @@ export async function getCardPrints(cardName: string): Promise<ScryfallCard[]> {
       mana_cost: data.mana_cost,
       type_line: data.type_line,
       oracle_text: data.oracle_text,
+      flavor_text: data.flavor_text,
       set_name: data.set_name,
+      set: data.set,
       collector_number: data.collector_number,
     }));
   } catch (error) {
