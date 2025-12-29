@@ -18,7 +18,8 @@ export interface CreateEventResult {
 export async function createEvent(
   name: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  organizationId?: string | null
 ): Promise<CreateEventResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -39,6 +40,7 @@ export async function createEvent(
       end_date: endDate || null,
       invite_code: inviteCode,
       is_active: true,
+      organization_id: organizationId || null, // Link to Guild
     })
     .select()
     .single();

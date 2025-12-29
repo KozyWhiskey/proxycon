@@ -36,6 +36,7 @@ interface MatchReportingFormProps {
   userDecks: Deck[]; // New prop: list of current user's decks
   player1ProfileId?: string; // New prop: profile_id of player1 if they are the current user
   player2ProfileId?: string; // New prop: profile_id of player2 if they are the current user
+  format?: string; // New prop: game format
 }
 
 export default function MatchReportingForm({
@@ -45,6 +46,7 @@ export default function MatchReportingForm({
   userDecks,
   player1ProfileId,
   player2ProfileId,
+  format,
 }: MatchReportingFormProps) {
   const router = useRouter();
   const [player1Games, setPlayer1Games] = useState(0);
@@ -95,8 +97,8 @@ export default function MatchReportingForm({
 
       const response = await submitResultWithGamesNoRedirect(
         matchId,
-        p1Id, player1Games, player1DeckId,
-        p2Id, player2Games, player2DeckId,
+        p1Id, player1Games, player1DeckId === 'none' ? null : player1DeckId,
+        p2Id, player2Games, player2DeckId === 'none' ? null : player2DeckId,
         tournamentId
       );
 
@@ -168,7 +170,7 @@ export default function MatchReportingForm({
           </div>
           <p className="text-xs text-muted-foreground">Games Won</p>
 
-          {player1ProfileId && userDecks.length > 0 && (
+          {player1ProfileId && userDecks.length > 0 && format !== 'draft' && format !== 'sealed' && (
             <div className="mt-4">
               <Select onValueChange={setPlayer1DeckId} value={player1DeckId || ''}>
                 <SelectTrigger className="w-full">
@@ -185,7 +187,7 @@ export default function MatchReportingForm({
               </Select>
             </div>
           )}
-           {player1ProfileId && userDecks.length === 0 && (
+           {player1ProfileId && userDecks.length === 0 && format !== 'draft' && format !== 'sealed' && (
              <p className="text-xs text-muted-foreground mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
            )}
         </div>
@@ -224,14 +226,14 @@ export default function MatchReportingForm({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">Games Won</p>
-          {player2ProfileId && userDecks.length > 0 && (
+          {player2ProfileId && userDecks.length > 0 && format !== 'draft' && format !== 'sealed' && (
             <div className="mt-4">
-              <Select onValueChange={setPlayer2DeckId} value={player2DeckId || ''}>
+              <Select onValueChange={setPlayer2DeckId} value={player2DeckId || 'none'}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Deck" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="" className="text-muted-foreground">No Deck Selected</SelectItem>
+                  <SelectItem value="none" className="text-muted-foreground">No Deck Selected</SelectItem>
                   {userDecks.map((deck) => (
                     <SelectItem key={deck.id} value={deck.id}>
                       {deck.name}
@@ -241,7 +243,7 @@ export default function MatchReportingForm({
               </Select>
             </div>
           )}
-          {player2ProfileId && userDecks.length === 0 && (
+          {player2ProfileId && userDecks.length === 0 && format !== 'draft' && format !== 'sealed' && (
              <p className="text-xs text-muted-foreground mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
            )}
         </div>

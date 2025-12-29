@@ -412,14 +412,17 @@ export async function checkAndAwardMatchFeats(
 
   // 2. Check "The Mirror" (Same Colors)
   // Only if both used decks
-  if (winner.decks?.colors && loser.decks?.colors) {
-    const c1 = winner.decks.colors.sort().join('');
-    const c2 = loser.decks.colors.sort().join('');
+  const winnerDeck = Array.isArray(winner.decks) ? winner.decks[0] : winner.decks;
+  const loserDeck = Array.isArray(loser.decks) ? loser.decks[0] : loser.decks;
+
+  if (winnerDeck?.colors && loserDeck?.colors) {
+    const c1 = winnerDeck.colors.sort().join('');
+    const c2 = loserDeck.colors.sort().join('');
     
     if (c1 === c2 && c1.length > 0) {
        const feat = await generateMatchFeat('mirror', {
-         winnerDeck: winner.decks.name,
-         loserDeck: loser.decks.name
+         winnerDeck: winnerDeck.name,
+         loserDeck: loserDeck.name
        });
        
        if (feat) {

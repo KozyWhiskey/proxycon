@@ -1,19 +1,22 @@
-# Database Structure (V3 Architecture)
+# Database Structure (V3/V4 Architecture)
 
-**Last Updated:** December 19, 2025 - V3 "Fresh Start" Architecture
+**Last Updated:** December 29, 2025 - V4 "Guilds" Architecture
 **Database:** Supabase (PostgreSQL)
 
 ---
 
 ## Overview
 
-This document outlines the complete V3 database schema for the Upkeep platform. This schema implements a scalable, normalized architecture designed for multi-event support ("Global Identity, Local Context").
+This document outlines the complete database schema for the Upkeep platform. This schema implements a scalable, normalized architecture designed for multi-tenancy via "Guilds" and multi-event support.
 
-**Key Changes from V2:**
-- **Removed Legacy Tables:** `players` table is gone. Identity is now strictly handled by `profiles`.
+**Key Changes in V4 (Guilds):**
+- **New Layer:** Introduced `organizations` (Guilds) as the top-level container for communities.
+- **Hierarchy:** Users belong to Guilds; Events belong to Guilds (or are standalone).
+- **Access Control:** `organization_members` manages RBAC (Owner, Admin, Member) and Invite status.
+
+**Key Changes from V3:**
 - **Global Identity:** All users have a `profile` linked to `auth.users`.
-- **Local Context:** Users join events via `event_members`.
-- **Unified Match System:** Matches link to `profiles` (via `match_participants`) and optionally to `tournaments` and `decks`.
+- **Unified Match System:** Matches link to `profiles` (via `match_participants`).
 
 ---
 
@@ -40,7 +43,41 @@ Extends Supabase `auth.users`. This is the "Global User".
 
 ---
 
-## 2. Event System (Multi-Tenancy)
+## 2. Organizations (Guilds)
+
+### `public.organizations`
+The root entity for a gaming group/community.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | Unique Guild ID |
+| `owner_id` | UUID | FK → profiles.id | The Guild Master (Creator) |
+| `name` | TEXT | NOT NULL | Display Name (e.g., "Ravnica High Rollers") |
+| `slug` | TEXT | UNIQUE, NOT NULL | URL-friendly identifier |
+| `description` | TEXT | NULLABLE | Guild manifesto or bio |
+| `logo_url` | TEXT | NULLABLE | Branding image |
+| `banner_url` | TEXT | NULLABLE | Hero image for Guild dashboard |
+| `theme_color` | TEXT | DEFAULT 'gold' | UI Accent Color preference |
+| `invite_code` | TEXT | UNIQUE, NULLABLE | Code for joining via link |
+| `is_public` | BOOLEAN | DEFAULT FALSE | Searchable in directory? |
+| `created_at` | TIMESTAMP | DEFAULT NOW() | Creation date |
+
+### `public.organization_members`
+Manages membership and RBAC within a Guild.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `organization_id` | UUID | PK, FK → organizations.id | The Guild |
+| `profile_id` | UUID | PK, FK → profiles.id | The Member |
+| `role` | TEXT | CHECK ('owner', 'admin', 'member') | Permissions level |
+| `status` | TEXT | CHECK ('active', 'invited', 'requested') | Membership status |
+| `title` | TEXT | NULLABLE | Flavor text (e.g., "Grand Arbiter") |
+| `invited_by` | UUID | FK → profiles.id, NULLABLE | User who sent the invite |
+| `joined_at` | TIMESTAMP | DEFAULT NOW() | Membership start date |
+
+---
+
+## 3. Event System (Multi-Tenancy)
 
 ### `public.events`
 The container for specific weekends, leagues, or game nights.
@@ -48,6 +85,7 @@ The container for specific weekends, leagues, or game nights.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | UUID | PRIMARY KEY | Unique event identifier |
+| `organization_id` | UUID | FK → organizations.id, NULLABLE | Parent Guild (Null = Personal Event) |
 | `owner_id` | UUID | FK → profiles.id | User who created the event |
 | `name` | TEXT | NOT NULL | Event name (e.g., "Upkeep") |
 | `slug` | TEXT | UNIQUE, NULLABLE | URL-friendly identifier |
@@ -70,7 +108,7 @@ The "Join Table". Links a Profile to an Event.
 
 ---
 
-## 3. Game Assets
+## 4. Game Assets
 
 ### `public.decks`
 Global library of user decks.
@@ -95,7 +133,7 @@ Global library of user decks.
 
 ---
 
-## 4. Competition Engine
+## 5. Competition Engine
 
 ### `public.tournaments`
 Stores tournament information.
@@ -156,7 +194,7 @@ Who played in the match and what happened.
 
 ---
 
-## 5. Achievements & Badges
+## 6. Achievements & Badges
 
 ### `public.badges`
 Catalog of all available achievements.
@@ -191,6 +229,12 @@ Badges awarded to users.
 
 ## Migration History
 
+### V4 "Guilds" (December 2025)
+- **Goal:** Add Organization layer for communities.
+- **Actions:**
+    - Created `organizations` and `organization_members`.
+    - Added `organization_id` to `events` table.
+
 ### V3 "Fresh Start" (December 17, 2025)
 - **Goal:** Full normalization and removal of legacy dependencies.
 - **Actions:**
@@ -198,9 +242,6 @@ Badges awarded to users.
     - Created `profiles`, `events`, `event_members`.
     - Recreated `tournaments`, `matches`, `match_participants` with foreign keys to `profiles`.
     - Added `tournament_participants` for draft seating logic.
-
-### V2 Platform Upgrade (Legacy)
-- *Superseded by V3.*
 
 ---
 

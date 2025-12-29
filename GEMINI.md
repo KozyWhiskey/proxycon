@@ -5,11 +5,14 @@ This document provides a comprehensive overview of the MTG League Platform proje
 ## 1. Project Overview
 
 **Goal**: Transition the application from a single-event "weekend companion" to a persistent Magic: The Gathering League Platform.
-**Current State**: The app is in **V3 Development** and has achieved **Stable V3 Architecture**.
-**Target State**: A persistent platform supporting multiple Events (e.g., "Upkeep", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes.
+**Current State**: The app is in **V4 Development** and has achieved **Stable V4 Architecture**.
+**Target State**: A persistent platform supporting multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes.
 
-### Core Features (V3)
+### Core Features (V4)
 
+-   **Guilds (Organizations)**: Persistent gaming groups that can host multiple events, manage rosters, and track shared history.
+    -   **Creation & Invites**: Create guilds with custom themes and invite members via code.
+    -   **The Sanctuary**: Guild Dashboard aggregating feed and events.
 -   **Auth & Onboarding**: Secure identity via Supabase Auth (Email/Password) linked to a `public.profiles` table. Includes a mandatory onboarding flow (`/onboarding`).
 -   **Events & Dashboard**: Support for multiple concurrent events.
     -   **Global Dashboard**: Personal career stats and "One-Shot" quick actions.

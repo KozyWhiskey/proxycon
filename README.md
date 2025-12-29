@@ -66,8 +66,13 @@ Upkeep is a **multi-event platform** that handles:
 
 ## ✨ Features
 
-### ✅ Implemented (V3)
+### ✅ Implemented (V3 & V4)
 
+- **V4 Guilds & Communities**:
+  - **Guild Creation**: Establish permanent gaming groups with custom themes and branding.
+  - **Invite System**: Share invite codes or links to summon friends to your guild.
+  - **The Sanctuary**: A dedicated Guild Dashboard aggregating feed, events, and roster.
+  - **Linked Events**: Host events under a Guild to share stats and history.
 - **V3 Architecture**: Fully normalized database schema (`profiles`, `events`, `event_members`).
 - **Multi-Event System**: 
   - Dedicated "Global Dashboard" for personal stats.
@@ -103,5 +108,5 @@ Upkeep is a **multi-event platform** that handles:
 
 ---
 
-**Status**: Active Development (V3 Platform)  
-**Last Updated**: December 22, 2025
+**Status**: Active Development (V4 Platform)  
+**Last Updated**: December 29, 2025

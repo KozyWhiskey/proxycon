@@ -1,10 +1,13 @@
 import { Suspense } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { requireProfile } from "@/lib/get-current-user";
+import { getUserGuilds } from "@/app/guilds/actions";
 import ActiveTournament from "@/components/dashboard/active-tournament";
 import ActiveEvents from "@/components/dashboard/active-events";
 import MyStats from "@/components/dashboard/my-stats";
 import QuickActions from "@/components/dashboard/quick-actions";
+import MyGuilds from "@/components/dashboard/my-guilds";
+import PendingInvites from "@/components/dashboard/pending-invites";
 import UserHeader from "@/components/dashboard/user-header";
 import Feed from "@/components/dashboard/feed";
 import { TrophyCase } from "@/components/profile/trophy-case";
@@ -14,6 +17,10 @@ import { Separator } from "@/components/ui/separator";
 export default async function Dashboard() {
   const supabase = await createClient();
   const { user, profile } = await requireProfile();
+
+  // Fetch Guilds
+  const userGuilds = await getUserGuilds(user.id);
+  const pendingInvites = userGuilds.filter(g => g.status === 'invited');
 
   // --- 1. Fetch Active Events ---
   const { data: activeEventsRaw } = await supabase
@@ -250,6 +257,10 @@ export default async function Dashboard() {
         <div className="md:col-span-8 flex flex-col gap-6">
           <section className="flex flex-col gap-6">
              <Suspense fallback={<Skeleton className="h-[200px] w-full rounded-xl bg-white/5" />}>
+               
+               {/* Pending Invites */}
+               <PendingInvites invites={pendingInvites} userId={user.id} />
+
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Show Active Tournament if exists, otherwise placeholder or null */}
                   {activeTournamentData ? (
@@ -268,11 +279,16 @@ export default async function Dashboard() {
                     />
                   )}
                   
-                  {/* Show Active Events if any */}
-                  {activeEvents.length > 0 && (
-                    <ActiveEvents events={activeEvents} />
-                  )}
+                  {/* My Guilds (Replaces Active Events if none, or stacks) */}
+                  <MyGuilds guilds={userGuilds} userId={user.id} />
                </div>
+               
+               {/* Show Active Events row below if any exist */}
+               {activeEvents.length > 0 && (
+                 <div className="w-full">
+                    <ActiveEvents events={activeEvents} />
+                 </div>
+               )}
             </Suspense>
           </section>
 

@@ -20,13 +20,14 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/guilds", label: "Guilds", icon: ShieldAlert },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/tournaments", label: "Tournaments", icon: Trophy },
   { href: "/stats", label: "Stats", icon: BarChart2 },
   { href: "/decks", label: "Decks", icon: Layers },
   { href: "/players", label: "Players", icon: Users },
   { href: "/profile", label: "Profile", icon: UserCircle },
-  { href: "/admin", label: "Admin", icon: ShieldAlert },
+  { href: "/admin", label: "Admin", icon: Layers }, // Using Layers for Admin as placeholder or find better icon
 ];
 
 export function SideNav({ userRole = 'user' }: { userRole?: 'user' | 'admin' }) {

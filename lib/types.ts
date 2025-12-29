@@ -14,8 +14,34 @@ export interface Profile {
   updated_at: string;
 }
 
+// --- V4 Organization (Guild) Definitions ---
+
+export interface Organization {
+  id: string;
+  owner_id: string; // references profiles.id
+  name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  theme_color: string | null; // e.g., 'gold'
+  invite_code: string | null;
+  is_public: boolean;
+  created_at: string;
+}
+
+export interface OrganizationMember {
+  organization_id: string;
+  profile_id: string;
+  role: 'owner' | 'admin' | 'member';
+  status: 'active' | 'invited' | 'requested';
+  title: string | null; // Flavor text
+  joined_at: string;
+}
+
 export interface Event {
   id: string;
+  organization_id: string | null; // V4: Link to Guild
   owner_id: string | null; // references profiles.id
   name: string;
   slug: string | null;

@@ -119,6 +119,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
           userDecks={decks || []} // Pass fetched decks
           player1ProfileId={player1IsCurrentUser ? user.id : undefined} 
           player2ProfileId={player2IsCurrentUser ? user.id : undefined}
+          format={match.game_type}
         />
       </div>
     </main>

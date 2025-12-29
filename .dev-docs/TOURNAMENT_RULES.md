@@ -220,7 +220,7 @@ if (!pairing.player2) {
   // Bye - create match with one participant, result = 'win'
   await supabase.from('match_participants').insert({
     match_id: match.id,
-    player_id: pairing.player1,
+    profile_id: pairing.player1,
     result: 'win', // ✅ Automatic win for bye
   });
 }
@@ -320,7 +320,7 @@ const { data: tournament } = await supabase
 for (const playerId of playerIds) {
   await supabase.from('tournament_participants').insert({
     tournament_id: tournament.id,
-    player_id: playerId,
+    profile_id: playerId,
     // draft_seat is NULL initially
   });
 }
@@ -370,7 +370,7 @@ for (let i = 0; i < Math.floor(numPlayers / 2); i++) {
   const player2 = participants.find((p) => p.draft_seat === seat2);
   
   if (player1 && player2) {
-    pairings.push({ player1: player1.player_id, player2: player2.player_id });
+    pairings.push({ player1: player1.profile_id, player2: player2.profile_id });
   }
 }
 
@@ -379,7 +379,7 @@ if (numPlayers % 2 === 1) {
   const byeSeat = numPlayers;
   const byePlayer = participants.find((p) => p.draft_seat === byeSeat);
   if (byePlayer) {
-    pairings.push({ player1: byePlayer.player_id });
+    pairings.push({ player1: byePlayer.profile_id });
   }
 }
 ```
@@ -517,7 +517,7 @@ export async function submitDraw(
       .from('match_participants')
       .update({ result: 'draw' })
       .eq('match_id', matchId)
-      .eq('player_id', playerId);
+      .eq('profile_id', playerId);
   }
   
   // Check round completion and generate next round if needed
@@ -532,7 +532,7 @@ await supabase
   .from('match_participants')
   .update({ result: 'draw' })
   .eq('match_id', matchId)
-  .eq('player_id', player1Id); // ❌ Both players must be set to draw
+  .eq('profile_id', player1Id); // ❌ Both players must be set to draw
 ```
 
 ## Tournament Status & Workflow

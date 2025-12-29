@@ -15,6 +15,8 @@ import {
   type MatchResult,
 } from '@/lib/swiss-pairing';
 
+import ForceStartButton from '@/components/tournament/force-start-button';
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -26,7 +28,7 @@ export default async function TournamentPage({ params }: PageProps) {
   // Fetch tournament
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
-    .select('id, event_id, name, format, status, max_rounds, round_duration_minutes, prize_1st, prize_2nd, prize_3rd')
+    .select('id, event_id, name, format, status, max_rounds, round_duration_minutes')
     .eq('id', id)
     .single();
 
@@ -340,7 +342,7 @@ export default async function TournamentPage({ params }: PageProps) {
         </Card>
 
         {/* Tournament Prizes - Show when tournament is completed and has prizes */}
-        {tournament.status === 'completed' && (tournament.prize_1st || tournament.prize_2nd || tournament.prize_3rd) && (
+        {tournament.status === 'completed' && ((tournament as any).prize_1st || (tournament as any).prize_2nd || (tournament as any).prize_3rd) && (
           <Card className="bg-slate-900 border-yellow-500/30">
             <CardHeader>
               <CardTitle className="text-yellow-500 flex items-center gap-2">
@@ -349,36 +351,36 @@ export default async function TournamentPage({ params }: PageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {tournament.prize_1st && standings[0] && (
+              {(tournament as any).prize_1st && standings[0] && (
                 <div className="flex items-center gap-3 p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                   <span className="text-3xl">🥇</span>
                   <div className="flex-1">
                     <p className="text-slate-100 font-semibold text-lg">
                       {standings[0].profile?.display_name || standings[0].profile?.username || 'Unknown'}
                     </p>
-                    <p className="text-yellow-500 font-medium">{tournament.prize_1st}</p>
+                    <p className="text-yellow-500 font-medium">{(tournament as any).prize_1st}</p>
                   </div>
                 </div>
               )}
-              {tournament.prize_2nd && standings[1] && (
+              {(tournament as any).prize_2nd && standings[1] && (
                 <div className="flex items-center gap-3 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
                   <span className="text-3xl">🥈</span>
                   <div className="flex-1">
                     <p className="text-slate-100 font-semibold text-lg">
                       {standings[1].profile?.display_name || standings[1].profile?.username || 'Unknown'}
                     </p>
-                    <p className="text-slate-300">{tournament.prize_2nd}</p>
+                    <p className="text-slate-300">{(tournament as any).prize_2nd}</p>
                   </div>
                 </div>
               )}
-              {tournament.prize_3rd && standings[2] && (
+              {(tournament as any).prize_3rd && standings[2] && (
                 <div className="flex items-center gap-3 p-4 bg-amber-900/20 rounded-lg border border-amber-700/30">
                   <span className="text-3xl">🥉</span>
                   <div className="flex-1">
                     <p className="text-slate-100 font-semibold text-lg">
                       {standings[2].profile?.display_name || standings[2].profile?.username || 'Unknown'}
                     </p>
-                    <p className="text-amber-500">{tournament.prize_3rd}</p>
+                    <p className="text-amber-500">{(tournament as any).prize_3rd}</p>
                   </div>
                 </div>
               )}
@@ -387,64 +389,78 @@ export default async function TournamentPage({ params }: PageProps) {
         )}
 
         <div className="space-y-4">
-          {matchDetails.map(({ match, participants }) => {
-            const status = getMatchStatus(participants);
-            const isCompleted = participants.some((p) => p.result !== null);
+          {matchDetails.length > 0 ? (
+            matchDetails.map(({ match, participants }) => {
+              const status = getMatchStatus(participants);
+              const isCompleted = participants.some((p) => p.result !== null);
 
-            // Handle bye (single participant)
-            if (participants.length === 1) {
-              const profile = participants[0].profile;
+              // Handle bye (single participant)
+              if (participants.length === 1) {
+                const profile = participants[0].profile;
+                return (
+                  <Card
+                    key={match.id}
+                    className="bg-slate-900 border-yellow-500/20"
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-slate-100">Bye</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-lg text-slate-100 mb-2">
+                        {profile?.display_name || profile?.username || 'Unknown Player'}
+                      </p>
+                      <p className="text-sm text-slate-400">{status}</p>
+                    </CardContent>
+                  </Card>
+                );
+              }
+
+              // Normal match with two players
+              const player1 = participants[0]?.profile;
+              const player2 = participants[1]?.profile;
+
               return (
                 <Card
                   key={match.id}
-                  className="bg-slate-900 border-yellow-500/20"
+                  className={`bg-slate-900 border-slate-800 ${
+                    isCompleted ? '' : 'border-yellow-500/20'
+                  }`}
                 >
                   <CardHeader>
-                    <CardTitle className="text-slate-100">Bye</CardTitle>
+                    <CardTitle className="text-slate-100">
+                      {player1?.display_name || player1?.username || 'Player 1'} vs.{' '}
+                      {player2?.display_name || player2?.username || 'Player 2'}
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-lg text-slate-100 mb-2">
-                      {profile?.display_name || profile?.username || 'Unknown Player'}
-                    </p>
+                  <CardContent className="space-y-4">
                     <p className="text-sm text-slate-400">{status}</p>
+                    {!isCompleted && (
+                      <Button
+                        asChild
+                        className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+                      >
+                        <Link href={`/tournament/${id}/match/${match.id}`}>
+                          Report Result
+                        </Link>
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
-            }
-
-            // Normal match with two players
-            const player1 = participants[0]?.profile;
-            const player2 = participants[1]?.profile;
-
-            return (
-              <Card
-                key={match.id}
-                className={`bg-slate-900 border-slate-800 ${
-                  isCompleted ? '' : 'border-yellow-500/20'
-                }`}
-              >
-                <CardHeader>
-                  <CardTitle className="text-slate-100">
-                    {player1?.display_name || player1?.username || 'Player 1'} vs.{' '}
-                    {player2?.display_name || player2?.username || 'Player 2'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-slate-400">{status}</p>
-                  {!isCompleted && (
-                    <Button
-                      asChild
-                      className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
-                    >
-                      <Link href={`/tournament/${id}/match/${match.id}`}>
-                        Report Result
-                      </Link>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+            })
+          ) : (
+            <Card className="bg-slate-900 border-slate-800">
+              <CardContent className="pt-6 flex flex-col items-center">
+                <p className="text-slate-400 text-center">No pairings found for Round {currentRound}.</p>
+                {tournament.status === 'active' && (
+                   <>
+                     <p className="text-xs text-slate-500 text-center mt-2">The pairings for this round may still be generating.</p>
+                     <ForceStartButton tournamentId={id} />
+                   </>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </main>

@@ -3,7 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus, Play, CalendarPlus, List, Users } from 'lucide-react';
+import { Plus, Play, CalendarPlus, List, Users, Shield } from 'lucide-react';
+import { CreateGuildDialog } from '@/components/guilds/create-guild-dialog';
 
 interface QuickActionsProps {
   eventId?: string;
@@ -59,22 +60,43 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
         <CardTitle className="font-heading tracking-wide">Quick Actions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+
+        {/* Create Guild (New Primary Action) */}
+        <div className="space-y-2">
+          <CreateGuildDialog>
+            <Button
+              className="w-full h-12 font-heading tracking-wide bg-gradient-to-r from-amber-700 to-yellow-600 hover:from-amber-600 hover:to-yellow-500 border-none text-white shadow-lg shadow-amber-900/20"
+            >
+              <Shield className="w-5 h-5 mr-2" />
+              Create Guild
+            </Button>
+          </CreateGuildDialog>
+          <p className="text-[10px] text-muted-foreground/60 text-center uppercase tracking-widest font-heading">
+            Establish a permanent home for your group.
+          </p>
+        </div>
+
+        <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-white/5" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
+            <span className="bg-[#09090b] px-3 text-muted-foreground/40 font-heading">Events</span>
+            </div>
+        </div>
         
         {/* Primary Workflow: Create Event */}
         <div className="space-y-2">
             <Button
             asChild
             className="w-full h-12 font-heading tracking-wide"
-            variant="default"
+            variant="secondary"
             >
             <Link href="/events/new">
                 <CalendarPlus className="w-5 h-5 mr-2" />
-                Create New Event
+                Create Weekend Event
             </Link>
             </Button>
-            <p className="text-[10px] text-muted-foreground/60 text-center uppercase tracking-widest font-heading">
-            Best for weekends or tracked leagues.
-            </p>
         </div>
 
         <div className="relative py-4">
