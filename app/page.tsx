@@ -162,9 +162,59 @@ export default async function Dashboard() {
       )
     `)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10);
 
-  // --- 5. Fetch Badges ---
+  // Recent 5 badges system-wide (for feed)
+  const { data: feedBadges } = await supabase
+    .from('profile_badges')
+    .select(`
+      id, awarded_at,
+      badges (name, description, icon_url),
+      profile:profiles (display_name)
+    `)
+    .order('awarded_at', { ascending: false })
+    .limit(10);
+
+  // Combine and sort feed items
+  const feedItems = [
+    ...(feedMatches || []).map((m: any) => ({
+      type: 'match' as const,
+      id: m.id,
+      tournament_id: m.tournament_id,
+      round_number: m.round_number,
+      game_type: m.game_type,
+      created_at: m.created_at,
+      participants: m.participants.map((p: any) => ({
+        id: p.id,
+        player_id: p.player_id,
+        result: p.result,
+        player: {
+          id: p.player.id,
+          name: p.player.name,
+          nickname: p.player.nickname
+        }
+      }))
+    })),
+    ...(feedBadges || []).map((b: any) => ({
+      type: 'badge' as const,
+      id: b.id,
+      awarded_at: b.awarded_at,
+      badge: {
+        name: b.badges?.name,
+        description: b.badges?.description,
+        icon_url: b.badges?.icon_url
+      },
+      profile: {
+        display_name: b.profile?.display_name || 'Unknown'
+      }
+    }))
+  ].sort((a, b) => {
+    const dateA = a.type === 'match' ? new Date(a.created_at) : new Date(a.awarded_at);
+    const dateB = b.type === 'match' ? new Date(b.created_at) : new Date(b.awarded_at);
+    return dateB.getTime() - dateA.getTime();
+  }).slice(0, 10);
+
+  // --- 5. Fetch Badges (User's Trophy Case) ---
   const { data: rawBadges } = await supabase
     .from('profile_badges')
     .select(`
@@ -231,7 +281,7 @@ export default async function Dashboard() {
           </section>
 
           <section className="hidden md:block">
-             <Feed matches={(feedMatches as any) || []} />
+             <Feed items={feedItems} />
           </section>
         </div>
 
@@ -257,7 +307,7 @@ export default async function Dashboard() {
 
           {/* Mobile Only Feed (Shown below stats on mobile) */}
           <section className="md:hidden">
-             <Feed matches={(feedMatches as any) || []} />
+             <Feed items={feedItems} />
           </section>
         </div>
       </div>

@@ -8,7 +8,7 @@
 
 ## Overview
 
-The ProxyCon tournament system uses **Swiss-style pairings** for tournament brackets with **draft seat-based Round 1 pairings** and a **points-based ranking system**. This allows players to continue playing even after a loss, with pairings based on point totals. The system supports multiple rounds, automatic next-round generation, round timers, game win tracking for tiebreakers, and handles edge cases like odd numbers of players (byes).
+The Upkeep tournament system uses **Swiss-style pairings** for tournament brackets with **draft seat-based Round 1 pairings** and a **points-based ranking system**. This allows players to continue playing even after a loss, with pairings based on point totals. The system supports multiple rounds, automatic next-round generation, round timers, game win tracking for tiebreakers, and handles edge cases like odd numbers of players (byes).
 
 **Key Features:**
 - **Tournament Status Workflow:** Tournaments start as 'pending', become 'active' when Round 1 starts

@@ -1,12 +1,12 @@
-# ProxyCon 2025 Companion App
+# Upkeep Companion App
 
 A mobile-first, desktop-optimized companion web application for Magic: The Gathering tournament weekends. Built for groups of friends, with a focus on usability, instant feedback, and frictionless interactions.
 
 ## 🎯 Project Overview
 
-ProxyCon 2025 is a **multi-event platform** that handles:
+Upkeep is a **multi-event platform** that handles:
 
-- **Event Management**: Create and manage multiple events (e.g., "ProxyCon 2025", "Weekly Draft").
+- **Event Management**: Create and manage multiple events (e.g., "Upkeep", "Weekly Draft").
 - **Tournament Brackets**: Swiss-style pairings with draft seat-based Round 1 pairings.
 - **Casual Play**: Log Commander, 1v1, and 2HG games, linked to specific events.
 - **Deck Tracking**: Manage your personal deck library with Scryfall integration (including art selection).
@@ -43,7 +43,7 @@ ProxyCon 2025 is a **multi-event platform** that handles:
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd proxycon
+   cd upkeep
    ```
 
 2. **Install dependencies**

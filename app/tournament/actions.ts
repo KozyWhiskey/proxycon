@@ -12,7 +12,7 @@ import {
   type MatchResult,
 } from '@/lib/swiss-pairing';
 import { TimerData, TimerControlResult } from '@/lib/types';
-import { checkAndAwardBadges, awardBadge, checkAndAwardCommanderBadge } from '@/lib/badges';
+import { checkAndAwardBadges, awardBadge, checkAndAwardCommanderBadge, checkAndAwardSetBadge, checkAndAwardMatchFeats } from '@/lib/badges';
 
 interface CreateTournamentResult {
   success: boolean;
@@ -29,7 +29,9 @@ export async function createTournament(
   // prize1st?: string, // Prize columns not in V3 schema yet
   // prize2nd?: string,
   // prize3rd?: string,
-  eventId?: string
+  eventId?: string,
+  setCode?: string,
+  setName?: string
 ): Promise<CreateTournamentResult> {
   try {
     if (!name || name.trim().length === 0) return { success: false, message: 'Tournament name is required' };
@@ -48,6 +50,8 @@ export async function createTournament(
         max_rounds: maxRounds,
         round_duration_minutes: roundDurationMinutes,
         event_id: eventId || null,
+        set_code: setCode || null,
+        set_name: setName || null
       })
       .select()
       .single();
@@ -99,18 +103,41 @@ export async function submitResultWithGames(
     await supabase.from('match_participants').update({ result: p2Result, games_won: player2Games, deck_id: player2DeckId }).eq('match_id', matchId).eq('profile_id', player2Id);
 
     // Badge Check
-    const { data: tournamentBadge } = await supabase.from('tournaments').select('event_id').eq('id', tournamentId).single();
-    if (tournamentBadge) {
-      await Promise.all([
-        checkAndAwardBadges(player1Id, tournamentBadge.event_id),
-        checkAndAwardBadges(player2Id, tournamentBadge.event_id)
-      ]);
-    }
+    const { data: tournament } = await supabase
+      .from('tournaments')
+      .select('event_id, format, set_code, set_name')
+      .eq('id', tournamentId)
+      .single();
 
-    const nextRoundGenerated = await checkAndGenerateNextRound(supabase, matchId, tournamentId);
-    revalidatePath(`/tournament/${tournamentId}`);
-    redirect(`/tournament/${tournamentId}${nextRoundGenerated ? '?roundGenerated=true' : ''}`);
-  } catch (error) {
+    if (tournament) {
+      await Promise.all([
+        checkAndAwardBadges(player1Id, tournament.event_id),
+        checkAndAwardBadges(player2Id, tournament.event_id)
+      ]);
+
+      let winnerId = null;
+      let winnerDeckId = null;
+      if (player1Games > player2Games) { winnerId = player1Id; winnerDeckId = player1DeckId; }
+      else if (player2Games > player1Games) { winnerId = player2Id; winnerDeckId = player2DeckId; }
+
+      if (winnerId) {
+         if (tournament.format === 'draft' || tournament.format === 'sealed') {
+            if (tournament.set_code && tournament.set_name) {
+               await checkAndAwardSetBadge(winnerId, tournament.set_code, tournament.set_name, tournament.event_id);
+            }
+         } else if (winnerDeckId) {
+            await checkAndAwardCommanderBadge(winnerId, winnerDeckId, tournament.event_id);
+         }
+         
+         const loserId = winnerId === player1Id ? player2Id : player1Id;
+         await checkAndAwardMatchFeats(matchId, winnerId, loserId);
+      }
+          }
+    
+        const nextRoundGenerated = await checkAndGenerateNextRound(supabase, matchId, tournamentId);
+        revalidatePath(`/tournament/${tournamentId}`);
+        revalidatePath('/stats');
+        redirect(`/tournament/${tournamentId}${nextRoundGenerated ? '?roundGenerated=true' : ''}`);  } catch (error) {
     if (error && typeof error === 'object' && 'digest' in error && (error as any).digest?.startsWith('NEXT_REDIRECT')) throw error;
     return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
   }
@@ -123,6 +150,7 @@ export async function submitDraw(matchId: string, playerIds: string[], tournamen
     
     const nextRoundGenerated = await checkAndGenerateNextRound(supabase, matchId, tournamentId);
     revalidatePath(`/tournament/${tournamentId}`);
+    revalidatePath('/stats');
     redirect(`/tournament/${tournamentId}${nextRoundGenerated ? '?roundGenerated=true' : ''}`);
    } catch (error) {
     if (error && typeof error === 'object' && 'digest' in error && (error as any).digest?.startsWith('NEXT_REDIRECT')) throw error;
@@ -408,30 +436,58 @@ export async function submitResultWithGamesNoRedirect(
 
     // Badge Check
     let awardedBadges: any[] = [];
-    const { data: tournamentBadge } = await supabase.from('tournaments').select('event_id').eq('id', tournamentId).single();
-    if (tournamentBadge) {
+    const { data: tournament } = await supabase
+      .from('tournaments')
+      .select('event_id, format, set_code, set_name')
+      .eq('id', tournamentId)
+      .single();
+
+    if (tournament) {
       const [b1, b2] = await Promise.all([
-        checkAndAwardBadges(player1Id, tournamentBadge.event_id),
-        checkAndAwardBadges(player2Id, tournamentBadge.event_id)
+        checkAndAwardBadges(player1Id, tournament.event_id),
+        checkAndAwardBadges(player2Id, tournament.event_id)
       ]);
       awardedBadges = [...b1, ...b2];
-    }
 
-    // Badge Check (AI Commander) - Only if there is a winner and they used a deck
-    if (winnerId && winnerDeckId) {
-      try {
-        const aiBadge = await checkAndAwardCommanderBadge(winnerId, winnerDeckId);
-        if (aiBadge) {
-          awardedBadges.push(aiBadge);
+      // Winner Specific Badges
+      if (winnerId) {
+        if (tournament.format === 'draft' || tournament.format === 'sealed') {
+          // Limited: Award Set Badge
+          if (tournament.set_code && tournament.set_name) {
+             try {
+               const setBadge = await checkAndAwardSetBadge(winnerId, tournament.set_code, tournament.set_name, tournament.event_id);
+               if (setBadge) awardedBadges.push(setBadge);
+             } catch (e) {
+               console.error('Set Badge Error:', e);
+             }
+          }
+        } else {
+          // Constructed: Award Commander/Deck Badge
+          if (winnerDeckId) {
+            try {
+              const aiBadge = await checkAndAwardCommanderBadge(winnerId, winnerDeckId, tournament.event_id);
+              if (aiBadge) awardedBadges.push(aiBadge);
+            } catch (e) {
+              console.error('AI Badge Error:', e);
+            }
+          }
         }
-      } catch (e) {
-        console.error('AI Badge Error:', e);
+        
+        // Match Feats (Stomp, Mirror)
+        const loserId = winnerId === player1Id ? player2Id : player1Id;
+        try {
+           const feat = await checkAndAwardMatchFeats(matchId, winnerId, loserId);
+           if (feat) awardedBadges.push(feat);
+        } catch (e) {
+           console.error('Match Feat Error:', e);
+        }
       }
     }
 
     const nextRoundGenerated = await checkAndGenerateNextRound(supabase, matchId, tournamentId);
     revalidatePath(`/tournament/${tournamentId}`);
     revalidatePath(`/tournament/${tournamentId}/dashboard`);
+    revalidatePath('/stats');
 
     return { success: true, nextRoundGenerated, awardedBadges };
   } catch (error) {

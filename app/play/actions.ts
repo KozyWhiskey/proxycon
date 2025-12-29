@@ -3,10 +3,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { checkAndAwardBadges, checkAndAwardCommanderBadge, type Badge } from '@/lib/badges';
 
 interface LogCasualMatchResult {
   success: boolean;
   message?: string;
+  awardedBadges?: Badge[];
 }
 
 interface NewCasualMatchData {
@@ -72,15 +74,37 @@ export async function logCasualMatch(
       return { success: false, message: 'Failed to create match participants' };
     }
 
-    // Step 3: Remove legacy 'players' table win update.
-    // Global wins will be calculated directly from match_participants on the dashboard.
+    // Step 3: Check and Award Badges
+    const awardedBadges: Badge[] = [];
+    
+    // We check badges for ALL winners
+    for (const winnerId of data.winnerProfileIds) {
+      try {
+        // A. Standard Badges (Hot Hand, etc.)
+        const standardBadges = await checkAndAwardBadges(winnerId, data.eventId || null);
+        awardedBadges.push(...standardBadges);
+
+        // B. Commander/Deck Badges
+        const winnerDeckId = data.deckIds[winnerId];
+        if (winnerDeckId) {
+          const commanderBadge = await checkAndAwardCommanderBadge(winnerId, winnerDeckId, data.eventId);
+          if (commanderBadge) {
+            awardedBadges.push(commanderBadge);
+          }
+        }
+      } catch (badgeError) {
+        console.error(`Error processing badges for user ${winnerId}:`, badgeError);
+        // Continue loop even if one fails
+      }
+    }
 
     // Step 4: Revalidate
     revalidatePath('/');
+    revalidatePath('/stats');
     if (data.eventId) {
       revalidatePath(`/events/${data.eventId}`);
     }
-    return { success: true };
+    return { success: true, awardedBadges };
   } catch (error) {
     console.error('Error in logCasualMatch:', error);
     const errorMessage =

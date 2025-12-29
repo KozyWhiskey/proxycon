@@ -77,7 +77,7 @@ export default function LoginForm() {
         <CardDescription className="text-center text-muted-foreground">
           {isLogin
             ? 'Enter your credentials to access the platform'
-            : 'Join the ProxyCon league'}
+            : 'Join the Upkeep league'}
         </CardDescription>
       </CardHeader>
       <CardContent>

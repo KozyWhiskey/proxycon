@@ -1,6 +1,6 @@
 # Supabase Setup & Authentication Guide
 
-**Project:** Proxycon 2025  
+**Project:** Upkeep  
 **Last Updated:** December 19, 2025  
 **Next.js Version:** 16.0.10  
 **Pattern:** Next.js 16 Proxy Pattern with Supabase SSR

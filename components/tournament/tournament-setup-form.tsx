@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PlayerSelector from './player-selector';
 import { toast } from 'sonner';
+import { ScryfallSet } from '@/lib/scryfall';
 // import { Trophy } from 'lucide-react'; // No longer needed as prize section is removed
 
 interface Player {
@@ -20,17 +21,17 @@ interface Player {
 interface TournamentSetupFormProps {
   players: Player[];
   eventId?: string; // Added eventId prop
+  sets: ScryfallSet[];
 }
 
-export default function TournamentSetupForm({ players, eventId }: TournamentSetupFormProps) {
+export default function TournamentSetupForm({ players, eventId, sets }: TournamentSetupFormProps) {
   const [tournamentName, setTournamentName] = useState('');
   const [format, setFormat] = useState('draft');
   const [maxRounds, setMaxRounds] = useState('3');
   const [roundDuration, setRoundDuration] = useState('50');
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  // const [prize1st, setPrize1st] = useState(''); // Removed prize state
-  // const [prize2nd, setPrize2nd] = useState('');
-  // const [prize3rd, setPrize3rd] = useState('');
+  const [selectedSetCode, setSelectedSetCode] = useState<string>('');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +47,14 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
       return;
     }
 
+    if (format !== 'constructed' && !selectedSetCode) {
+         toast.error('Please select a Set for Limited format');
+         return;
+    }
+
     setIsSubmitting(true);
+    
+    const selectedSet = sets.find(s => s.code === selectedSetCode);
 
     try {
       const result = await createTournament(
@@ -55,30 +63,23 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
         format, 
         parseInt(maxRounds, 10),
         parseInt(roundDuration, 10),
-        // prize1st.trim() || undefined, // Removed prize args
-        // prize2nd.trim() || undefined,
-        // prize3rd.trim() || undefined,
-        eventId // Pass eventId to action
+        eventId,
+        selectedSet?.code,
+        selectedSet?.name
       );
       
       if (!result.success) {
         toast.error(result.message || 'Failed to create tournament');
         setIsSubmitting(false);
       }
-      // If successful, the server action will redirect, so we don't need to handle success here
-      // Note: redirect() throws an error to perform the redirect, which is expected behavior
     } catch (error) {
-      // Check if this is a redirect error (expected behavior)
       if (error && typeof error === 'object' && 'digest' in error) {
         const digest = (error as { digest?: string }).digest;
         if (digest?.startsWith('NEXT_REDIRECT')) {
-          // This is expected - redirect() throws to perform redirect
-          // Don't show error or reset state, just let the redirect happen
           return;
         }
       }
       
-      // Only show error for actual errors, not redirects
       console.error('Error creating tournament:', error);
       toast.error('An unexpected error occurred');
       setIsSubmitting(false);
@@ -118,9 +119,34 @@ export default function TournamentSetupForm({ players, eventId }: TournamentSetu
               <SelectContent>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="sealed">Sealed</SelectItem>
+                <SelectItem value="constructed">Constructed</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {(format === 'draft' || format === 'sealed') && (
+            <div className="space-y-2">
+              <Label htmlFor="set">
+                Expansion Set
+              </Label>
+              <Select value={selectedSetCode} onValueChange={setSelectedSetCode}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Select a set..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {sets.map((set) => (
+                    <SelectItem key={set.id} value={set.code}>
+                      <span className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={set.icon_svg_uri} alt="" className="w-4 h-4 invert opacity-70" />
+                        {set.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="rounds">

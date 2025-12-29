@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import OnboardingForm from '@/components/onboarding/onboarding-form'
 import Image from 'next/image'
-import badgeImg from '@/public/proxycon_badge.png'
+import badgeImg from '@/public/upkeep_badge.png'
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
@@ -28,7 +28,7 @@ export default async function OnboardingPage() {
       <div className="w-full max-w-md space-y-8 flex flex-col items-center">
         <Image
           src={badgeImg}
-          alt="ProxyCon 2025"
+          alt="Upkeep"
           width={120}
           height={120}
           className="drop-shadow-lg"

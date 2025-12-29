@@ -4,6 +4,7 @@ import TournamentSetupForm from '@/components/tournament/tournament-setup-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PageHeader from '@/components/ui/page-header';
 import { Profile } from '@/lib/types';
+import { fetchSets } from '@/lib/scryfall';
 
 interface PageProps {
   searchParams: Promise<{ eventId?: string }>;
@@ -12,6 +13,8 @@ interface PageProps {
 export default async function NewTournamentPage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const { eventId } = await searchParams;
+
+  const sets = await fetchSets();
 
   let players = [];
   let error = null;
@@ -103,7 +106,7 @@ export default async function NewTournamentPage({ searchParams }: PageProps) {
         backLabel={eventId ? "Event Dashboard" : "Dashboard"}
       />
       <div className="max-w-3xl mx-auto p-4 space-y-6">
-        <TournamentSetupForm players={mappedPlayers} eventId={eventId} />
+        <TournamentSetupForm players={mappedPlayers} eventId={eventId} sets={sets} />
       </div>
     </main>
   );

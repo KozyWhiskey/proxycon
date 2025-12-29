@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import badgeImg from '@/public/proxycon_badge.png';
+import badgeImg from '@/public/upkeep_badge.png';
 import LoginForm from './login-form';
 
 export default function LoginPage() {
@@ -14,13 +14,13 @@ export default function LoginPage() {
           <div className="flex justify-center mb-6">
             <Image
               src={badgeImg}
-              alt="ProxyCon 2025 crest"
+              alt="Upkeep crest"
               priority
               sizes="(max-width: 640px) 240px, (max-width: 1024px) 304px, 360px"
               className="w-48 sm:w-60 h-auto drop-shadow-[0_0_25px_rgba(186,147,43,0.3)]"
             />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground font-heading uppercase text-glow">ProxyCon Platform</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-heading uppercase text-glow">Upkeep Platform</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Sign in to access tournaments and track your stats
           </p>

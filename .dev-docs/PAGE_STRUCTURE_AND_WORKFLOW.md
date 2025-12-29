@@ -20,7 +20,7 @@ This document provides a comprehensive overview of the application's page struct
 
 ### Event Management
 - **`/events`**: A list of all events the user has joined or created.
-- **`/events/new`**: A form to create a new event (e.g., "ProxyCon 2025") or join an existing one via invite code.
+- **`/events/new`**: A form to create a new event (e.g., "Upkeep") or join an existing one via invite code.
 - **`/events/[id]`**: The **Event Dashboard**. This is the main hub during a tournament weekend. It shows event-specific stats, active tournaments, and a live feed of match results.
 - **`app/events/page.tsx`, `app/events/new/page.tsx`, `app/events/[id]/page.tsx`**
 

@@ -1,4 +1,4 @@
-# ProxyCon V3: "The Mythic" Design System
+# Upkeep V3: "The Mythic" Design System
 
 **Status:** Active
 **Role:** Senior UX/UI Architecture

@@ -1,6 +1,6 @@
-# ProxyCon 2025 - Implementation Plan
+# Upkeep - Implementation Plan
 
-This document outlines the development plan for the ProxyCon 2025 companion application. The project is broken down into features, each with its own detailed specification file located in the `.dev-docs/features/` directory.
+This document outlines the development plan for the Upkeep companion application. The project is broken down into features, each with its own detailed specification file located in the `.dev-docs/features/` directory.
 
 We will follow this plan sequentially. Each feature must be implemented and tested before moving to the next.
 

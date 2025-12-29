@@ -1,4 +1,4 @@
-# ProxyCon V3 Design System: "The Mythic"
+# Upkeep V3 Design System: "The Mythic"
 
 **Last Updated:** December 20, 2025
 **Philosophy:** Mobile-First, Desktop-Optimized, High-Fidelity.

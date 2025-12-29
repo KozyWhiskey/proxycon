@@ -6,7 +6,7 @@ This document provides a comprehensive overview of the MTG League Platform proje
 
 **Goal**: Transition the application from a single-event "weekend companion" to a persistent Magic: The Gathering League Platform.
 **Current State**: The app is in **V3 Development** and has achieved **Stable V3 Architecture**.
-**Target State**: A persistent platform supporting multiple Events (e.g., "ProxyCon 2025", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes.
+**Target State**: A persistent platform supporting multiple Events (e.g., "Upkeep", "Weekly Draft"), real User Accounts via Supabase Auth, Deck Tracking with Scryfall data, and expanded Game Modes.
 
 ### Core Features (V3)
 

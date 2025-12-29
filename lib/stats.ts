@@ -6,10 +6,14 @@ export interface PlayerStats {
   playerName: string;
   playerNickname: string | null;
   playerAvatarUrl: string | null;
-  tournamentWins: number;
-  matchWins: number;
+  tournamentWins: number; // Number of tournaments won
+  matchWins: number; // Total match wins (Casual + Tournament)
   matchLosses: number;
   matchDraws: number;
+  tournamentMatchWins: number; // Wins in tournament matches
+  casualMatchWins: number; // Wins in casual matches
+  tournamentMatchesPlayed: number; // Total tournament matches played
+  casualMatchesPlayed: number; // Total casual matches played
   totalMatches: number;
   winPercentage: number;
   currentWinStreak: number;
@@ -24,31 +28,50 @@ export interface TournamentWinner {
   winnerNickname: string | null;
 }
 
+export interface RecentMatch {
+  id: string;
+  winnerIds: string[];
+  loserIds: string[];
+  isDraw: boolean;
+  gameType: string;
+  eventName: string | null;
+  tournamentName: string | null;
+  completedAt: string; // or created_at
+}
+
+export interface EventStat {
+  id: string;
+  name: string;
+  totalMatches: number;
+  totalTournaments: number;
+  uniquePlayers: number;
+}
+
 export async function getGlobalStats(supabase: SupabaseClient) {
+  // Fetch all events
+  const { data: events } = await supabase
+    .from('events')
+    .select('id, name')
+    .eq('is_active', true);
+
+  const eventMap = new Map(events?.map(e => [e.id, e.name]) || []);
+
   // Fetch all completed tournaments
   const { data: completedTournaments } = await supabase
     .from('tournaments')
-    .select('id, name, format, created_at')
+    .select('id, name, format, created_at, event_id')
     .eq('status', 'completed')
     .order('created_at', { ascending: false });
 
-  // Fetch all casual matches (tournament_id is null)
-  const { data: casualMatches } = await supabase
-    .from('matches')
-    .select('id, game_type, created_at, notes')
-    .is('tournament_id', null);
+  const tournamentMap = new Map(completedTournaments?.map(t => [t.id, t]) || []);
 
-  // Fetch all tournament matches
-  const { data: tournamentMatches } = await supabase
+  // Fetch all matches
+  const { data: allMatches } = await supabase
     .from('matches')
-    .select('id, tournament_id, round_number')
-    .not('tournament_id', 'is', null);
+    .select('id, game_type, created_at, notes, tournament_id, event_id, round_number')
+    .order('created_at', { ascending: true }); // Chronological for streak calc
 
-  // Get all match participants for all matches
-  const allMatchIds = [
-    ...(casualMatches?.map((m) => m.id) || []),
-    ...(tournamentMatches?.map((m) => m.id) || []),
-  ];
+  const allMatchIds = allMatches?.map((m) => m.id) || [];
 
   let allMatchParticipants: { match_id: string; profile_id: string; result: string | null }[] | null = null;
   if (allMatchIds.length > 0) {
@@ -69,15 +92,22 @@ export async function getGlobalStats(supabase: SupabaseClient) {
     return {
       playerStats: [],
       tournamentWinners: [],
+      recentMatches: [],
+      eventStats: [],
       totalTournaments: completedTournaments?.length || 0,
-      totalCasualGames: casualMatches?.length || 0,
+      totalCasualGames: allMatches?.filter(m => !m.tournament_id).length || 0,
     };
   }
 
   const profilesMap = new Map(allProfiles.map((p) => [p.id, p]));
 
-  // Calculate tournament winners
+  // --- Calculate Tournament Winners ---
   const tournamentWinners: TournamentWinner[] = [];
+  
+  // Group matches by tournament for calculating winners
+  // We need to fetch ALL tournament matches, not just the ones in `allMatches` (though `allMatches` should have them)
+  // But we need them structured for `calculateStandings`.
+  
   for (const tournament of completedTournaments || []) {
     // Get tournament participants
     const { data: tournamentParticipants } = await supabase
@@ -89,14 +119,8 @@ export async function getGlobalStats(supabase: SupabaseClient) {
 
     const profileIds = tournamentParticipants.map((tp) => tp.profile_id);
 
-    // Get all matches for this tournament
-    const { data: tournamentMatchesData } = await supabase
-      .from('matches')
-      .select('id, round_number')
-      .eq('tournament_id', tournament.id)
-      .order('round_number', { ascending: true });
-
-    if (!tournamentMatchesData || tournamentMatchesData.length === 0) continue;
+    // Filter matches for this tournament from our already fetched `allMatches`
+    const tournamentMatchesData = allMatches?.filter(m => m.tournament_id === tournament.id) || [];
 
     // Build match history
     const matchHistory = [];
@@ -106,7 +130,7 @@ export async function getGlobalStats(supabase: SupabaseClient) {
         matchHistory.push(
           convertDbMatchToMatchResult(
             match.id,
-            match.round_number || 1,
+            match.round_number || 1, 
             participants.map((p) => ({ playerId: p.profile_id, result: p.result as 'win' | 'loss' | 'draw' | null }))
           )
         );
@@ -132,20 +156,24 @@ export async function getGlobalStats(supabase: SupabaseClient) {
     }
   }
 
-  // Calculate player statistics
+  // --- Calculate Player Stats ---
   const playerStatsMap = new Map<string, PlayerStats>();
 
   // Initialize all profiles
   for (const profile of allProfiles) {
     playerStatsMap.set(profile.id, {
       playerId: profile.id,
-      playerName: profile.username,
+      playerName: profile.username || 'Unknown',
       playerNickname: profile.display_name,
       playerAvatarUrl: profile.avatar_url,
       tournamentWins: 0,
       matchWins: 0,
       matchLosses: 0,
       matchDraws: 0,
+      tournamentMatchWins: 0,
+      casualMatchWins: 0,
+      tournamentMatchesPlayed: 0,
+      casualMatchesPlayed: 0,
       totalMatches: 0,
       winPercentage: 0,
       currentWinStreak: 0,
@@ -161,86 +189,53 @@ export async function getGlobalStats(supabase: SupabaseClient) {
     }
   }
 
-  // Process all matches chronologically to calculate streaks
-  const allMatchesWithParticipants = [];
-  if (allMatchIds.length > 0 && allMatchParticipants) {
-    for (const matchId of allMatchIds) {
-      const participants = allMatchParticipants.filter((p) => p.match_id === matchId);
-      if (participants.length > 0) {
-        const match = tournamentMatches?.find((m) => m.id === matchId) || casualMatches?.find((m) => m.id === matchId);
-        allMatchesWithParticipants.push({
-          matchId,
-          tournamentId: match && 'tournament_id' in match ? match.tournament_id : null,
-          createdAt: null, // We'll fetch this if needed
-          participants,
-        });
-      }
-    }
-  }
-
-  // Fetch match creation times for chronological ordering
-  let matchesWithTime: { id: string; created_at: string }[] | null = null;
-  const matchTimeMap = new Map<string, string>();
-  if (allMatchIds.length > 0) {
-    const { data } = await supabase
-      .from('matches')
-      .select('id, created_at')
-      .in('id', allMatchIds);
-    matchesWithTime = data;
-    if (matchesWithTime) {
-      matchesWithTime.forEach((m) => {
-        if (m.created_at) {
-          matchTimeMap.set(m.id, m.created_at);
-        }
-      });
-    }
-  }
-
-  // Sort matches by creation time
-  if (matchesWithTime) {
-    allMatchesWithParticipants.sort((a, b) => {
-      const timeA = matchTimeMap.get(a.matchId) || '';
-      const timeB = matchTimeMap.get(b.matchId) || '';
-      return timeA.localeCompare(timeB);
-    });
-  }
-
   // Track current streaks per player
   const currentStreaks = new Map<string, number>();
   const longestStreaks = new Map<string, number>();
 
-  // Process matches chronologically
-  for (const { participants } of allMatchesWithParticipants) {
-    // Only process completed matches
-    const hasResults = participants.some((p: { result: string | null }) => p.result !== null);
-    if (!hasResults) continue;
+  // Process matches chronologically (allMatches is already sorted by created_at ascending)
+  if (allMatches && allMatchParticipants) {
+    for (const match of allMatches) {
+       const participants = allMatchParticipants.filter((p) => p.match_id === match.id);
+       
+       // Only process completed matches
+       const hasResults = participants.some((p) => p.result !== null);
+       if (!hasResults) continue;
 
-    for (const participant of participants) {
-      const stats = playerStatsMap.get(participant.profile_id);
-      if (!stats) continue;
+       const isTournament = !!match.tournament_id;
 
-      stats.totalMatches++;
+       for (const participant of participants) {
+        const stats = playerStatsMap.get(participant.profile_id);
+        if (!stats) continue;
 
-      if (participant.result === 'win') {
-        stats.matchWins++;
-        const currentStreak = (currentStreaks.get(participant.profile_id) || 0) + 1;
-        currentStreaks.set(participant.profile_id, currentStreak);
-        const longestStreak = longestStreaks.get(participant.profile_id) || 0;
-        if (currentStreak > longestStreak) {
-          longestStreaks.set(participant.profile_id, currentStreak);
+        stats.totalMatches++;
+        if (isTournament) stats.tournamentMatchesPlayed++;
+        else stats.casualMatchesPlayed++;
+
+        if (participant.result === 'win') {
+          stats.matchWins++;
+          if (isTournament) stats.tournamentMatchWins++;
+          else stats.casualMatchWins++;
+
+          const currentStreak = (currentStreaks.get(participant.profile_id) || 0) + 1;
+          currentStreaks.set(participant.profile_id, currentStreak);
+          const longestStreak = longestStreaks.get(participant.profile_id) || 0;
+          if (currentStreak > longestStreak) {
+            longestStreaks.set(participant.profile_id, currentStreak);
+          }
+        } else if (participant.result === 'loss') {
+          stats.matchLosses++;
+          currentStreaks.set(participant.profile_id, 0);
+        } else if (participant.result === 'draw') {
+          stats.matchDraws++;
+          // Draws break win streaks but don't count as losses
+          currentStreaks.set(participant.profile_id, 0);
         }
-      } else if (participant.result === 'loss') {
-        stats.matchLosses++;
-        currentStreaks.set(participant.profile_id, 0);
-      } else if (participant.result === 'draw') {
-        stats.matchDraws++;
-        // Draws break win streaks but don't count as losses for streak purposes
-        currentStreaks.set(participant.profile_id, 0);
-      }
+       }
     }
   }
 
-  // Update final stats
+  // Finalize Player Stats
   for (const stats of playerStatsMap.values()) {
     stats.currentWinStreak = currentStreaks.get(stats.playerId) || 0;
     stats.longestWinStreak = longestStreaks.get(stats.playerId) || 0;
@@ -249,10 +244,61 @@ export async function getGlobalStats(supabase: SupabaseClient) {
     }
   }
 
+  // --- Calculate Event Stats ---
+  const eventStats: EventStat[] = [];
+  if (events) {
+    for (const event of events) {
+      const eventMatches = allMatches?.filter(m => m.event_id === event.id) || [];
+      const eventTournaments = completedTournaments?.filter(t => t.event_id === event.id).length || 0;
+      
+      const eventPlayerIds = new Set<string>();
+      eventMatches.forEach(m => {
+        const parts = allMatchParticipants?.filter(p => p.match_id === m.id) || [];
+        parts.forEach(p => eventPlayerIds.add(p.profile_id));
+      });
+
+      eventStats.push({
+        id: event.id,
+        name: event.name,
+        totalMatches: eventMatches.length,
+        totalTournaments: eventTournaments,
+        uniquePlayers: eventPlayerIds.size
+      });
+    }
+  }
+
+  // --- Recent Matches ---
+  const recentMatches: RecentMatch[] = [];
+  const sortedMatchesDesc = [...(allMatches || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const last5Matches = sortedMatchesDesc.slice(0, 5);
+
+  for (const match of last5Matches) {
+    const participants = allMatchParticipants?.filter(p => p.match_id === match.id) || [];
+    const winnerIds = participants.filter(p => p.result === 'win').map(p => p.profile_id);
+    const loserIds = participants.filter(p => p.result === 'loss').map(p => p.profile_id);
+    const isDraw = participants.every(p => p.result === 'draw') || (winnerIds.length === 0 && participants.length > 0);
+    
+    // Only include matches that have results
+    if (participants.some(p => p.result !== null)) {
+        recentMatches.push({
+            id: match.id,
+            winnerIds,
+            loserIds,
+            isDraw,
+            gameType: match.game_type,
+            eventName: match.event_id ? eventMap.get(match.event_id) || null : null,
+            tournamentName: match.tournament_id ? tournamentMap.get(match.tournament_id)?.name || null : null,
+            completedAt: match.created_at
+        });
+    }
+  }
+
   return {
     playerStats: Array.from(playerStatsMap.values()),
     tournamentWinners,
+    recentMatches,
+    eventStats,
     totalTournaments: completedTournaments?.length || 0,
-    totalCasualGames: casualMatches?.length || 0,
+    totalCasualGames: allMatches?.filter(m => !m.tournament_id).length || 0,
   };
 }

@@ -2,11 +2,8 @@ import { createClient } from '@/utils/supabase/server';
 import { getCurrentUser } from '@/lib/get-current-user';
 import { getUsersDecks } from './actions';
 import { redirect } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import DeckForm from '@/components/decks/deck-form';
 import DeckCard from '@/components/decks/deck-card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import CreateDeckDialog from '@/components/decks/create-deck-dialog';
 import PageHeader from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -42,22 +39,7 @@ export default async function DecksPage() {
         subtitle="Manage your deck library"
         backHref="/"
         backLabel="Home"
-        actions={
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="default">
-                <Plus className="w-4 h-4 mr-2" />
-                New Deck
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-5xl">
-              <DialogHeader>
-                <DialogTitle>Create New Deck</DialogTitle>
-              </DialogHeader>
-              <DeckForm />
-            </DialogContent>
-          </Dialog>
-        }
+        actions={<CreateDeckDialog />}
       />
 
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">

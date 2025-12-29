@@ -52,11 +52,11 @@ export function SideNav({ userRole = 'user' }: { userRole?: 'user' | 'admin' }) 
       <div className={cn("h-16 flex items-center border-b border-border/50", isCollapsed ? "justify-center" : "px-6")}>
         <div className="flex items-center gap-2">
            <div className="h-8 w-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(231,153,9,0.5)]">
-              <span className="font-heading font-bold text-white text-lg">P</span>
+              <span className="font-heading font-bold text-white text-lg">U</span>
            </div>
            {!isCollapsed && (
              <span className="font-heading font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-               ProxyCon
+               Upkeep
              </span>
            )}
         </div>

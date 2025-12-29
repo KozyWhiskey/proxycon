@@ -8,6 +8,7 @@ import UserHeader from '@/components/dashboard/user-header';
 import QuickActions from '@/components/dashboard/quick-actions';
 import ManageMembersDialog from '@/components/events/manage-members-dialog';
 import EventPlayerList from '@/components/events/event-player-list';
+import EventTrophies from '@/components/events/event-trophies';
 import { getEventMembers } from '@/app/events/actions';
 import {
   calculateStandings,
@@ -218,6 +219,7 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
     .limit(20);
 
   const formattedMatches = (recentMatches || []).map((m: any) => ({
+    type: 'match' as const,
     id: m.id,
     tournament_id: m.tournament_id,
     round_number: m.round_number,
@@ -234,6 +236,40 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
       }
     }))
   }));
+
+  // --- 3. Fetch Event Trophies ---
+  const { data: eventBadges } = await supabase
+    .from('profile_badges')
+    .select(`
+      id, awarded_at,
+      badges (id, slug, name, description, icon_url),
+      profile:profiles (id, display_name)
+    `)
+    .eq('event_id', eventId)
+    .order('awarded_at', { ascending: false });
+
+  const eventTrophies = eventBadges?.map((b: any) => ({
+    id: b.id,
+    awarded_at: b.awarded_at,
+    badge: b.badges,
+    profile: b.profile
+  })) || [];
+
+  // Combine and sort feed
+  const feedItems = [
+    ...formattedMatches,
+    ...eventTrophies.map(t => ({
+      type: 'badge' as const,
+      id: t.id,
+      awarded_at: t.awarded_at,
+      badge: t.badge,
+      profile: t.profile
+    }))
+  ].sort((a, b) => {
+    const dateA = a.type === 'match' ? new Date(a.created_at) : new Date(a.awarded_at);
+    const dateB = b.type === 'match' ? new Date(b.created_at) : new Date(b.awarded_at);
+    return dateB.getTime() - dateA.getTime();
+  });
 
   return (
     <main className="min-h-screen bg-background pb-24">
@@ -292,8 +328,8 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
             </section>
 
             <section className="hidden md:block">
-              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Match Feed</h2>
-              <Feed matches={formattedMatches} />
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Activity Feed</h2>
+              <Feed items={feedItems} />
             </section>
           </div>
 
@@ -315,13 +351,18 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
             </section>
 
             <section>
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Awarded Trophies</h2>
+              <EventTrophies trophies={eventTrophies} />
+            </section>
+
+            <section>
               <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Players</h2>
               <EventPlayerList members={members} />
             </section>
 
             <section className="md:hidden">
-              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Match Feed</h2>
-              <Feed matches={formattedMatches} />
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Activity Feed</h2>
+              <Feed items={feedItems} />
             </section>
           </div>
         </div>

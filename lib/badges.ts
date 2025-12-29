@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { searchCard } from '@/lib/scryfall';
-import { generateCommanderBadge } from '@/lib/ai-director';
+import { generateCommanderBadge, generateSetBadge, generateMatchFeat } from '@/lib/ai-director';
 import { slugify } from '@/lib/utils';
 
 export interface Badge {
@@ -98,7 +98,8 @@ export async function checkAndAwardBadges(
  */
 export async function checkAndAwardCommanderBadge(
   userId: string,
-  deckId: string | null
+  deckId: string | null,
+  eventId?: string
 ): Promise<Badge | null> {
   if (!deckId) return null;
 
@@ -192,7 +193,7 @@ export async function checkAndAwardCommanderBadge(
   const { error: awardError } = await supabase.from('profile_badges').insert({
     profile_id: userId,
     badge_id: badgeToAward.id,
-    event_id: null // Commander badges are global
+    event_id: eventId || null // Link to event if provided
   });
 
   if (awardError) {
@@ -253,6 +254,217 @@ export async function awardBadge(
     }
     return null;
   }
+
+  return badge;
+}
+
+/**
+ * Checks if the winner won a Limited tournament of a specific Set and awards a generated badge.
+ */
+export async function checkAndAwardSetBadge(
+  userId: string,
+  setCode: string,
+  setName: string,
+  eventId?: string
+): Promise<Badge | null> {
+  if (!setCode || !setName) return null;
+
+  const supabase = await createClient();
+
+  // 1. Check if a badge already exists for this Set
+  // We use the metadata column: metadata->>'set_code'
+  const { data: existingBadge } = await supabase
+    .from('badges')
+    .select('*')
+    .eq('metadata->>set_code', setCode)
+    .single();
+
+  let badgeToAward = existingBadge;
+
+  // 2. If NO badge exists, generate one
+  if (!badgeToAward) {
+    // A. Generate with AI
+    const aiBadge = await generateSetBadge(setCode, setName);
+    if (!aiBadge) return null;
+
+    // B. Create Badge in DB
+    const slug = `set-${setCode}`;
+    
+    // Fetch Set Icon
+    let iconUrl = '🏆';
+    try {
+        const res = await fetch(`https://api.scryfall.com/sets/${setCode}`);
+        if (res.ok) {
+            const json = await res.json();
+            if (json.icon_svg_uri) iconUrl = json.icon_svg_uri;
+        }
+    } catch (e) {
+        console.error('Error fetching set icon:', e);
+    }
+
+    const { data: newBadge, error } = await supabase
+      .from('badges')
+      .insert({
+        slug: slug,
+        name: aiBadge.name,
+        description: aiBadge.description,
+        icon_url: iconUrl,
+        category: 'automated',
+        generated_by: 'ai',
+        metadata: {
+          set_code: setCode,
+          set_name: setName,
+          rarity: aiBadge.rarity
+        }
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating Set badge:', error);
+      if (error.code === '23505') {
+         const { data: retryBadge } = await supabase
+          .from('badges')
+          .select('*')
+          .eq('slug', slug)
+          .single();
+         badgeToAward = retryBadge;
+      } else {
+        return null;
+      }
+    } else {
+      badgeToAward = newBadge;
+    }
+  }
+
+  if (!badgeToAward) return null;
+
+  // 3. Award the badge to the user
+  const { data: owned } = await supabase
+    .from('profile_badges')
+    .select('id')
+    .eq('profile_id', userId)
+    .eq('badge_id', badgeToAward.id)
+    .maybeSingle();
+
+  if (owned) return null; // Already have it
+
+  const { error: awardError } = await supabase.from('profile_badges').insert({
+    profile_id: userId,
+    badge_id: badgeToAward.id,
+    event_id: eventId || null
+  });
+
+  if (awardError) {
+    console.error('Error awarding set badge:', awardError);
+    return null;
+  }
+
+  return badgeToAward;
+}
+
+export async function checkAndAwardMatchFeats(
+  matchId: string,
+  winnerId: string,
+  loserId: string
+): Promise<Badge | null> {
+  const supabase = await createClient();
+
+  // Fetch match details
+  const { data: match } = await supabase
+    .from('matches')
+    .select('started_at, completed_at, tournament_id, event_id')
+    .eq('id', matchId)
+    .single();
+
+  if (!match) return null;
+
+  // Fetch participants (for scores and decks)
+  const { data: participants } = await supabase
+    .from('match_participants')
+    .select('profile_id, result, games_won, deck_id, decks(colors, name)')
+    .eq('match_id', matchId);
+
+  if (!participants || participants.length !== 2) return null;
+
+  const winner = participants.find(p => p.profile_id === winnerId);
+  const loser = participants.find(p => p.profile_id === loserId);
+
+  if (!winner || !loser) return null;
+
+  // 1. Check "The Stomp" (2-0 win < 15 mins)
+  if (winner.games_won === 2 && loser.games_won === 0 && match.started_at) {
+    const start = new Date(match.started_at);
+    const end = new Date(); // approx now
+    const durationMinutes = (end.getTime() - start.getTime()) / 1000 / 60;
+    
+    if (durationMinutes < 15) {
+       const feat = await generateMatchFeat('stomp', {
+         winnerName: 'Winner', // We'd need to fetch names to be precise, skipping for speed
+         score: '2-0'
+       });
+       
+       if (feat) {
+         return awardUniqueFeat(supabase, winnerId, feat, matchId, match.event_id);
+       }
+    }
+  }
+
+  // 2. Check "The Mirror" (Same Colors)
+  // Only if both used decks
+  if (winner.decks?.colors && loser.decks?.colors) {
+    const c1 = winner.decks.colors.sort().join('');
+    const c2 = loser.decks.colors.sort().join('');
+    
+    if (c1 === c2 && c1.length > 0) {
+       const feat = await generateMatchFeat('mirror', {
+         winnerDeck: winner.decks.name,
+         loserDeck: loser.decks.name
+       });
+       
+       if (feat) {
+         return awardUniqueFeat(supabase, winnerId, feat, matchId, match.event_id);
+       }
+    }
+  }
+
+  return null;
+}
+
+async function awardUniqueFeat(
+  supabase: SupabaseClient, 
+  userId: string, 
+  feat: { name: string, description: string, rarity: string },
+  contextId: string,
+  eventId?: string
+): Promise<Badge | null> {
+  // Create a unique badge for this specific moment
+  const slug = `feat-${contextId}-${Date.now()}`;
+  
+  const { data: badge, error } = await supabase
+    .from('badges')
+    .insert({
+      slug,
+      name: feat.name,
+      description: feat.description,
+      icon_url: '⚡', // Generic feat icon
+      category: 'automated',
+      generated_by: 'ai',
+      metadata: { rarity: feat.rarity, context_id: contextId }
+    })
+    .select()
+    .single();
+
+  if (error || !badge) return null;
+
+  await supabase.from('profile_badges').insert({
+    profile_id: userId,
+    badge_id: badge.id,
+    event_id: eventId || null,
+    is_unique: true,
+    custom_title: feat.name,
+    custom_description: feat.description
+  });
 
   return badge;
 }

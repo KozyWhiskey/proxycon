@@ -2,6 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { Trophy } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Player {
   id: string;
@@ -16,7 +18,8 @@ interface MatchParticipant {
   player: Player;
 }
 
-interface Match {
+export interface FeedMatch {
+  type: 'match';
   id: string;
   tournament_id: string | null;
   round_number: number | null;
@@ -25,25 +28,41 @@ interface Match {
   participants: MatchParticipant[];
 }
 
-interface FeedProps {
-  matches: Match[];
+export interface FeedBadge {
+  type: 'badge';
+  id: string;
+  awarded_at: string;
+  badge: {
+    name: string;
+    description: string;
+    icon_url: string;
+  };
+  profile: {
+    display_name: string;
+  };
 }
 
-export default function Feed({ matches }: FeedProps) {
-  if (matches.length === 0) {
+export type FeedItem = FeedMatch | FeedBadge;
+
+interface FeedProps {
+  items: FeedItem[];
+}
+
+export default function Feed({ items }: FeedProps) {
+  if (items.length === 0) {
     return (
       <Card className="glass-panel">
         <CardHeader>
           <CardTitle className="font-heading">Activity Feed</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground italic">No recent matches. Start playing to see activity here!</p>
+          <p className="text-muted-foreground italic">No recent activity. Start playing to see updates here!</p>
         </CardContent>
       </Card>
     );
   }
 
-  const formatMatchResult = (match: Match): string => {
+  const formatMatchResult = (match: FeedMatch): string => {
     const winners = match.participants.filter((p) => p.result === 'win' || p.result === '1st');
     const losers = match.participants.filter((p) => p.result === 'loss' || ['2nd', '3rd', '4th'].includes(p.result || ''));
 
@@ -79,25 +98,54 @@ export default function Feed({ matches }: FeedProps) {
         <CardTitle className="font-heading tracking-wide">Activity Feed</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {matches.map((match, index) => (
+        {items.map((item, index) => (
           <motion.div
-            key={match.id}
+            key={`${item.type}-${item.id}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
             className="pb-4 border-b border-white/5 last:border-0 last:pb-0"
           >
-            <p className="text-foreground mb-1 text-sm font-medium">{formatMatchResult(match)}</p>
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono">{formatDate(match.created_at)}</p>
-              {match.round_number && (
-                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-bold uppercase">Round {match.round_number}</span>
-              )}
-            </div>
-            {/* Placeholder for AI-generated roast */}
-            <p className="text-xs text-muted-foreground italic mt-3 opacity-60">
-              {/* AI roast will go here */}
-            </p>
+            {item.type === 'match' ? (
+              <>
+                <p className="text-foreground mb-1 text-sm font-medium">{formatMatchResult(item)}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono">{formatDate(item.created_at)}</p>
+                  {item.round_number && (
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-bold uppercase">Round {item.round_number}</span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex-shrink-0">
+                  <TooltipProvider>
+                    <Tooltip delayDuration={100}>
+                      <TooltipTrigger asChild>
+                         <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-lg cursor-default">
+                           {item.badge.icon_url?.startsWith('http') ? (
+                             // eslint-disable-next-line @next/next/no-img-element
+                             <img src={item.badge.icon_url} alt={item.badge.name} className={`w-full h-full object-contain ${item.badge.icon_url.includes('svg') ? 'invert opacity-80' : 'rounded-full'}`} />
+                           ) : (
+                             <span>{item.badge.icon_url || '🏆'}</span>
+                           )}
+                         </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="font-bold text-primary">{item.badge.name}</p>
+                        <p className="text-xs text-zinc-300 max-w-[200px]">{item.badge.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex-1">
+                  <p className="text-foreground text-sm font-medium">
+                    <span className="text-primary font-bold">{item.profile.display_name}</span> earned <span className="text-amber-200 font-bold">{item.badge.name}</span>
+                  </p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono mt-1">{formatDate(item.awarded_at)}</p>
+                </div>
+              </div>
+            )}
           </motion.div>
         ))}
       </CardContent>

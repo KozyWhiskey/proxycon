@@ -16,7 +16,7 @@ const chakra = Chakra_Petch({
 });
 
 export const metadata: Metadata = {
-  title: "ProxyCon | Tournament Companion",
+  title: "Upkeep | Tournament Companion",
   description: "Track events, decks, and tournaments for Magic the Gathering.",
 };
 

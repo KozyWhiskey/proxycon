@@ -7,7 +7,7 @@
 
 ## Overview
 
-This document outlines the complete V3 database schema for the ProxyCon platform. This schema implements a scalable, normalized architecture designed for multi-event support ("Global Identity, Local Context").
+This document outlines the complete V3 database schema for the Upkeep platform. This schema implements a scalable, normalized architecture designed for multi-event support ("Global Identity, Local Context").
 
 **Key Changes from V2:**
 - **Removed Legacy Tables:** `players` table is gone. Identity is now strictly handled by `profiles`.
@@ -49,7 +49,7 @@ The container for specific weekends, leagues, or game nights.
 |--------|------|-------------|-------------|
 | `id` | UUID | PRIMARY KEY | Unique event identifier |
 | `owner_id` | UUID | FK → profiles.id | User who created the event |
-| `name` | TEXT | NOT NULL | Event name (e.g., "ProxyCon 2025") |
+| `name` | TEXT | NOT NULL | Event name (e.g., "Upkeep") |
 | `slug` | TEXT | UNIQUE, NULLABLE | URL-friendly identifier |
 | `start_date` | DATE | NULLABLE | Event start date |
 | `end_date` | DATE | NULLABLE | Event end date |

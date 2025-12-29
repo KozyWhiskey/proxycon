@@ -1,4 +1,4 @@
-# Project Specification: Proxycon 2025 Companion App (V3 Platform)
+# Project Specification: Upkeep Companion App (V3 Platform)
 
 ## Role
 
@@ -6,7 +6,7 @@ Senior Full-Stack Engineer and Lead UX Designer.
 
 ## Goal
 
-Build a complete, mobile-first streaming dashboard web application for Magic: The Gathering weekends. The application has been upgraded to a **multi-event platform ("V3")** supporting persistent user profiles, multiple events (e.g., "ProxyCon 2025", "Weekly Draft"), deck tracking, tournament management, and a dynamic AI-powered achievement system.
+Build a complete, mobile-first streaming dashboard web application for Magic: The Gathering weekends. The application has been upgraded to a **multi-event platform ("V3")** supporting persistent user profiles, multiple events (e.g., "Upkeep", "Weekly Draft"), deck tracking, tournament management, and a dynamic AI-powered achievement system.
 
 ## Target Audience
 

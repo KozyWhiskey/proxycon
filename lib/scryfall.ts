@@ -19,6 +19,50 @@ export interface ScryfallCard {
   collector_number?: string;
 }
 
+export interface ScryfallSet {
+  id: string;
+  code: string;
+  name: string;
+  set_type: string;
+  card_count: number;
+  icon_svg_uri: string;
+  released_at?: string;
+}
+
+export async function fetchSets(): Promise<ScryfallSet[]> {
+  try {
+    const response = await fetch('https://api.scryfall.com/sets');
+    if (!response.ok) throw new Error('Failed to fetch sets');
+
+    const json = await response.json();
+    if (!json.data) return [];
+
+    const allowedTypes = [
+      'core',
+      'expansion',
+      'masters',
+      'draft_innovation',
+      'commander',
+      'funny'
+    ];
+
+    return json.data
+      .filter((set: any) => allowedTypes.includes(set.set_type))
+      .map((set: any) => ({
+        id: set.id,
+        code: set.code,
+        name: set.name,
+        set_type: set.set_type,
+        card_count: set.card_count,
+        icon_svg_uri: set.icon_svg_uri,
+        released_at: set.released_at
+      }));
+  } catch (error) {
+    console.error('Error fetching sets:', error);
+    return [];
+  }
+}
+
 export async function searchCard(query: string): Promise<ScryfallCard | null> {
   if (!query) return null;
 

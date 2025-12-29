@@ -55,7 +55,7 @@ export default function NewEventPage() {
                 <Input 
                   id="name" 
                   name="name" 
-                  placeholder="ProxyCon 2026" 
+                  placeholder="Upkeep 2026" 
                   required 
                   className="bg-slate-950 border-slate-800"
                 />
