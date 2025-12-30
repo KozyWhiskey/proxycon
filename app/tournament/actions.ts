@@ -188,7 +188,7 @@ async function checkAndGenerateNextRound(supabase: any, matchId: string, tournam
 
 export async function generateNextRound(tournamentId: string, currentRound: number) {
   const supabase = await createClient();
-  const { data: tournament } = await supabase.from('tournaments').select('format, max_rounds, event_id').eq('id', tournamentId).single();
+  const { data: tournament } = await supabase.from('tournaments').select('format, max_rounds, event_id, set_code, set_name').eq('id', tournamentId).single();
   
   const { data: tps } = await supabase.from('tournament_participants').select('profile_id').eq('tournament_id', tournamentId);
   const profileIds = tps?.map(p => p.profile_id) || [];

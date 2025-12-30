@@ -92,6 +92,8 @@ export interface Tournament {
   status: 'pending' | 'active' | 'completed';
   max_rounds: number;
   round_duration_minutes: number;
+  set_code?: string | null;
+  set_name?: string | null;
   created_at: string;
 }
 

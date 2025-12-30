@@ -6,7 +6,7 @@ import { ScryfallCard } from '@/lib/scryfall';
 const badgeSchema = z.object({
   name: z.string().describe('The name of the achievement. Funny, snarky, or pun-based.'),
   description: z.string().describe('A sarcastic or observant description of why this was awarded.'),
-  rarity: z.enum(['common', 'rare', 'mythic']).describe('How impressive or rare this achievement is.'),
+  rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']).describe('How impressive or rare this achievement is.'),
 });
 
 export async function generateCommanderBadge(card: ScryfallCard) {
