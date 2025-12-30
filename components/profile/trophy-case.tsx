@@ -50,13 +50,24 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
         <div className={`grid gap-4 ${isDashboard ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
           {badges.map((badge) => {
             const isUrl = badge.icon_url?.startsWith('http');
+            const rarity = badge.metadata?.rarity;
+            
+            let rarityClass = 'border-white/10 bg-white/5 hover:border-primary/30';
+            
+            if (rarity === 'mythic') {
+              rarityClass = 'border-orange-500/50 bg-orange-500/5 hover:border-orange-500/80 shadow-[0_0_15px_rgba(249,115,22,0.1)]';
+            } else if (rarity === 'rare') {
+              rarityClass = 'border-amber-400/50 bg-amber-400/5 hover:border-amber-400/80 shadow-[0_0_15px_rgba(251,191,36,0.1)]';
+            } else if (rarity === 'uncommon') {
+              rarityClass = 'border-blue-400/50 bg-blue-400/5 hover:border-blue-400/80 shadow-[0_0_15px_rgba(96,165,250,0.1)]';
+            }
             
             return (
               <TooltipProvider key={`${badge.id}-${badge.awarded_at}`}>
                 <Tooltip delayDuration={100}>
                   <TooltipTrigger asChild>
                     <div 
-                      className={`group relative flex flex-col items-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-primary/30 transition-all text-center cursor-default ${
+                      className={`group relative flex flex-col items-center rounded-xl border transition-all text-center cursor-default ${rarityClass} ${
                         isDashboard ? 'p-2' : 'p-4'
                       }`}
                     >
@@ -90,7 +101,14 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[250px] text-center p-3">
-                    <p className="font-bold text-primary mb-1">{badge.name}</p>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                       <p className="font-bold text-primary">{badge.name}</p>
+                       {rarity && <span className={`text-[10px] uppercase tracking-widest px-1 rounded border ${
+                         rarity === 'mythic' ? 'border-orange-500 text-orange-500' : 
+                         rarity === 'rare' ? 'border-amber-400 text-amber-400' : 
+                         'border-blue-400 text-blue-400'
+                       }`}>{rarity}</span>}
+                    </div>
                     <p className="text-zinc-300">{badge.description}</p>
                   </TooltipContent>
                 </Tooltip>

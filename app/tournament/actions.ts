@@ -122,9 +122,7 @@ export async function submitResultWithGames(
 
       if (winnerId) {
          if (tournament.format === 'draft' || tournament.format === 'sealed') {
-            if (tournament.set_code && tournament.set_name) {
-               await checkAndAwardSetBadge(winnerId, tournament.set_code, tournament.set_name, tournament.event_id);
-            }
+            // Limited: Set badges are now awarded at tournament completion
          } else if (winnerDeckId) {
             await checkAndAwardCommanderBadge(winnerId, winnerDeckId, tournament.event_id);
          }
@@ -218,6 +216,18 @@ export async function generateNextRound(tournamentId: string, currentRound: numb
       if (sortedStandings.length > 0) {
         const winner = sortedStandings[0];
         await awardBadge(supabase, winner.playerId, 'champion', tournament?.event_id || null);
+
+        // Award Set Badges (Tiered)
+        if (tournament?.format === 'draft' || tournament?.format === 'sealed') {
+            if (tournament?.set_code && tournament?.set_name) {
+                // Rank 1
+                if (sortedStandings[0]) await checkAndAwardSetBadge(sortedStandings[0].playerId, tournament.set_code, tournament.set_name, tournament.event_id, 1);
+                // Rank 2
+                if (sortedStandings[1]) await checkAndAwardSetBadge(sortedStandings[1].playerId, tournament.set_code, tournament.set_name, tournament.event_id, 2);
+                // Rank 3
+                if (sortedStandings[2]) await checkAndAwardSetBadge(sortedStandings[2].playerId, tournament.set_code, tournament.set_name, tournament.event_id, 3);
+            }
+        }
       }
     } catch (e) {
       console.error('Error awarding champion badge:', e);
@@ -452,15 +462,7 @@ export async function submitResultWithGamesNoRedirect(
       // Winner Specific Badges
       if (winnerId) {
         if (tournament.format === 'draft' || tournament.format === 'sealed') {
-          // Limited: Award Set Badge
-          if (tournament.set_code && tournament.set_name) {
-             try {
-               const setBadge = await checkAndAwardSetBadge(winnerId, tournament.set_code, tournament.set_name, tournament.event_id);
-               if (setBadge) awardedBadges.push(setBadge);
-             } catch (e) {
-               console.error('Set Badge Error:', e);
-             }
-          }
+          // Limited: Set badges are now awarded at tournament completion
         } else {
           // Constructed: Award Commander/Deck Badge
           if (winnerDeckId) {

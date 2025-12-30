@@ -44,17 +44,36 @@ export async function generateCommanderBadge(card: ScryfallCard) {
   }
 }
 
-export async function generateSetBadge(setCode: string, setName: string) {
+export async function generateSetBadge(setCode: string, setName: string, rank?: number) {
+  let rankText = "a Draft or Sealed tournament";
+  let rarityInstruction = "";
+  
+  if (rank) {
+    if (rank === 1) {
+      rankText = "1st Place (Champion) in a Draft or Sealed tournament";
+      rarityInstruction = "Set rarity to 'mythic'.";
+    } else if (rank === 2) {
+      rankText = "2nd Place (Finalist) in a Draft or Sealed tournament";
+      rarityInstruction = "Set rarity to 'rare'.";
+    } else if (rank === 3) {
+      rankText = "3rd Place in a Draft or Sealed tournament";
+      rarityInstruction = "Set rarity to 'uncommon'.";
+    }
+  }
+
   const prompt = `
     You are "The Director", a snarky, observant, and slightly sadistic AI game show host for a Magic: The Gathering tournament.
     
-    Your task is to create a unique achievement badge for a player who just won a Draft or Sealed tournament for the following Expansion Set:
+    Your task is to create a unique achievement badge for a player who achieved:
+    ${rankText}
     
+    Expansion Set:
     Set Name: ${setName}
     Set Code: ${setCode}
     
     Analyze the set's mechanics, themes, and reputation in the community.
     Create a "Roast" style achievement. It should be funny, maybe a little mean, but ultimately a badge of honor.
+    ${rarityInstruction}
     
     Examples:
     - Modern Horizons 3: "The Power Creeper" (You paid $100 for this draft and all you got was this digital badge)
@@ -69,6 +88,11 @@ export async function generateSetBadge(setCode: string, setName: string) {
       schema: badgeSchema,
       prompt: prompt,
     });
+
+    // Enforce rarity based on rank if provided
+    if (rank === 1) object.rarity = 'mythic';
+    else if (rank === 2) object.rarity = 'rare';
+    else if (rank === 3) object.rarity = 'uncommon';
 
     return object;
   } catch (error) {

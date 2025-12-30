@@ -23,7 +23,7 @@ export default async function ProfilePage() {
     .from('profile_badges')
     .select(`
       awarded_at,
-      badges (id, slug, name, description, icon_url),
+      badges (id, slug, name, description, icon_url, metadata),
       events (name)
     `)
     .eq('profile_id', user.id)

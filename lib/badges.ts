@@ -10,6 +10,7 @@ export interface Badge {
   name: string;
   description: string;
   icon_url: string;
+  metadata?: any;
 }
 
 type BadgeStrategy = (
@@ -153,7 +154,7 @@ export async function checkAndAwardCommanderBadge(
         generated_by: 'ai',
         metadata: {
           commander_name: commanderName,
-          rarity: aiBadge.rarity
+          rarity: 'rare'
         }
       })
       .select()
@@ -265,31 +266,34 @@ export async function checkAndAwardSetBadge(
   userId: string,
   setCode: string,
   setName: string,
-  eventId?: string
+  eventId?: string,
+  rank?: number
 ): Promise<Badge | null> {
   if (!setCode || !setName) return null;
 
   const supabase = await createClient();
 
-  // 1. Check if a badge already exists for this Set
-  // We use the metadata column: metadata->>'set_code'
+  // 1. Determine Slug based on rank
+  // If rank is provided, we want unique badges for 1st, 2nd, 3rd.
+  // If no rank, fallback to generic (or maybe we shouldn't use generic anymore?)
+  const slug = rank ? `set-${setCode}-rank-${rank}` : `set-${setCode}`;
+
+  // 2. Check if a badge already exists with this SLUG
   const { data: existingBadge } = await supabase
     .from('badges')
     .select('*')
-    .eq('metadata->>set_code', setCode)
+    .eq('slug', slug)
     .single();
 
   let badgeToAward = existingBadge;
 
-  // 2. If NO badge exists, generate one
+  // 3. If NO badge exists, generate one
   if (!badgeToAward) {
     // A. Generate with AI
-    const aiBadge = await generateSetBadge(setCode, setName);
+    const aiBadge = await generateSetBadge(setCode, setName, rank);
     if (!aiBadge) return null;
 
     // B. Create Badge in DB
-    const slug = `set-${setCode}`;
-    
     // Fetch Set Icon
     let iconUrl = '🏆';
     try {
@@ -314,7 +318,8 @@ export async function checkAndAwardSetBadge(
         metadata: {
           set_code: setCode,
           set_name: setName,
-          rarity: aiBadge.rarity
+          rarity: aiBadge.rarity,
+          rank: rank
         }
       })
       .select()
@@ -339,7 +344,7 @@ export async function checkAndAwardSetBadge(
 
   if (!badgeToAward) return null;
 
-  // 3. Award the badge to the user
+  // 4. Award the badge to the user
   const { data: owned } = await supabase
     .from('profile_badges')
     .select('id')
