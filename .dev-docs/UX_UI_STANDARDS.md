@@ -39,7 +39,9 @@ We use **Tailwind CSS V4** variables defined in `app/globals.css`. The theme is 
 ### Backgrounds
 -   **App Background:** `bg-background` (Zinc 950 - `#09090b`).
 -   **Glass Panel (Cards/Surfaces):** `bg-zinc-900/60` with `backdrop-blur-md` and `border-white/10` (via `.glass-panel` utility).
+    -   *Update:* Opacity standardized to 60% for better contrast against complex backgrounds.
 -   **Overlay:** `bg-black/80` with `backdrop-blur-sm`.
+-   **Hero Gradient Overlays:** Use `bg-gradient-to-t from-black/90` when overlaying text on colored backgrounds.
 
 ### Text Colors
 -   **Foreground:** `text-foreground` (Zinc 50 - `#fafafa`).

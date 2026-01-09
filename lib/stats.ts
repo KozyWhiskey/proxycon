@@ -47,29 +47,65 @@ export interface EventStat {
   uniquePlayers: number;
 }
 
-export async function getGlobalStats(supabase: SupabaseClient) {
-  // Fetch all events
-  const { data: events } = await supabase
+export async function getGlobalStats(supabase: SupabaseClient, guildId?: string) {
+  // Fetch events (filtered by Guild if provided)
+  let eventsQuery = supabase
     .from('events')
-    .select('id, name')
+    .select('id, name, organization_id') // Added organization_id for clarity
     .eq('is_active', true);
 
+  if (guildId) {
+    eventsQuery = eventsQuery.eq('organization_id', guildId);
+  }
+
+  const { data: events } = await eventsQuery;
+
   const eventMap = new Map(events?.map(e => [e.id, e.name]) || []);
+  const validEventIds = events?.map(e => e.id) || [];
 
   // Fetch all completed tournaments
-  const { data: completedTournaments } = await supabase
+  // If guildId is set, only fetch tournaments for valid events
+  let tournamentsQuery = supabase
     .from('tournaments')
     .select('id, name, format, created_at, event_id')
     .eq('status', 'completed')
     .order('created_at', { ascending: false });
+  
+  if (guildId) {
+    if (validEventIds.length > 0) {
+      tournamentsQuery = tournamentsQuery.in('event_id', validEventIds);
+    } else {
+      // If a guild has no events, it has no tournaments. Return empty result safely.
+      // We can simulate this by asking for an impossible ID or just returning early.
+      // Returning early is cleaner but requires restructuring.
+      // We'll let the query run with an empty IN clause which might error, so let's handle empty case.
+    }
+  }
+
+  const { data: completedTournaments } = (guildId && validEventIds.length === 0) 
+    ? { data: [] } 
+    : await tournamentsQuery;
 
   const tournamentMap = new Map(completedTournaments?.map(t => [t.id, t]) || []);
 
-  // Fetch all matches
-  const { data: allMatches } = await supabase
+  // Fetch matches
+  // If guildId is set, only fetch matches linked to the valid events
+  let matchesQuery = supabase
     .from('matches')
-    .select('id, game_type, created_at, notes, tournament_id, event_id, round_number')
+    .select('id, game_type, created_at, tournament_id, event_id, round_number')
     .order('created_at', { ascending: true }); // Chronological for streak calc
+  
+  if (guildId) {
+     if (validEventIds.length > 0) {
+        matchesQuery = matchesQuery.in('event_id', validEventIds);
+     } else {
+        // Guild has no events, so no matches.
+     }
+  }
+
+  const { data: allMatches } = (guildId && validEventIds.length === 0)
+    ? { data: [] }
+    : await matchesQuery;
 
   const allMatchIds = allMatches?.map((m) => m.id) || [];
 
@@ -143,15 +179,19 @@ export async function getGlobalStats(supabase: SupabaseClient) {
 
     if (sortedStandings.length > 0) {
       const winner = sortedStandings[0];
-      const winnerProfile = profilesMap.get(winner.playerId);
-      if (winnerProfile) {
-        tournamentWinners.push({
-          tournamentId: tournament.id,
-          tournamentName: tournament.name,
-          winnerId: winner.playerId,
-          winnerName: winnerProfile.username,
-          winnerNickname: winnerProfile.display_name,
-        });
+      // Only count as a winner if they actually scored points or played matches
+      // This prevents empty completed tournaments from assigning a winner based on ID sort
+      if (winner.points > 0 || matchHistory.length > 0) {
+        const winnerProfile = profilesMap.get(winner.playerId);
+        if (winnerProfile) {
+          tournamentWinners.push({
+            tournamentId: tournament.id,
+            tournamentName: tournament.name,
+            winnerId: winner.playerId,
+            winnerName: winnerProfile.username,
+            winnerNickname: winnerProfile.display_name,
+          });
+        }
       }
     }
   }

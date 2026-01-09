@@ -17,9 +17,20 @@ import { getGlobalStats, PlayerStats } from '@/lib/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import GuildStatsFilter from '@/components/stats/guild-stats-filter';
+import { getUserGuilds } from '@/app/guilds/actions';
 
-export default async function StatsPage() {
+interface PageProps {
+  searchParams: Promise<{ guild?: string }>;
+}
+
+export default async function StatsPage({ searchParams }: PageProps) {
   const supabase = await createClient();
+  const { guild } = await searchParams;
+
+  // Fetch current user to get their guilds for the filter
+  const { data: { user } } = await supabase.auth.getUser();
+  const userGuilds = user ? await getUserGuilds(user.id) : [];
 
   const {
     playerStats,
@@ -28,7 +39,7 @@ export default async function StatsPage() {
     totalCasualGames,
     recentMatches,
     eventStats
-  } = await getGlobalStats(supabase);
+  } = await getGlobalStats(supabase, guild);
 
   // --- Helper Functions ---
   const getPlayerName = (id: string) => {
@@ -110,6 +121,10 @@ export default async function StatsPage() {
       />
       
       <div className="max-w-7xl mx-auto p-4 space-y-8">
+
+        {userGuilds.length > 0 && (
+          <GuildStatsFilter userGuilds={userGuilds} />
+        )}
         
         {/* Hero Highlights */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -117,7 +132,7 @@ export default async function StatsPage() {
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                     <Trophy className="w-8 h-8 text-primary mb-2" />
                     <div className="text-xs text-primary uppercase font-bold tracking-wider">Top Champion</div>
-                    {topTournamentWinner ? (
+                    {topTournamentWinner && topTournamentWinner.tournamentWins > 0 ? (
                         <>
                              <div className="text-xl font-heading font-bold text-foreground mt-1">
                                 {topTournamentWinner.playerNickname || topTournamentWinner.playerName}
@@ -132,7 +147,7 @@ export default async function StatsPage() {
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                     <Crown className="w-8 h-8 text-emerald-500 mb-2" />
                     <div className="text-xs text-emerald-500 uppercase font-bold tracking-wider">Match Leader</div>
-                    {topMatchWinner ? (
+                    {topMatchWinner && topMatchWinner.matchWins > 0 ? (
                         <>
                              <div className="text-xl font-heading font-bold text-foreground mt-1">
                                 {topMatchWinner.playerNickname || topMatchWinner.playerName}

@@ -11,13 +11,12 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// Removed ScrollArea
-import { Users, UserPlus, Search, X, Loader2, Trash2, Copy } from 'lucide-react';
+import { Users, Trash2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { addEventMember, removeEventMember, searchProfiles } from '@/app/events/actions';
 import { useRouter } from 'next/navigation';
+import { UserSearch } from '@/components/shared/user-search';
 
 interface Member {
   id: string;
@@ -45,40 +44,14 @@ export default function ManageMembersDialog({
 }: ManageMembersDialogProps) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>(initialMembers);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
-
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const results = await searchProfiles(query);
-      // Filter out existing members
-      const filtered = results.filter(
-        (r) => !members.some((m) => m.id === r.id)
-      );
-      setSearchResults(filtered);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   const handleAddMember = async (profile: any) => {
     startTransition(async () => {
       const result = await addEventMember(eventId, profile.id);
       if (result.success) {
         toast.success(`Added ${profile.display_name} to event`);
-        setSearchResults((prev) => prev.filter((p) => p.id !== profile.id));
         setMembers((prev) => [
           ...prev,
           {
@@ -155,57 +128,11 @@ export default function ManageMembersDialog({
           {canManage && (
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest font-heading">Add Members</h3>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/40" />
-                <Input
-                  placeholder="Search by username or name..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9 h-11"
-                />
-              </div>
-              
-              {isSearching && (
-                 <div className="flex justify-center p-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                 </div>
-              )}
-
-              {searchResults.length > 0 && (
-                <div className="bg-zinc-950 border border-white/10 rounded-md overflow-hidden max-h-48 overflow-y-auto">
-                  {searchResults.map((result) => (
-                    <div
-                      key={result.id}
-                      className="flex items-center justify-between p-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8 border border-white/10">
-                          <AvatarImage src={result.avatar_url || undefined} />
-                          <AvatarFallback className="bg-white/5 text-xs">{result.display_name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {result.display_name}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground/60 font-mono">
-                            @{result.username}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={isPending}
-                        onClick={() => handleAddMember(result)}
-                        className="h-8"
-                      >
-                        <UserPlus className="h-3.5 w-3.5 mr-1.5" />
-                        Add
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <UserSearch 
+                onSearch={searchProfiles}
+                onSelect={handleAddMember}
+                excludeIds={members.map(m => m.id)}
+              />
             </div>
           )}
 

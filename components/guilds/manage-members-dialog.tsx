@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -21,10 +20,7 @@ import {
   X, 
   Check, 
   Shield, 
-  Trash2, 
-  Search,
-  Loader2,
-  MoreVertical
+  Trash2
 } from 'lucide-react';
 import { 
   getGuildMembers, 
@@ -34,7 +30,7 @@ import {
   inviteUser 
 } from '@/app/guilds/actions';
 import { toast } from 'sonner';
-import { Separator } from '@/components/ui/separator';
+import { UserSearch } from '@/components/shared/user-search';
 
 interface Member {
   id: string;
@@ -49,9 +45,6 @@ interface Member {
 export function ManageMembersDialog({ guildId, guildName }: { guildId: string, guildName: string }) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isFetching, setIsFetching] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const loadMembers = async () => {
@@ -64,14 +57,6 @@ export function ManageMembersDialog({ guildId, guildName }: { guildId: string, g
       loadMembers();
     }
   }, [open]);
-
-  const handleSearch = async () => {
-    if (searchQuery.length < 2) return;
-    setIsFetching(true);
-    const results = await searchUsers(searchQuery);
-    setSearchResults(results);
-    setIsFetching(false);
-  };
 
   const handleAction = (userId: string, action: 'approve' | 'reject' | 'promote' | 'kick' | 'invite') => {
     startTransition(async () => {
@@ -95,14 +80,14 @@ export function ManageMembersDialog({ guildId, guildName }: { guildId: string, g
       if (res?.success) {
         toast.success('Action completed');
         loadMembers();
-        if (action === 'invite') {
-            setSearchQuery('');
-            setSearchResults([]);
-        }
       } else {
         toast.error(res?.message || 'Action failed');
       }
     });
+  };
+  
+  const handleInvite = async (user: any) => {
+    handleAction(user.id, 'invite');
   };
 
   const activeMembers = members.filter(m => m.status === 'active');
@@ -232,53 +217,13 @@ export function ManageMembersDialog({ guildId, guildName }: { guildId: string, g
             </TabsContent>
 
             <TabsContent value="invite" className="mt-0 space-y-6">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search by name or @username..." 
-                    className="pl-9 bg-black/20"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                </div>
-                <Button onClick={handleSearch} disabled={isFetching}>
-                  {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {searchResults.map(user => {
-                  const isAlreadyIn = members.some(m => m.id === user.id);
-                  return (
-                    <div key={user.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={user.avatar_url} />
-                          <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{user.display_name || user.username}</p>
-                          <p className="text-[10px] text-muted-foreground italic">@{user.username}</p>
-                        </div>
-                      </div>
-                      
-                      {isAlreadyIn ? (
-                        <Badge variant="outline" className="opacity-50">Member</Badge>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
-                          onClick={() => handleAction(user.id, 'invite')}
-                          disabled={isPending}
-                        >
-                          Invite
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
+              <UserSearch 
+                onSearch={(q) => searchUsers(q, guildId)}
+                onSelect={handleInvite}
+                excludeIds={members.map(m => m.id)}
+                actionLabel="Invite"
+                placeholder="Search by name or @username..."
+              />
                 
                 {invited.length > 0 && (
                     <div className="pt-4">
@@ -301,7 +246,6 @@ export function ManageMembersDialog({ guildId, guildName }: { guildId: string, g
                         </div>
                     </div>
                 )}
-              </div>
             </TabsContent>
 
           </div>

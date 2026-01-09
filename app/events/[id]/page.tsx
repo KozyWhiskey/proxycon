@@ -329,8 +329,8 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
 
   return (
     <main className="min-h-screen bg-background pb-24">
-      {/* User Header */}
-      <div className="sticky top-0 z-10">
+      {/* User Header - Sticky only on Desktop to save mobile screen real estate */}
+      <div className="md:sticky md:top-0 z-10">
         <UserHeader
           displayName={currentProfile.display_name || 'Player'}
           username={currentProfile.username}
@@ -364,14 +364,13 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Main Content Area */}
-          <div className="md:col-span-8 space-y-8">
-            <section>
-              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Quick Actions</h2>
-              <QuickActions eventId={eventId} />
-            </section>
-
-            <section>
-              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Active Tournaments</h2>
+          <div className="md:col-span-8 space-y-8 flex flex-col">
+            
+            {/* 1. Active Tournaments (Priority 1) */}
+            <section className="order-1">
+              {tournamentsWithMatches.length > 0 && (
+                <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Active Match</h2>
+              )}
               <div className="space-y-4">
                 {tournamentsWithMatches.length > 0 ? (
                   tournamentsWithMatches.map(({ tournament, currentMatch }) => (
@@ -383,7 +382,11 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
                     />
                   ))
                 ) : (
-                  <ActiveTournament
+                  /* Only show empty state if NO quick actions or other content (optional, but keeping simple for now) 
+                     Actually, standard design: if no active tournament, we just show quick actions first.
+                     We can conditionally render this section only if active.
+                  */
+                   <ActiveTournament
                     tournament={null}
                     currentMatch={null}
                     currentProfileId={currentProfileId}
@@ -392,15 +395,33 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
               </div>
             </section>
 
-            <section className="hidden md:block">
+            {/* 2. Quick Actions (Priority 2) */}
+            <section className="order-2">
+              <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Quick Actions</h2>
+              <QuickActions eventId={eventId} />
+            </section>
+
+            {/* 3. Feed (Desktop Only in this col, or shifted via grid?) 
+                Actually, following the request to consolidate feed:
+                We will remove the feed from here and let the sidebar handle it on desktop?
+                OR we keep it here and hide on mobile?
+                The original layout had Feed in main col for Desktop, and Sidebar for Mobile (duplicated).
+                
+                Better Approach:
+                Mobile: Active -> Actions -> Stats -> Feed
+                Desktop: 
+                  Left: Active -> Actions -> Feed
+                  Right: Stats -> Trophies -> Players
+            */}
+            <section className="order-3 hidden md:block">
               <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Activity Feed</h2>
               <Feed items={feedItems} />
             </section>
           </div>
 
           {/* Sidebar Stats Area */}
-          <div className="md:col-span-4 space-y-8">
-            <section>
+          <div className="md:col-span-4 space-y-8 flex flex-col">
+            <section className="order-1">
               <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Event Stats</h2>
               <MyStats
                 casualWins={casualWins}
@@ -415,17 +436,18 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
               />
             </section>
 
-            <section>
+            <section className="order-2">
               <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Awarded Trophies</h2>
               <EventTrophies trophies={eventTrophies} />
             </section>
 
-            <section>
+            <section className="order-3">
               <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Players</h2>
               <EventPlayerList members={members} />
             </section>
 
-            <section className="md:hidden">
+            {/* Mobile Feed (Priority 4) */}
+            <section className="md:hidden order-4">
               <h2 className="text-sm font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-heading mb-4 px-1">Activity Feed</h2>
               <Feed items={feedItems} />
             </section>

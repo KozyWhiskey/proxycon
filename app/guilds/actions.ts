@@ -373,6 +373,7 @@ export async function getGuildEvents(guildId: string) {
   return data;
 }
 
+// ... existing imports
 export async function getGuildFeed(guildId: string) {
   const supabase = await createClient();
   const { data: events } = await supabase.from('events').select('id').eq('organization_id', guildId);
@@ -385,4 +386,41 @@ export async function getGuildFeed(guildId: string) {
     `).in('event_id', eventIds).order('created_at', { ascending: false }).limit(10);
   if (error) return [];
   return matches;
+}
+
+export async function deleteGuild(guildId: string): Promise<GuildActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: 'Not authenticated' };
+  }
+
+  // 1. Verify Ownership
+  const { data: guild, error: fetchError } = await supabase
+    .from('organizations')
+    .select('owner_id')
+    .eq('id', guildId)
+    .single();
+
+  if (fetchError || !guild) {
+    return { success: false, message: 'Guild not found' };
+  }
+
+  if (guild.owner_id !== user.id) {
+    return { success: false, message: 'Only the Guildmaster can delete the guild.' };
+  }
+
+  // 2. Delete
+  const { error: deleteError } = await supabase
+    .from('organizations')
+    .delete()
+    .eq('id', guildId);
+
+  if (deleteError) {
+    console.error('Error deleting guild:', deleteError);
+    return { success: false, message: deleteError.message };
+  }
+
+  return { success: true, message: 'Guild disbanded successfully.' };
 }

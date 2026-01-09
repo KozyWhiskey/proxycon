@@ -6,6 +6,7 @@ import { Shield, Users, Crown, Calendar, Swords } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ManageMembersDialog } from '@/components/guilds/manage-members-dialog';
+import { DeleteGuildDialog } from '@/components/guilds/delete-guild-dialog';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +37,7 @@ export default async function GuildDashboard({ params }: PageProps) {
 
   const currentUserMembership = members.find((m: any) => m.id === user.id);
   const isAdmin = currentUserMembership?.role === 'owner' || currentUserMembership?.role === 'admin';
+  const isOwner = currentUserMembership?.role === 'owner';
   const activeMembers = members.filter((m: any) => m.status === 'active');
   
   // Theme color mapping
@@ -53,7 +55,8 @@ export default async function GuildDashboard({ params }: PageProps) {
     <div className="min-h-screen pb-20">
       {/* 1. Hero Banner */}
       <div className={`relative h-48 md:h-64 bg-gradient-to-r ${bgGradient}`}>
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+        {/* Stronger Gradient Overlay for Readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
         <div className="absolute inset-0 bg-grid-white/[0.1] bg-[length:32px_32px]" />
         
         <div className="max-w-7xl mx-auto px-4 h-full flex flex-col justify-end pb-8 relative z-10">
@@ -82,6 +85,7 @@ export default async function GuildDashboard({ params }: PageProps) {
             {/* Actions */}
             <div className="mb-4 hidden md:flex items-center gap-3">
                  {isAdmin && <ManageMembersDialog guildId={guild.id} guildName={guild.name} />}
+                 {isOwner && <DeleteGuildDialog guildId={guild.id} guildName={guild.name} />}
             </div>
           </div>
         </div>
@@ -94,6 +98,7 @@ export default async function GuildDashboard({ params }: PageProps) {
             {/* Mobile Actions */}
             <div className="md:hidden flex flex-wrap gap-3">
                 {isAdmin && <ManageMembersDialog guildId={guild.id} guildName={guild.name} />}
+                {isOwner && <DeleteGuildDialog guildId={guild.id} guildName={guild.name} />}
             </div>
 
             {/* Campaigns Section */}

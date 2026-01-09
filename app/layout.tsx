@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Chakra_Petch } from "next/font/google";
+import { Geist, Chakra_Petch } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ 
+const geist = Geist({ 
   subsets: ["latin"], 
-  variable: "--font-inter" 
+  variable: "--font-sans" 
 });
 
 const chakra = Chakra_Petch({
@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${chakra.variable} font-sans antialiased bg-background text-foreground selection:bg-primary/30 selection:text-primary-foreground`}>
+      <body className={`${geist.variable} ${chakra.variable} font-sans antialiased bg-background text-foreground selection:bg-primary/30 selection:text-primary-foreground`}>
         <AppShell>
           {children}
         </AppShell>
