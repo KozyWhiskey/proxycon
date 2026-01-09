@@ -221,3 +221,75 @@ export async function getEventMembers(eventId: string) {
     };
   });
 }
+
+export async function endEvent(eventId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: 'Not authenticated' };
+  }
+
+  // Check if user is owner
+  const { data: member } = await supabase
+    .from('event_members')
+    .select('role')
+    .eq('event_id', eventId)
+    .eq('profile_id', user.id)
+    .single();
+
+  if (!member || member.role !== 'owner') {
+     return { success: false, message: 'Only the event owner can end the event.' };
+  }
+
+  const { error } = await supabase
+    .from('events')
+    .update({ is_active: false })
+    .eq('id', eventId);
+
+  if (error) {
+    console.error('Error ending event:', error);
+    return { success: false, message: 'Failed to end event.' };
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath('/events');
+  revalidatePath('/'); 
+  return { success: true };
+}
+
+export async function reactivateEvent(eventId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: 'Not authenticated' };
+  }
+
+  // Check if user is owner
+  const { data: member } = await supabase
+    .from('event_members')
+    .select('role')
+    .eq('event_id', eventId)
+    .eq('profile_id', user.id)
+    .single();
+
+  if (!member || member.role !== 'owner') {
+     return { success: false, message: 'Only the event owner can reactivate the event.' };
+  }
+
+  const { error } = await supabase
+    .from('events')
+    .update({ is_active: true })
+    .eq('id', eventId);
+
+  if (error) {
+    console.error('Error reactivating event:', error);
+    return { success: false, message: 'Failed to reactivate event.' };
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath('/events');
+  revalidatePath('/'); 
+  return { success: true };
+}

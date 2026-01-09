@@ -169,7 +169,7 @@ export default async function TournamentsPage() {
   // Fetch tournaments belonging to events the user is in
   const { data: tournaments, error } = await supabase
     .from('tournaments')
-    .select('id, name, format, status, created_at, max_rounds')
+    .select('id, name, format, status, created_at, max_rounds, is_archived')
     .in('event_id', eventIds)
     .order('created_at', { ascending: false });
 
@@ -205,9 +205,12 @@ export default async function TournamentsPage() {
   );
 
   // Group tournaments by status
-  const pendingTournaments = tournamentsWithStandings.filter((t) => t.status === 'pending');
-  const activeTournaments = tournamentsWithStandings.filter((t) => t.status === 'active');
-  const completedTournaments = tournamentsWithStandings.filter((t) => t.status === 'completed');
+  const visibleTournaments = tournamentsWithStandings.filter((t: any) => !t.is_archived);
+  const archivedTournaments = tournamentsWithStandings.filter((t: any) => t.is_archived);
+
+  const pendingTournaments = visibleTournaments.filter((t) => t.status === 'pending');
+  const activeTournaments = visibleTournaments.filter((t) => t.status === 'active');
+  const completedTournaments = visibleTournaments.filter((t) => t.status === 'completed');
 
   return (
     <main className="min-h-screen pb-24 bg-background">
@@ -222,6 +225,7 @@ export default async function TournamentsPage() {
           pendingTournaments={pendingTournaments}
           activeTournaments={activeTournaments}
           completedTournaments={completedTournaments}
+          archivedTournaments={archivedTournaments}
         />
       </div>
     </main>

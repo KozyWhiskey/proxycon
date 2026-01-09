@@ -17,7 +17,7 @@ import {
 } from '@/lib/swiss-pairing';
 import { Button } from '@/components/ui/button';
 import { Trophy, Plus } from 'lucide-react';
-import Link from 'next/link';
+import EventSettingsDialog from '@/components/events/event-settings-dialog';
 
 interface EventDashboardProps {
   params: Promise<{ id: string }>;
@@ -59,7 +59,7 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
   // Fetch Event Details
   const { data: event } = await supabase
     .from('events')
-    .select('name, invite_code')
+    .select('name, invite_code, is_active')
     .eq('id', eventId)
     .single();
 
@@ -188,10 +188,66 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
     ? ((tournamentWins / tournamentTotal) * 100).toFixed(1)
     : '0.0';
 
-  // Placeholder for Placements (Requires analyzing full tournament history)
-  const tournamentFirstPlace = 0;
-  const tournamentSecondPlace = 0;
-  const tournamentThirdPlace = 0;
+  // --- 1.5 Calculate Tournament Placements ---
+  let tournamentFirstPlace = 0;
+  let tournamentSecondPlace = 0;
+  let tournamentThirdPlace = 0;
+
+  const { data: completedTournaments } = await supabase
+    .from('tournaments')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('status', 'completed');
+
+  if (completedTournaments && completedTournaments.length > 0) {
+    for (const t of completedTournaments) {
+      // Fetch matches and participants for this tournament to calc standings
+      const { data: tMatches } = await supabase
+        .from('matches')
+        .select('id, round_number')
+        .eq('tournament_id', t.id);
+        
+      const { data: tParticipants } = await supabase
+        .from('tournament_participants')
+        .select('profile_id')
+        .eq('tournament_id', t.id);
+        
+      if (!tMatches || !tParticipants) continue;
+
+      const tMatchIds = tMatches.map(m => m.id);
+      const { data: tMatchParticipants } = await supabase
+        .from('match_participants')
+        .select('match_id, profile_id, result')
+        .in('match_id', tMatchIds);
+
+      const tProfileIds = tParticipants.map(p => p.profile_id);
+      
+      // Build history
+      const tMatchHistory: any[] = [];
+      const participantsByMatch = new Map<string, any[]>();
+      tMatchParticipants?.forEach(p => {
+        if (!participantsByMatch.has(p.match_id)) participantsByMatch.set(p.match_id, []);
+        participantsByMatch.get(p.match_id)!.push(p);
+      });
+
+      for (const m of tMatches) {
+        const parts = participantsByMatch.get(m.id) || [];
+        if (parts.length > 0) {
+          tMatchHistory.push(convertDbMatchToMatchResult(m.id, m.round_number, parts.map(p => ({ playerId: p.profile_id, result: p.result }))));
+        }
+      }
+
+      // Calculate Standings
+      const tStandingsMap = calculateStandings(tProfileIds, tMatchHistory);
+      const tSortedStandings = sortStandings(Array.from(tStandingsMap.values()));
+
+      // Check user rank
+      const userRankIndex = tSortedStandings.findIndex(s => s.playerId === currentProfileId);
+      if (userRankIndex === 0) tournamentFirstPlace++;
+      else if (userRankIndex === 1) tournamentSecondPlace++;
+      else if (userRankIndex === 2) tournamentThirdPlace++;
+    }
+  }
 
 
   // --- 2. Fetch Feed Data (Recent Matches for Event) ---
@@ -288,13 +344,22 @@ export default async function EventDashboard({ params }: EventDashboardProps) {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 font-heading tracking-tight">{event?.name || 'Event Dashboard'}</h1>
             <p className="text-muted-foreground/60 text-xs uppercase tracking-[0.2em] font-heading">Event Context</p>
           </div>
-          <ManageMembersDialog 
-            eventId={eventId}
-            eventName={event?.name || 'Event'}
-            inviteCode={event?.invite_code}
-            initialMembers={members}
-            canManage={['owner', 'admin'].includes(eventMember.role)}
-          />
+          <div className="flex gap-2">
+            <ManageMembersDialog 
+              eventId={eventId}
+              eventName={event?.name || 'Event'}
+              inviteCode={event?.invite_code}
+              initialMembers={members}
+              canManage={['owner', 'admin'].includes(eventMember.role)}
+            />
+            {eventMember.role === 'owner' && (
+              <EventSettingsDialog 
+                eventId={eventId}
+                eventName={event?.name || 'Event'}
+                isActive={event?.is_active ?? true}
+              />
+            )}
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">

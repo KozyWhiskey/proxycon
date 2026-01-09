@@ -3,7 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Trophy, Users, Calendar } from 'lucide-react';
+import { Trophy, Users, Calendar, Archive, RotateCcw, Trash2 } from 'lucide-react';
+import { deleteTournament, restoreTournament, permanentlyDeleteTournament } from '@/app/tournament/actions';
 
 interface Tournament {
   id: string;
@@ -26,12 +27,14 @@ interface TournamentManagementListProps {
   pendingTournaments: Tournament[];
   activeTournaments: Tournament[];
   completedTournaments: Tournament[];
+  archivedTournaments?: Tournament[];
 }
 
 export default function TournamentManagementList({
   pendingTournaments,
   activeTournaments,
   completedTournaments,
+  archivedTournaments = [],
 }: TournamentManagementListProps) {
 
   const formatDate = (dateString: string) => {
@@ -58,9 +61,27 @@ export default function TournamentManagementList({
     }
   };
 
-  const renderTournamentCard = (tournament: Tournament) => {
+  const handleArchive = async (id: string) => {
+    if (!confirm('Are you sure you want to archive this tournament? It will be moved to the Archived section and can be restored later.')) return;
+    const result = await deleteTournament(id);
+    if (!result.success) alert(result.message);
+  };
+
+  const handleRestore = async (id: string) => {
+    if (!confirm('Restore this tournament?')) return;
+    const result = await restoreTournament(id);
+    if (!result.success) alert(result.message);
+  };
+
+  const handleDeletePermanently = async (id: string) => {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this tournament? This action cannot be undone.')) return;
+    const result = await permanentlyDeleteTournament(id);
+    if (!result.success) alert(result.message);
+  };
+
+  const renderTournamentCard = (tournament: Tournament, isArchived: boolean = false) => {
     return (
-      <Card key={tournament.id} className="glass-panel hover:border-primary/50 transition-colors">
+      <Card key={tournament.id} className={`glass-panel transition-colors ${isArchived ? 'opacity-75 border-dashed border-zinc-700' : 'hover:border-primary/50'}`}>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -145,27 +166,59 @@ export default function TournamentManagementList({
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2">
-            {tournament.status === 'pending' && (
-              <Button
-                asChild
-                variant="outline"
-                className="flex-1 bg-white/5 border-white/10 hover:bg-white/10"
-              >
-                <Link href={`/tournament/${tournament.id}/seating`}>
-                  Continue Setup
-                </Link>
-              </Button>
-            )}
-            {(tournament.status === 'active' || tournament.status === 'completed') && (
-              <Button
-                asChild
-                variant="outline"
-                className="flex-1 bg-white/5 border-white/10 hover:bg-white/10"
-              >
-                <Link href={`/tournament/${tournament.id}/dashboard`}>
-                  View Tournament
-                </Link>
-              </Button>
+            {!isArchived ? (
+              <>
+                {tournament.status === 'pending' && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="flex-1 bg-white/5 border-white/10 hover:bg-white/10"
+                  >
+                    <Link href={`/tournament/${tournament.id}/seating`}>
+                      Continue Setup
+                    </Link>
+                  </Button>
+                )}
+                {(tournament.status === 'active' || tournament.status === 'completed') && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="flex-1 bg-white/5 border-white/10 hover:bg-white/10"
+                  >
+                    <Link href={`/tournament/${tournament.id}/dashboard`}>
+                      View Tournament
+                    </Link>
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-white/5 border-white/10 hover:bg-rose-900/20 hover:text-rose-400 hover:border-rose-900/50 transition-colors"
+                  onClick={() => handleArchive(tournament.id)}
+                  title="Archive Tournament"
+                >
+                  <Archive className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-white/5 border-white/10 hover:bg-emerald-900/20 hover:text-emerald-400 hover:border-emerald-900/50"
+                  onClick={() => handleRestore(tournament.id)}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Restore
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-white/5 border-white/10 hover:bg-rose-950 hover:text-rose-500 hover:border-rose-900"
+                  onClick={() => handleDeletePermanently(tournament.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </>
             )}
           </div>
         </CardContent>
@@ -183,7 +236,7 @@ export default function TournamentManagementList({
             Tournaments that haven&apos;t started yet. Complete seat selection to begin.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pendingTournaments.map(renderTournamentCard)}
+            {pendingTournaments.map((t) => renderTournamentCard(t, false))}
           </div>
         </div>
       )}
@@ -194,7 +247,7 @@ export default function TournamentManagementList({
           <h2 className="text-xl font-bold font-heading text-foreground">Active Tournaments</h2>
           <p className="text-sm text-muted-foreground">Tournaments currently in progress.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {activeTournaments.map(renderTournamentCard)}
+            {activeTournaments.map((t) => renderTournamentCard(t, false))}
           </div>
         </div>
       )}
@@ -205,7 +258,23 @@ export default function TournamentManagementList({
           <h2 className="text-xl font-bold font-heading text-foreground">Completed Tournaments</h2>
           <p className="text-sm text-muted-foreground">Finished tournaments.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {completedTournaments.map(renderTournamentCard)}
+            {completedTournaments.map((t) => renderTournamentCard(t, false))}
+          </div>
+        </div>
+      )}
+
+      {/* Archived Tournaments */}
+      {archivedTournaments.length > 0 && (
+        <div className="space-y-4 pt-8 border-t border-white/10">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Archive className="w-5 h-5" />
+            <h2 className="text-xl font-bold font-heading">Archived Tournaments</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Inactive tournaments. Restore them to view details or resume.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-80 hover:opacity-100 transition-opacity">
+            {archivedTournaments.map((t) => renderTournamentCard(t, true))}
           </div>
         </div>
       )}
@@ -213,7 +282,8 @@ export default function TournamentManagementList({
       {/* Empty State */}
       {pendingTournaments.length === 0 &&
         activeTournaments.length === 0 &&
-        completedTournaments.length === 0 && (
+        completedTournaments.length === 0 &&
+        archivedTournaments.length === 0 && (
           <Card className="glass-panel">
             <CardContent className="pt-6">
               <p className="text-muted-foreground text-center italic">No tournaments found.</p>

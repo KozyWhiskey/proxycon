@@ -1,66 +1,60 @@
-# Feature: Tournament Dashboard & Match Reporting Fixes
+# Feature: Tournament Stats & Dashboard Fixes
 
-**Status:** Draft
-**Role:** Engineering & UX Polish
-**Goal:** Ensure the Tournament Dashboard reliably displays pairings and allows for error-free match reporting.
+**Status:** Active
+**Role:** Engineering & Analytics
+**Goal:** Ensure statistics (MyStats) and the Tournament Dashboard correctly reflect tournament results, standings, and pairings.
 
 ---
 
 ## 1. Problem Statement
 
-Two critical issues have been identified:
-1.  **Blank Dashboard:** After starting a draft, the tournament dashboard pairing list may appear empty or fail to render the created matches.
-2.  **Runtime Error:** Accessing the "Enter Result" form triggers a `Runtime Error: A <Select.Item /> must have a value prop that is not an empty string.` This is caused by the Deck Selector's "No Deck" option having an invalid `value=""` prop.
+### A. MyStats (Event Page)
+-   **Issue:** The "Tournament Victories" (1st, 2nd, 3rd place) counts are hardcoded to `0` or missing logic.
+-   **Root Cause:** The `EventDashboard` component (`app/events/[id]/page.tsx`) does not calculate these stats. It has placeholders.
+-   **Requirement:** We need to analyze all *completed* tournaments for the event, calculate the standings for each using the Swiss algorithm, determine the user's rank, and aggregate the counts.
+
+### B. Tournament Dashboard (`/tournament/[id]/dashboard`)
+-   **Issue:** Users report missing Round Pairings, Match Results, and incorrect Standings metrics (Record, Points, OMW%) even when player names are correct.
+-   **Root Cause:** 
+    -   Data fetching logic in `fetchDashboardData` might be handling empty states better now, but we need to ensure the *data mapping* for existing matches is correct.
+    -   Specifically, `calculateStandings` depends on a complete match history. If `match_participants` are loaded but not correctly associated with round numbers or results, the stats will be zero.
+    -   The `pairingsDisplay` logic relies on `currentRoundMatches`. If `currentRound` calculation is off (e.g., max(round_number) is null), no pairings show.
 
 ---
 
-## 2. Proposed Solution
+## 2. Implementation Plan
 
-### A. Match Reporting Form Fix
-**File:** `components/tournament/match-reporting-form.tsx`
+### Phase 1: Fix MyStats (Event Page)
+**File:** `app/events/[id]/page.tsx`
 
-The `<Select>` component for choosing a deck (used when reporting results) currently uses an empty string for "No Deck". This violates Radix UI/Shadcn requirements.
+1.  **Fetch Completed Tournaments:** Query `tournaments` table for `event_id` where `status = 'completed'`.
+2.  **Calculate Standings per Tournament:**
+    -   For each tournament, fetch all `matches` and `match_participants`.
+    -   Use `calculateStandings` (from `lib/swiss-pairing`) to generate the final leaderboard.
+    -   Sort the standings.
+3.  **Aggregate User Placements:**
+    -   Find the current user's `profile_id` in the sorted standings.
+    -   If Rank 1 -> `tournamentFirstPlace++`
+    -   If Rank 2 -> `tournamentSecondPlace++`
+    -   If Rank 3 -> `tournamentThirdPlace++`
+4.  **Optimization:** Since this is a server component, we can do this calculation efficiently. For V4 scaling, we should consider storing `winner_id` on the `tournaments` table, but calculation is fine for now.
 
-**Changes:**
-- Update `<SelectItem value="">` to `<SelectItem value="no_deck">`.
-- Update the logic to treat `"no_deck"` as `null` when submitting to the server action.
+### Phase 2: Fix Tournament Dashboard
+**File:** `app/tournament/[id]/dashboard/page.tsx`
 
-### B. Tournament Dashboard Resilience
-**File:** `app/tournament/[id]/page.tsx`
-
-Ensure the dashboard handles edge cases gracefully:
--   **No Participants:** If a match exists but participants failed to insert, it should not crash.
--   **Loading State:** Ensure data fetching doesn't cause a hydration mismatch.
--   **Visual Feedback:** If "No matches found" is rendered, provide a way to "Force Start Round 1" or check tournament status (Admin only).
-
-### C. Action Verification
-**File:** `app/tournament/actions.ts`
-
--   Verify `startDraft` transaction logic ensures `match_participants` are created *before* the redirect.
--   Verify `profile_id` is correctly mapped from `tournament_participants` to `match_participants`.
-
----
-
-## 3. UX Workflow Confirmation
-
-1.  **Draft Seating:** User selects seats -> Clicks "Start Draft".
-2.  **Transition:** System creates Round 1 Matches -> Redirects to `/tournament/[id]`.
-3.  **Dashboard:**
-    -   Header: Shows "Round 1 of X".
-    -   Body: Lists matches (e.g., "Player A vs Player B").
-    -   Action: "Enter Result" button is visible for incomplete matches.
-4.  **Reporting:**
-    -   User clicks "Enter Result".
-    -   Form shows Score Inputs (0-0).
-    -   Deck Selector defaults to "No Deck Selected" (if applicable).
-    -   User selects deck (or leaves as "No Deck").
-    -   User submits.
-5.  **Result:** Dashboard updates with result. Standings update.
+1.  **Verify Round Calculation:**
+    -   Ensure `currentRound` is correctly derived from the latest match `round_number`.
+    -   If no matches exist, default to 1 (which I already fixed).
+2.  **Verify Match History Mapping:**
+    -   Ensure `convertDbMatchToMatchResult` is receiving the correct `result` enums ('win', 'loss', 'draw').
+3.  **Verify Pairings Display:**
+    -   Ensure `pairingsDisplay` correctly groups participants by `match_id`.
+    -   Debug why "Match Results" might be hidden (check `status` logic).
 
 ---
 
-## 4. Implementation Checklist
+## 3. Execution Steps
 
-- [ ] Refactor `MatchReportingForm` to use valid Select values.
-- [ ] Review `startDraft` in `actions.ts` for race conditions.
-- [ ] Verify `TournamentPage` rendering logic for matches.
+1.  **Update `app/events/[id]/page.tsx`:** Implement the "MyStats" calculation logic.
+2.  **Update `app/tournament/[id]/dashboard/page.tsx`:** Review and refine the `pairings` and `standings` data mapping.
+3.  **Verification:** Check a completed tournament's dashboard and the event page stats.

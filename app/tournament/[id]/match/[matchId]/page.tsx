@@ -4,6 +4,7 @@ import MatchReportingForm from '@/components/tournament/match-reporting-form';
 import PageHeader from '@/components/ui/page-header';
 import { requireProfile } from '@/lib/get-current-user'; // Import requireProfile
 import { getUsersDecks } from '@/app/decks/actions'; // Import getUsersDecks
+import { Card, CardContent } from '@/components/ui/card';
 
 interface PageProps {
   params: Promise<{ id: string; matchId: string }>;
@@ -48,7 +49,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
   if (isCompleted) {
     // Match already has a result, redirect back to tournament
     return (
-      <main className="min-h-screen bg-slate-950 pb-24">
+      <main className="min-h-screen bg-background pb-24">
         <PageHeader
           title="Match Already Reported"
           subtitle="This match result has already been submitted"
@@ -56,7 +57,11 @@ export default async function MatchReportingPage({ params }: PageProps) {
           backLabel="Tournament"
         />
         <div className="max-w-2xl mx-auto p-4">
-          <p className="text-slate-400">This match has already been reported.</p>
+          <Card className="glass-panel">
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground">This match has already been reported.</p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     );
@@ -81,7 +86,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
   // Handle bye (single participant)
   if (matchParticipants.length === 1) {
     return (
-      <main className="min-h-screen bg-slate-950 pb-24">
+      <main className="min-h-screen bg-background pb-24">
         <PageHeader
           title="Bye Match"
           subtitle="This match is a bye and has already been recorded"
@@ -89,7 +94,11 @@ export default async function MatchReportingPage({ params }: PageProps) {
           backLabel="Tournament"
         />
         <div className="max-w-2xl mx-auto p-4">
-          <p className="text-slate-400">This is a bye match and has already been recorded.</p>
+          <Card className="glass-panel">
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground">This is a bye match and has already been recorded.</p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     );
@@ -104,7 +113,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
   const player2IsCurrentUser = matchParticipants[1]?.profile_id === user.id;
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen bg-background pb-24">
       <PageHeader
         title="Who Won?"
         subtitle={`${player1Name} vs ${player2Name}`}

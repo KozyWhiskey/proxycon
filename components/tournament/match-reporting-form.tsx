@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { submitResultWithGamesNoRedirect } from '@/app/tournament/actions';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, RefreshCw } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Deck } from '@/lib/types'; // Import Deck type
+import { Deck } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -33,10 +34,10 @@ interface MatchReportingFormProps {
   tournamentId: string;
   matchId: string;
   participants: Participant[];
-  userDecks: Deck[]; // New prop: list of current user's decks
-  player1ProfileId?: string; // New prop: profile_id of player1 if they are the current user
-  player2ProfileId?: string; // New prop: profile_id of player2 if they are the current user
-  format?: string; // New prop: game format
+  userDecks: Deck[]; 
+  player1ProfileId?: string; 
+  player2ProfileId?: string; 
+  format?: string; 
 }
 
 export default function MatchReportingForm({
@@ -59,7 +60,7 @@ export default function MatchReportingForm({
   const player2 = participants[1];
 
   if (!player1 || !player2) {
-    return <p className="text-slate-400">Invalid match participants</p>;
+    return <p className="text-muted-foreground text-center">Invalid match participants</p>;
   }
 
   const player1Name = player1.profile?.display_name || player1.profile?.username || 'Player 1';
@@ -91,7 +92,6 @@ export default function MatchReportingForm({
     setIsSubmitting(true);
 
     try {
-      // Invert logic for clarity on who is "player1" and "player2" in action
       const p1Id = player1.profile_id;
       const p2Id = player2.profile_id;
 
@@ -108,7 +108,6 @@ export default function MatchReportingForm({
         return;
       }
 
-      // Show badges
       if (response.awardedBadges && response.awardedBadges.length > 0) {
         response.awardedBadges.forEach((badge) => {
           toast(`Badge Unlocked: ${badge.name}`, {
@@ -121,7 +120,6 @@ export default function MatchReportingForm({
         toast.success('Result submitted');
       }
 
-      // Handle Redirect
       if (response.nextRoundGenerated) {
         router.push(`/tournament/${tournamentId}?roundGenerated=true`);
       } else {
@@ -137,25 +135,30 @@ export default function MatchReportingForm({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="glass-panel p-6 md:p-8 rounded-xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Game Score Entry */}
-      <div className="grid grid-cols-3 gap-4 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        
         {/* Player 1 */}
-        <div className="text-center space-y-3">
-          <p className="text-foreground font-semibold text-lg truncate px-2 font-heading">
+        <div className="text-center space-y-4">
+          <p className="text-foreground font-bold text-xl truncate px-2 font-heading tracking-tight">
             {player1Name}
           </p>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-3">
             <Button
               type="button"
               onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
               disabled={isSubmitting || player1Games === 0}
               variant="outline"
-              className="h-12 w-12 rounded-full border-white/10"
+              size="icon"
+              className="h-14 w-14 rounded-full border-white/10 hover:bg-white/10"
             >
-              <Minus className="w-5 h-5" />
+              <Minus className="w-6 h-6" />
             </Button>
-            <span className="text-5xl font-bold text-primary text-glow w-16 text-center tabular-nums">
+            <span className={cn(
+              "text-6xl font-bold font-mono w-20 text-center tabular-nums transition-all",
+              player1Games > player2Games ? "text-emerald-500 text-glow" : "text-foreground"
+            )}>
               {player1Games}
             </span>
             <Button
@@ -163,17 +166,18 @@ export default function MatchReportingForm({
               onClick={() => setPlayer1Games(player1Games + 1)}
               disabled={isSubmitting}
               variant="outline"
-              className="h-12 w-12 rounded-full border-white/10"
+              size="icon"
+              className="h-14 w-14 rounded-full border-white/10 hover:bg-white/10"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-6 h-6" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Games Won</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">Games Won</p>
 
           {player1ProfileId && userDecks.length > 0 && format !== 'draft' && format !== 'sealed' && (
             <div className="mt-4">
               <Select onValueChange={setPlayer1DeckId} value={player1DeckId || ''}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-secondary/50 border-white/10">
                   <SelectValue placeholder="Select Deck" />
                 </SelectTrigger>
                 <SelectContent>
@@ -187,32 +191,33 @@ export default function MatchReportingForm({
               </Select>
             </div>
           )}
-           {player1ProfileId && userDecks.length === 0 && format !== 'draft' && format !== 'sealed' && (
-             <p className="text-xs text-muted-foreground mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
-           )}
         </div>
 
         {/* VS Divider */}
-        <div className="text-center">
-          <span className="text-3xl font-bold text-muted-foreground font-heading">vs</span>
+        <div className="text-center md:py-0 py-4">
+          <span className="text-4xl font-black text-muted-foreground/20 font-heading">VS</span>
         </div>
 
         {/* Player 2 */}
-        <div className="text-center space-y-3">
-          <p className="text-foreground font-semibold text-lg truncate px-2 font-heading">
+        <div className="text-center space-y-4">
+          <p className="text-foreground font-bold text-xl truncate px-2 font-heading tracking-tight">
             {player2Name}
           </p>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-3">
             <Button
               type="button"
               onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
               disabled={isSubmitting || player2Games === 0}
               variant="outline"
-              className="h-12 w-12 rounded-full border-white/10"
+              size="icon"
+              className="h-14 w-14 rounded-full border-white/10 hover:bg-white/10"
             >
-              <Minus className="w-5 h-5" />
+              <Minus className="w-6 h-6" />
             </Button>
-            <span className="text-5xl font-bold text-primary text-glow w-16 text-center tabular-nums">
+            <span className={cn(
+              "text-6xl font-bold font-mono w-20 text-center tabular-nums transition-all",
+              player2Games > player1Games ? "text-emerald-500 text-glow" : "text-foreground"
+            )}>
               {player2Games}
             </span>
             <Button
@@ -220,16 +225,18 @@ export default function MatchReportingForm({
               onClick={() => setPlayer2Games(player2Games + 1)}
               disabled={isSubmitting}
               variant="outline"
-              className="h-12 w-12 rounded-full border-white/10"
+              size="icon"
+              className="h-14 w-14 rounded-full border-white/10 hover:bg-white/10"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-6 h-6" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Games Won</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">Games Won</p>
+          
           {player2ProfileId && userDecks.length > 0 && format !== 'draft' && format !== 'sealed' && (
             <div className="mt-4">
               <Select onValueChange={setPlayer2DeckId} value={player2DeckId || 'none'}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-secondary/50 border-white/10">
                   <SelectValue placeholder="Select Deck" />
                 </SelectTrigger>
                 <SelectContent>
@@ -243,37 +250,43 @@ export default function MatchReportingForm({
               </Select>
             </div>
           )}
-          {player2ProfileId && userDecks.length === 0 && format !== 'draft' && format !== 'sealed' && (
-             <p className="text-xs text-muted-foreground mt-2">No decks found. <Link href="/decks" className="underline hover:text-white">Create one?</Link></p>
-           )}
         </div>
       </div>
 
-      {/* Result Preview */}
-      <div className={`text-center p-4 bg-white/5 rounded-lg border border-white/10 ${result.color}`}>
-        <p className="text-lg font-medium font-heading">{result.text}</p>
-      </div>
+      {/* Result Preview & Action */}
+      <div className="pt-6 border-t border-white/5 space-y-4">
+        <div className={cn(
+          "text-center p-4 rounded-lg border transition-colors duration-300",
+          result.color === "text-emerald-500" ? "bg-emerald-500/10 border-emerald-500/20" : 
+          result.type === "draw" ? "bg-primary/10 border-primary/20" :
+          "bg-secondary/30 border-white/5"
+        )}>
+          <p className={cn("text-lg font-bold font-heading", result.color)}>{result.text}</p>
+        </div>
 
-      {/* Submit Button */}
-      {canSubmit && (
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full h-14 font-semibold text-lg disabled:opacity-50"
-          variant={result.type === 'draw' ? 'secondary' : 'default'}
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit Result'}
-        </Button>
-      )}
+        {canSubmit && (
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-full h-14 font-bold text-lg shadow-lg hover:scale-[1.01] transition-all"
+            variant={result.type === 'draw' ? 'secondary' : 'default'}
+          >
+            {isSubmitting ? (
+              <>
+                <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Confirm Result'
+            )}
+          </Button>
+        )}
 
-      {/* Points Information */}
-      <div className="text-center space-y-1">
-        <p className="text-xs text-muted-foreground uppercase tracking-widest">
-          Win: 3pts • Draw: 1pt • Loss: 0pts
-        </p>
-        <p className="text-[10px] text-muted-foreground/40">
-          Game wins are used as a tiebreaker
-        </p>
+        <div className="text-center space-y-1 pt-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">
+            Win: 3pts • Draw: 1pt • Loss: 0pts
+          </p>
+        </div>
       </div>
     </div>
   );

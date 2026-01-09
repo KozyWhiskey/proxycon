@@ -96,34 +96,71 @@ export default async function GuildDashboard({ params }: PageProps) {
                 {isAdmin && <ManageMembersDialog guildId={guild.id} guildName={guild.name} />}
             </div>
 
-            {/* Active/Recent Events */}
-            {events.length > 0 && (
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-heading tracking-wide flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-primary" />
-                            Active Campaigns
-                        </h2>
-                        {isAdmin && (
-                            <Button asChild variant="ghost" size="sm">
-                                <Link href={`/events/new?guildId=${guild.id}`}>+ New Event</Link>
-                            </Button>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {events.map((event: any) => (
-                            <Link key={event.id} href={`/events/${event.id}`}>
-                                <Card className="glass-panel hover:border-primary/50 transition-colors h-full">
-                                    <CardHeader>
-                                        <CardTitle className="font-heading text-lg">{event.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground uppercase tracking-widest">
-                                            {event.is_active ? 'In Progress' : 'Completed'}
-                                        </p>
-                                    </CardHeader>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
+            {/* Campaigns Section */}
+            {(events.length > 0) && (
+                <section className="space-y-8">
+                    {/* Active Campaigns */}
+                    {events.some((e: any) => e.is_active) && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-lg font-heading tracking-wide flex items-center gap-2">
+                                    <Calendar className="w-5 h-5 text-primary" />
+                                    Active Campaigns
+                                </h2>
+                                {isAdmin && (
+                                    <Button asChild variant="ghost" size="sm">
+                                        <Link href={`/events/new?guildId=${guild.id}`}>+ New Event</Link>
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {events.filter((e: any) => e.is_active).map((event: any) => (
+                                    <Link key={event.id} href={`/events/${event.id}`}>
+                                        <Card className="glass-panel hover:border-primary/50 transition-colors h-full border-primary/20">
+                                            <CardHeader>
+                                                <CardTitle className="font-heading text-lg">{event.name}</CardTitle>
+                                                <p className="text-xs text-muted-foreground uppercase tracking-widest text-primary">
+                                                    In Progress
+                                                </p>
+                                            </CardHeader>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Completed Campaigns */}
+                    {events.some((e: any) => !e.is_active) && (
+                        <div className="space-y-4">
+                             <div className="flex items-center justify-between">
+                                <h2 className="text-lg font-heading tracking-wide flex items-center gap-2 text-muted-foreground/60">
+                                    <Calendar className="w-5 h-5" />
+                                    Past Campaigns
+                                </h2>
+                                {/* Show button here if no active events exist, so it's always visible somewhere */}
+                                {isAdmin && !events.some((e: any) => e.is_active) && (
+                                    <Button asChild variant="ghost" size="sm">
+                                        <Link href={`/events/new?guildId=${guild.id}`}>+ New Event</Link>
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {events.filter((e: any) => !e.is_active).map((event: any) => (
+                                    <Link key={event.id} href={`/events/${event.id}`}>
+                                        <Card className="glass-panel hover:border-white/20 transition-colors h-full opacity-60 hover:opacity-100">
+                                            <CardHeader>
+                                                <CardTitle className="font-heading text-lg">{event.name}</CardTitle>
+                                                <p className="text-xs text-muted-foreground uppercase tracking-widest">
+                                                    Completed
+                                                </p>
+                                            </CardHeader>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </section>
             )}
 

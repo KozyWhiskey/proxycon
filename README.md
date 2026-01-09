@@ -78,10 +78,14 @@ Upkeep is a **multi-event platform** that handles:
   - Dedicated "Global Dashboard" for personal stats.
   - "Event Dashboard" for tournament weekends.
   - Seamless "Create vs. Join" workflows.
+  - **Lifecycle Management**: Owners can end/archive events to separate active campaigns from history.
 - **Deck Tracker**: 
   - **Scryfall Integration**: Search cards, auto-populate details.
   - **Art Selection**: Choose specific prints/art for your Commander.
   - **Rich Card Data**: Displays mana symbols, set symbols, and rich oracle text.
+- **Admin & Moderation**:
+  - **God Mode**: System-wide admin panel (`/admin`) to fix match results, game scores, and manage users.
+  - **Member Management**: Unified dialogs for searching global profiles and managing rosters for events and guilds.
 - **Achievements & Badges**:
   - **Trophy Case**: Profile section showcasing earned badges.
   - **Automated Awards**: Unlock badges for win streaks ("The Hot Hand") and participation ("Iron Man").
@@ -109,4 +113,4 @@ Upkeep is a **multi-event platform** that handles:
 ---
 
 **Status**: Active Development (V4 Platform)  
-**Last Updated**: December 29, 2025
+**Last Updated**: January 8, 2026

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import RoundGeneratedToast from '@/components/tournament/round-generated-toast';
 import RoundTimer from '@/components/tournament/round-timer';
 import PageHeader from '@/components/ui/page-header';
-import { Monitor } from 'lucide-react';
+import { Monitor, Trophy, Users, Crown } from 'lucide-react';
 import {
   calculateStandings,
   sortStandings,
@@ -16,6 +16,7 @@ import {
 } from '@/lib/swiss-pairing';
 
 import ForceStartButton from '@/components/tournament/force-start-button';
+import { cn } from '@/lib/utils';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -53,12 +54,12 @@ export default async function TournamentPage({ params }: PageProps) {
 
   if (!matches || matches.length === 0) {
     return (
-      <main className="min-h-screen bg-slate-950 p-4 pb-24">
+      <main className="min-h-screen bg-background p-4 pb-24">
         <div className="max-w-2xl mx-auto space-y-6">
-          <h1 className="text-4xl font-bold text-slate-100">{tournament.name}</h1>
-          <Card className="bg-slate-900 border-slate-800">
+          <h1 className="text-4xl font-bold font-heading text-foreground">{tournament.name}</h1>
+          <Card className="glass-panel">
             <CardContent className="pt-6">
-              <p className="text-slate-400">No matches found for this tournament.</p>
+              <p className="text-muted-foreground">No matches found for this tournament.</p>
             </CardContent>
           </Card>
         </div>
@@ -248,7 +249,7 @@ export default async function TournamentPage({ params }: PageProps) {
   }`;
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen bg-background pb-24">
       <PageHeader
         title={tournament.name}
         subtitle={subtitle}
@@ -261,10 +262,10 @@ export default async function TournamentPage({ params }: PageProps) {
         <Button
           asChild
           variant="outline"
-          className="w-full h-12 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300"
+          className="w-full h-12 border-primary/20 text-primary hover:bg-primary/10 hover:text-primary transition-all group"
         >
           <Link href={`/tournament/${id}/dashboard`}>
-            <Monitor className="w-5 h-5 mr-2" />
+            <Monitor className="w-5 h-5 mr-2 group-hover:text-glow" />
             Open Shared Screen Dashboard
           </Link>
         </Button>
@@ -284,103 +285,109 @@ export default async function TournamentPage({ params }: PageProps) {
         )}
 
         {/* Standings */}
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader>
+        <Card className="glass-panel">
+          <CardHeader className="border-b border-white/5 pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-slate-100">Standings</CardTitle>
-              <span className="text-xs text-slate-500">MTG Swiss (3-1-0)</span>
+              <CardTitle className="text-foreground font-heading flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary" />
+                Standings
+              </CardTitle>
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-medium">MTG Swiss (3-1-0)</span>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <div className="space-y-2">
               {standings.map((standing, index) => (
                 <div
                   key={standing.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50"
+                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-white/5 hover:border-primary/20 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-slate-400 font-bold w-6 text-center">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 text-center font-bold text-lg text-muted-foreground/50">
                       {index + 1}
-                    </span>
+                    </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-100 font-medium">
+                      <span className={cn(
+                        "font-medium text-lg font-heading",
+                        index === 0 ? "text-primary text-glow" : "text-foreground"
+                      )}>
                         {standing.profile?.display_name || standing.profile?.username || 'Unknown Player'}
                       </span>
                       {standing.receivedBye && (
-                        <span className="text-xs text-yellow-600">Has bye</span>
+                        <span className="text-xs text-primary/70">Received Bye</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="text-center min-w-[36px]">
-                      <div className="text-yellow-500 font-bold">{standing.points}</div>
-                      <div className="text-slate-400 text-xs">pts</div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="text-center min-w-[40px]">
+                      <div className="text-primary font-bold text-xl">{standing.points}</div>
+                      <div className="text-muted-foreground text-[10px] uppercase tracking-wider">pts</div>
                     </div>
-                    <div className="text-center min-w-[44px]">
-                      <div className="text-cyan-400 font-medium text-xs">
+                    <div className="text-center min-w-[50px] hidden sm:block">
+                      <div className="text-cyan-500 font-medium font-mono">
                         {formatOMWPercentage(standing.omwPercentage)}
                       </div>
-                      <div className="text-slate-400 text-xs">OMW%</div>
+                      <div className="text-muted-foreground text-[10px] uppercase tracking-wider">OMW%</div>
                     </div>
                     <div className="text-center min-w-[60px]">
-                      <div className="text-slate-300 font-medium">
+                      <div className="text-foreground font-medium font-mono tracking-wider">
                         {standing.wins}-{standing.losses}-{standing.draws}
                       </div>
-                      <div className="text-slate-400 text-xs">W-L-D</div>
+                      <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Record</div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
             {/* Point system legend */}
-            <div className="mt-4 pt-3 border-t border-slate-700">
-              <p className="text-xs text-slate-500 text-center">
-                Win = 3pts • Draw = 1pt • Loss = 0pts • OMW% = Opponent Match Win %
+            <div className="mt-4 pt-4 border-t border-white/5">
+              <p className="text-xs text-muted-foreground text-center uppercase tracking-widest">
+                Win = 3 • Draw = 1 • Loss = 0
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tournament Prizes - Show when tournament is completed and has prizes */}
+        {/* Tournament Prizes */}
         {tournament.status === 'completed' && ((tournament as any).prize_1st || (tournament as any).prize_2nd || (tournament as any).prize_3rd) && (
-          <Card className="bg-slate-900 border-yellow-500/30">
-            <CardHeader>
-              <CardTitle className="text-yellow-500 flex items-center gap-2">
-                <span className="text-2xl">🏆</span>
+          <Card className="glass-panel border-primary/20">
+            <CardHeader className="border-b border-white/5">
+              <CardTitle className="text-primary flex items-center gap-2 font-heading">
+                <Crown className="w-5 h-5" />
                 Tournament Prizes
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-4">
               {(tournament as any).prize_1st && standings[0] && (
-                <div className="flex items-center gap-3 p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <div className="flex items-center gap-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
                   <span className="text-3xl">🥇</span>
                   <div className="flex-1">
-                    <p className="text-slate-100 font-semibold text-lg">
+                    <p className="text-foreground font-bold font-heading text-lg">
                       {standings[0].profile?.display_name || standings[0].profile?.username || 'Unknown'}
                     </p>
-                    <p className="text-yellow-500 font-medium">{(tournament as any).prize_1st}</p>
+                    <p className="text-primary font-medium">{(tournament as any).prize_1st}</p>
                   </div>
                 </div>
               )}
               {(tournament as any).prize_2nd && standings[1] && (
-                <div className="flex items-center gap-3 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-lg border border-white/10">
                   <span className="text-3xl">🥈</span>
                   <div className="flex-1">
-                    <p className="text-slate-100 font-semibold text-lg">
+                    <p className="text-foreground font-semibold text-lg">
                       {standings[1].profile?.display_name || standings[1].profile?.username || 'Unknown'}
                     </p>
-                    <p className="text-slate-300">{(tournament as any).prize_2nd}</p>
+                    <p className="text-muted-foreground">{(tournament as any).prize_2nd}</p>
                   </div>
                 </div>
               )}
               {(tournament as any).prize_3rd && standings[2] && (
-                <div className="flex items-center gap-3 p-4 bg-amber-900/20 rounded-lg border border-amber-700/30">
+                <div className="flex items-center gap-4 p-4 bg-amber-900/10 rounded-lg border border-amber-900/20">
                   <span className="text-3xl">🥉</span>
                   <div className="flex-1">
-                    <p className="text-slate-100 font-semibold text-lg">
+                    <p className="text-foreground font-semibold text-lg">
                       {standings[2].profile?.display_name || standings[2].profile?.username || 'Unknown'}
                     </p>
-                    <p className="text-amber-500">{(tournament as any).prize_3rd}</p>
+                    <p className="text-amber-700">{(tournament as any).prize_3rd}</p>
                   </div>
                 </div>
               )}
@@ -389,6 +396,11 @@ export default async function TournamentPage({ params }: PageProps) {
         )}
 
         <div className="space-y-4">
+          <h2 className="text-xl font-bold font-heading text-foreground flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            Current Matches
+          </h2>
+          
           {matchDetails.length > 0 ? (
             matchDetails.map(({ match, participants }) => {
               const status = getMatchStatus(participants);
@@ -400,16 +412,16 @@ export default async function TournamentPage({ params }: PageProps) {
                 return (
                   <Card
                     key={match.id}
-                    className="bg-slate-900 border-yellow-500/20"
+                    className="glass-panel border-primary/20"
                   >
-                    <CardHeader>
-                      <CardTitle className="text-slate-100">Bye</CardTitle>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-primary font-heading">Bye</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-lg text-slate-100 mb-2">
+                      <p className="text-lg text-foreground mb-1 font-medium">
                         {profile?.display_name || profile?.username || 'Unknown Player'}
                       </p>
-                      <p className="text-sm text-slate-400">{status}</p>
+                      <p className="text-sm text-muted-foreground italic">Automatic Win (2-0)</p>
                     </CardContent>
                   </Card>
                 );
@@ -422,22 +434,29 @@ export default async function TournamentPage({ params }: PageProps) {
               return (
                 <Card
                   key={match.id}
-                  className={`bg-slate-900 border-slate-800 ${
-                    isCompleted ? '' : 'border-yellow-500/20'
-                  }`}
+                  className={cn(
+                    "glass-panel transition-colors",
+                    !isCompleted && "border-primary/20 bg-primary/5"
+                  )}
                 >
-                  <CardHeader>
-                    <CardTitle className="text-slate-100">
-                      {player1?.display_name || player1?.username || 'Player 1'} vs.{' '}
-                      {player2?.display_name || player2?.username || 'Player 2'}
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-foreground font-heading flex justify-between items-center">
+                      <span className={cn(participants[0].result === 'win' && "text-emerald-500 text-glow")}>
+                        {player1?.display_name || player1?.username || 'Player 1'}
+                      </span>
+                      <span className="text-muted-foreground/50 text-sm font-sans font-normal">vs</span>
+                      <span className={cn(participants[1].result === 'win' && "text-emerald-500 text-glow")}>
+                        {player2?.display_name || player2?.username || 'Player 2'}
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-slate-400">{status}</p>
+                    <p className="text-sm text-muted-foreground text-center uppercase tracking-widest">{status}</p>
                     {!isCompleted && (
                       <Button
                         asChild
-                        className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-slate-950"
+                        className="w-full h-12 text-lg font-medium"
+                        variant="default" // Primary/Gold
                       >
                         <Link href={`/tournament/${id}/match/${match.id}`}>
                           Report Result
@@ -449,13 +468,17 @@ export default async function TournamentPage({ params }: PageProps) {
               );
             })
           ) : (
-            <Card className="bg-slate-900 border-slate-800">
-              <CardContent className="pt-6 flex flex-col items-center">
-                <p className="text-slate-400 text-center">No pairings found for Round {currentRound}.</p>
+            <Card className="glass-panel border-dashed">
+              <CardContent className="pt-6 flex flex-col items-center py-12">
+                <p className="text-muted-foreground text-center text-lg">No pairings found for Round {currentRound}.</p>
                 {tournament.status === 'active' && (
                    <>
-                     <p className="text-xs text-slate-500 text-center mt-2">The pairings for this round may still be generating.</p>
-                     <ForceStartButton tournamentId={id} />
+                     <p className="text-xs text-muted-foreground/60 text-center mt-2 max-w-md">
+                       The pairings for this round may still be generating. If this persists, the tournament state may need a nudge.
+                     </p>
+                     <div className="mt-6">
+                        <ForceStartButton tournamentId={id} />
+                     </div>
                    </>
                 )}
               </CardContent>
@@ -466,4 +489,3 @@ export default async function TournamentPage({ params }: PageProps) {
     </main>
   );
 }
-

@@ -712,6 +712,29 @@ export async function forceStartRound1(tournamentId: string): Promise<{ success:
 export async function deleteTournament(tournamentId: string): Promise<{ success: boolean; message?: string }> {
   try {
     const supabase = await createClient();
+    // Soft delete: set is_archived to true
+    await supabase.from('tournaments').update({ is_archived: true }).eq('id', tournamentId);
+    revalidatePath('/tournaments');
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function restoreTournament(tournamentId: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const supabase = await createClient();
+    await supabase.from('tournaments').update({ is_archived: false }).eq('id', tournamentId);
+    revalidatePath('/tournaments');
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function permanentlyDeleteTournament(tournamentId: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const supabase = await createClient();
     await supabase.from('tournaments').delete().eq('id', tournamentId);
     revalidatePath('/tournaments');
     return { success: true };
