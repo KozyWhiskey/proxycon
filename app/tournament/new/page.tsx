@@ -56,14 +56,14 @@ export default async function NewTournamentPage({ searchParams }: PageProps) {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-950 p-4">
+      <main className="min-h-screen bg-background p-4">
         <div className="max-w-2xl mx-auto">
-          <Card className="bg-slate-900 border-slate-800">
+          <Card className="glass-panel">
             <CardHeader>
-              <CardTitle className="text-slate-100">Error</CardTitle>
+              <CardTitle className="text-foreground">Error</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-400">Could not fetch players. Please try again later.</p>
+              <p className="text-muted-foreground">Could not fetch players. Please try again later.</p>
             </CardContent>
           </Card>
         </div>
@@ -74,19 +74,19 @@ export default async function NewTournamentPage({ searchParams }: PageProps) {
   // Allow 1 player for testing? No, keep 2 for tournament logic.
   if (mappedPlayers.length < 2) {
     return (
-      <main className="min-h-screen bg-slate-950 p-4">
+      <main className="min-h-screen bg-background p-4">
         <div className="max-w-2xl mx-auto">
           <PageHeader
             title="New Tournament"
             backHref={eventId ? `/events/${eventId}` : '/'}
             backLabel="Back"
           />
-          <Card className="bg-slate-900 border-slate-800 mt-6">
+          <Card className="glass-panel mt-6">
             <CardHeader>
-              <CardTitle className="text-slate-100">Not Enough Players</CardTitle>
+              <CardTitle className="text-foreground">Not Enough Players</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-400">
+              <p className="text-muted-foreground">
                 You need at least 2 players to create a tournament. 
                 {eventId ? " Invite players to this event first." : " Wait for others to create profiles."}
               </p>
@@ -98,7 +98,7 @@ export default async function NewTournamentPage({ searchParams }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-24">
+    <main className="min-h-screen bg-background pb-24">
       <PageHeader
         title="New Tournament"
         subtitle="Create a new tournament bracket"

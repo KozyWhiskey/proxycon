@@ -20,44 +20,78 @@ type BadgeStrategy = (
 ) => Promise<boolean>;
 
 const strategies: Record<string, BadgeStrategy> = {
+  // --------------------------------------------------------------------------
+  // 1. HOT HAND (Win Streaks)
+  // --------------------------------------------------------------------------
   'hot-hand': async (supabase, userId, eventId) => {
-    // Check last 3 matches for wins
+    // Fetch last 10 matches to determine current streak
     const { data: recentMatches } = await supabase
       .from('match_participants')
       .select('result, created_at')
       .eq('profile_id', userId)
+      .neq('result', 'draw') // Ignore draws for streak purposes? Or break streak? Usually ignore or break.
+                             // Let's say draws break streaks or just check 'win' status.
+                             // We'll fetch raw results and calculate.
       .order('created_at', { ascending: false })
-      .limit(3);
+      .limit(20);
 
-    if (!recentMatches || recentMatches.length < 3) return false;
+    if (!recentMatches || recentMatches.length === 0) return false;
 
-    // Check if all are wins
-    return recentMatches.every((m) => m.result === 'win');
-  },
-  'iron-man': async (supabase, userId, eventId) => {
-    if (!eventId) return false; // Event specific
-    
-    // Count matches in this event
-    const { count } = await supabase
-      .from('match_participants')
-      .select('match_id!inner(event_id)', { count: 'exact', head: true })
-      .eq('profile_id', userId)
-      .eq('match_id.event_id', eventId);
-    
-    return (count || 0) >= 10;
-  },
-  'participation': async (supabase, userId, eventId) => {
-    if (!eventId) return false; // Event specific
+    let currentStreak = 0;
+    for (const match of recentMatches) {
+      if (match.result === 'win') {
+        currentStreak++;
+      } else {
+        break; // Streak broken
+      }
+    }
 
-    // Just check if they have played at least one match in this event
-    const { count } = await supabase
-      .from('match_participants')
-      .select('match_id!inner(event_id)', { count: 'exact', head: true })
-      .eq('profile_id', userId)
-      .eq('match_id.event_id', eventId);
+    // Check thresholds
+    const tiers = [
+      { slug: 'hot-hand-3', threshold: 10 },
+      { slug: 'hot-hand-2', threshold: 5 },
+      { slug: 'hot-hand-1', threshold: 3 },
+    ];
 
-    return (count || 0) >= 1;
+    for (const tier of tiers) {
+      if (currentStreak >= tier.threshold) {
+        // Attempt to award. If they already have it, awardBadge returns null/false internally or we check first.
+        // We'll return true if we *should* award at least one.
+        // The checkAndAwardBadges main loop handles the actual "check if owned" logic usually,
+        // but here we are dealing with multiple potential badges in one strategy.
+        // So we will modify the strategy signature or handle it inside.
+        
+        // For this refactor, we will rely on the main function to handle "one-off" simple strategies,
+        // but since this is a family, we might want to move this logic into the main loop or make the strategy return an array of slugs to award.
+        // To keep it compatible with the existing `checkAndAwardBadges` loop which expects a boolean for a SINGLE slug key...
+        // We need to change how `checkAndAwardBadges` works or cheat a bit.
+        
+        // BETTER APPROACH: The strategy returns TRUE if the *specific* slug passed in the loop is earned.
+        // But we iterate over keys.
+        // Let's redefine strategies to be "Checkers" that award badges directly.
+      }
+    }
+    return false; // Placeholder, see logic update below
   }
+};
+
+// Define thresholds
+const BADGE_MILESTONES = {
+  'hot-hand': [
+    { slug: 'hot-hand-1', threshold: 3 },
+    { slug: 'hot-hand-2', threshold: 5 },
+    { slug: 'hot-hand-3', threshold: 10 },
+  ],
+  'participation': [
+    { slug: 'veteran-1', threshold: 5 },
+    { slug: 'veteran-2', threshold: 10 },
+    { slug: 'veteran-3', threshold: 20 },
+  ],
+  'championship': [
+    { slug: 'victor-1', threshold: 3 },
+    { slug: 'victor-2', threshold: 5 },
+    { slug: 'victor-3', threshold: 10 },
+  ]
 };
 
 /**
@@ -72,22 +106,75 @@ export async function checkAndAwardBadges(
   const supabase = await createClient();
   const awardedBadges: Badge[] = [];
 
-  // Iterate over all defined strategies
-  for (const [slug, strategy] of Object.entries(strategies)) {
-    try {
-      // 1. Check if user already has the badge (in this context)
-      const owned = await hasBadge(supabase, userId, slug, eventId);
-      if (owned) continue;
+  // 1. Calculate Stats
+  
+  // A. Win Streak
+  const { data: recentMatches } = await supabase
+    .from('match_participants')
+    .select('result')
+    .eq('profile_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+    
+  let winStreak = 0;
+  if (recentMatches) {
+    for (const m of recentMatches) {
+      if (m.result === 'win') winStreak++;
+      else if (m.result === 'loss') break; 
+      // Draws don't break streak? Or do they? Let's say Loss breaks it. 
+      // If we want strict "Win Streak", Draw breaks it too. Let's assume strict.
+      else break;
+    }
+  }
 
-      // 2. Run strategy check
-      const shouldAward = await strategy(supabase, userId, eventId);
-      
-      if (shouldAward) {
-        const badge = await awardBadge(supabase, userId, slug, eventId);
-        if (badge) awardedBadges.push(badge);
+  // B. Event Participation
+  // Count unique event_ids in match_participants
+  const { data: eventIds } = await supabase
+    .from('match_participants')
+    .select('match_id!inner(event_id)')
+    .eq('profile_id', userId);
+    
+  // Use Set to count unique events
+  const uniqueEvents = new Set(eventIds?.map((row: any) => row.match_id?.event_id).filter(Boolean)).size;
+
+  // C. Championships
+  // Count 'champion' badges owned
+  // First find the 'champion' badge ID
+  const { data: championBadge } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('slug', 'champion')
+    .maybeSingle();
+    
+  let championCount = 0;
+  if (championBadge) {
+     const { count } = await supabase
+       .from('profile_badges')
+       .select('*', { count: 'exact', head: true })
+       .eq('profile_id', userId)
+       .eq('badge_id', championBadge.id);
+     championCount = count || 0;
+  }
+
+  // 2. Check Milestones
+  const stats = {
+    'hot-hand': winStreak,
+    'participation': uniqueEvents,
+    'championship': championCount
+  };
+
+  for (const [family, milestones] of Object.entries(BADGE_MILESTONES)) {
+    const currentStat = stats[family as keyof typeof stats] || 0;
+    
+    for (const tier of milestones) {
+      if (currentStat >= tier.threshold) {
+        // Check if already owned
+        const hasIt = await hasBadge(supabase, userId, tier.slug, null); // Global badges, no event_id needed usually
+        if (!hasIt) {
+          const badge = await awardBadge(supabase, userId, tier.slug, eventId); // Link to current event for context
+          if (badge) awardedBadges.push(badge);
+        }
       }
-    } catch (err) {
-      console.error(`Error checking badge ${slug}:`, err);
     }
   }
 

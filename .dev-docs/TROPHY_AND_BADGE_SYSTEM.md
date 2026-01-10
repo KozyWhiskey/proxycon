@@ -63,15 +63,53 @@ These are for truly unique, one-off gameplay moments that the AI Director deems 
 - **Rarity Mapping:** Rarity is determined by the AI, but is typically **Rare** or **Mythic**.
 - **Uniqueness:** These badges are created as unique entries (`is_unique: true`) and are not added to the global pool.
 
-### D. Milestone Badges
+### D. Career Milestones (Tiered System)
 
-These are simpler, stat-based achievements.
 
-- **Trigger:** `checkAndAwardBadges` runs after every match.
-- **Examples:**
-  - "Hot Hand": Win 3 matches in a row.
-  - "Iron Man": Play 10 matches in a single event.
-- **Rarity Mapping:** Most milestone badges are **Common**.
+
+These badges track a player's long-term career statistics. Unlike unique feats, these are predictable goals that provide a sense of progression.
+
+
+
+**Visuals:** In the Trophy Case, only the **highest tier** earned for a specific family is displayed. For example, if you earn "Supernova" (Tier 3), it replaces "On Fire" (Tier 2).
+
+
+
+#### 1. Participation ("The Veteran")
+
+Tracks the number of unique Events a player has joined.
+
+-   **Uncommon:** **"The Regular"** (5 Events)
+
+-   **Rare:** **"The Grinder"** (10 Events)
+
+-   **Mythic:** **"The Elder"** (20 Events)
+
+
+
+#### 2. Win Streaks ("The Hot Hand")
+
+Tracks consecutive match wins (excluding draws).
+
+-   **Uncommon:** **"Heating Up"** (3 Wins)
+
+-   **Rare:** **"On Fire"** (5 Wins)
+
+-   **Mythic:** **"Supernova"** (10 Wins)
+
+
+
+#### 3. Championships ("The Victor")
+
+Tracks total tournament victories (1st Place finishes).
+
+-   **Uncommon:** **"Contender"** (3 Wins)
+
+-   **Rare:** **"Conqueror"** (5 Wins)
+
+-   **Mythic:** **"Legend"** (10 Wins)
+
+
 
 ---
 

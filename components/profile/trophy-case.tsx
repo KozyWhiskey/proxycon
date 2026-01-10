@@ -14,7 +14,47 @@ interface TrophyCaseProps {
 export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
   const isDashboard = variant === 'dashboard';
 
-  if (!badges || badges.length === 0) {
+  // Filter badges to show only the highest tier per family
+  const filteredBadges = badges.reduce((acc, badge) => {
+    const family = badge.metadata?.family;
+    const tier = badge.metadata?.tier;
+
+    if (!family || tier === undefined) {
+      // Not part of a tiered family, always include
+      acc.push(badge);
+      return acc;
+    }
+
+    // Check if we already have a badge from this family
+    const existingIndex = acc.findIndex(b => b.metadata?.family === family);
+
+    if (existingIndex === -1) {
+      // First one from this family
+      acc.push(badge);
+    } else {
+      // We have one, compare tiers
+      const existingBadge = acc[existingIndex];
+      const existingTier = existingBadge.metadata?.tier || 0;
+
+      if (tier > existingTier) {
+        // Replace with higher tier
+        acc[existingIndex] = badge;
+      }
+    }
+    return acc;
+  }, [] as typeof badges);
+
+  // Sort: Mythic -> Rare -> Uncommon -> Common, then by date
+  filteredBadges.sort((a, b) => {
+    const rarityOrder = { mythic: 3, rare: 2, uncommon: 1, common: 0 };
+    const rA = rarityOrder[a.metadata?.rarity as keyof typeof rarityOrder] || 0;
+    const rB = rarityOrder[b.metadata?.rarity as keyof typeof rarityOrder] || 0;
+    
+    if (rA !== rB) return rB - rA;
+    return new Date(b.awarded_at).getTime() - new Date(a.awarded_at).getTime();
+  });
+
+  if (!filteredBadges || filteredBadges.length === 0) {
     if (isDashboard) return null; // Don't show empty trophy case on dashboard
 
     return (
@@ -42,13 +82,13 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
         </CardTitle>
         {!isDashboard && (
           <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">
-            {badges.length} Achievements Unlocked
+            {filteredBadges.length} Achievements Unlocked
           </CardDescription>
         )}
       </CardHeader>
       <CardContent className={`${isDashboard ? 'pt-4' : 'pt-8'}`}>
         <div className={`grid gap-4 ${isDashboard ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
-          {badges.map((badge) => {
+          {filteredBadges.map((badge) => {
             const isUrl = badge.icon_url?.startsWith('http');
             const rarity = badge.metadata?.rarity;
             

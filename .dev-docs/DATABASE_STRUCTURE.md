@@ -147,6 +147,9 @@ Stores tournament information.
 | `status` | TEXT | CHECK ('pending', 'active', 'completed') | Tournament status |
 | `max_rounds` | INTEGER | DEFAULT 3 | Maximum number of rounds |
 | `round_duration_minutes` | INTEGER | DEFAULT 50 | Duration of each round |
+| `set_code` | TEXT | NULLABLE | Scryfall set code (e.g., 'mh3') for Limited |
+| `set_name` | TEXT | NULLABLE | Full expansion name for Limited |
+| `is_archived` | BOOLEAN | DEFAULT FALSE | Archived/Hidden from active views |
 | `created_at` | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
 
 ### `public.tournament_participants`

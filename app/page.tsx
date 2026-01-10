@@ -169,7 +169,7 @@ export default async function Dashboard() {
       )
     `)
     .order('created_at', { ascending: false })
-    .limit(10);
+    .limit(5);
 
   // Recent 5 badges system-wide (for feed)
   const { data: feedBadges } = await supabase
@@ -180,7 +180,7 @@ export default async function Dashboard() {
       profile:profiles (display_name)
     `)
     .order('awarded_at', { ascending: false })
-    .limit(10);
+    .limit(5);
 
   // Combine and sort feed items
   const feedItems = [
@@ -219,7 +219,7 @@ export default async function Dashboard() {
     const dateA = a.type === 'match' ? new Date(a.created_at) : new Date(a.awarded_at);
     const dateB = b.type === 'match' ? new Date(b.created_at) : new Date(b.awarded_at);
     return dateB.getTime() - dateA.getTime();
-  }).slice(0, 10);
+  }).slice(0, 5);
 
   // --- 5. Fetch Badges (User's Trophy Case) ---
   const { data: rawBadges } = await supabase
@@ -261,27 +261,20 @@ export default async function Dashboard() {
                {/* Pending Invites */}
                <PendingInvites invites={pendingInvites} userId={user.id} />
 
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Show Active Tournament if exists, otherwise placeholder or null */}
-                  {activeTournamentData ? (
-                    <ActiveTournament 
-                      tournament={activeTournamentData as any} 
-                      currentMatch={currentMatch as any}
-                      currentProfileId={user.id}
-                    />
-                  ) : (
-                    // If no tournament, maybe show events prominent? 
-                    // For now, let's keep the logic simple: Always ActiveTournament (it handles null state)
-                    <ActiveTournament 
-                      tournament={null} 
-                      currentMatch={null}
-                      currentProfileId={user.id}
-                    />
-                  )}
-                  
-                  {/* My Guilds (Replaces Active Events if none, or stacks) */}
-                  <MyGuilds guilds={userGuilds} userId={user.id} />
-               </div>
+               {/* Active Tournament (Full Width) */}
+               {activeTournamentData ? (
+                <ActiveTournament 
+                  tournament={activeTournamentData as any} 
+                  currentMatch={currentMatch as any}
+                  currentProfileId={user.id}
+                />
+               ) : (
+                <ActiveTournament 
+                  tournament={null} 
+                  currentMatch={null}
+                  currentProfileId={user.id}
+                />
+               )}
                
                {/* Show Active Events row below if any exist */}
                {activeEvents.length > 0 && (
@@ -315,6 +308,10 @@ export default async function Dashboard() {
                tournamentDraws={tournamentDraws}
                tournamentWinRate={tournamentWinRate}
              />
+          </section>
+          
+          <section>
+             <MyGuilds guilds={userGuilds} userId={user.id} />
           </section>
 
           <section>

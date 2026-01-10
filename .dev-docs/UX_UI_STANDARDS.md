@@ -89,6 +89,17 @@ We use **Tailwind CSS V4** variables defined in `app/globals.css`. The theme is 
 -   **Gallery/Selection:** `sm:max-w-6xl`.
     -   *Layout:* Grid of 4-6 columns.
 
+### Dropdowns & Menus (Select, Command, Popover)
+**Standard:** "Glass UI" Menus. Avoid solid light backgrounds.
+
+-   **Container:** `bg-zinc-900/95` (High opacity), `backdrop-blur-md`, `border-white/10`.
+-   **Triggers:** `bg-white/5` (Idle) -> `bg-white/10` (Hover). Text: `text-foreground`.
+-   **Items (Rows):**
+    -   **Idle:** Transparent background, `text-foreground`.
+    -   **Hover/Focus:** `bg-white/10` (Subtle Glass), `text-foreground` (White).
+    -   **Selected:** `bg-white/10` or `bg-primary/20`.
+-   **Forbidden:** Do NOT use `focus:bg-accent` or `focus:text-accent-foreground` in menus. This causes unreadable black text on cream backgrounds in our dark theme.
+
 ### Forms (`Input`, `Select`, `Textarea`)
 -   **Base Style:** `bg-zinc-900/50 border-white/10`.
 -   **Focus:** `focus-visible:border-primary/50 focus-visible:ring-primary/20`.

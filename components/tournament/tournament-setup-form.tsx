@@ -7,6 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import PlayerSelector from './player-selector';
 import { toast } from 'sonner';
 import { ScryfallSet } from '@/lib/scryfall';
@@ -31,6 +35,7 @@ export default function TournamentSetupForm({ players, eventId, sets }: Tourname
   const [roundDuration, setRoundDuration] = useState('50');
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [selectedSetCode, setSelectedSetCode] = useState<string>('');
+  const [open, setOpen] = useState(false);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -129,22 +134,68 @@ export default function TournamentSetupForm({ players, eventId, sets }: Tourname
               <Label htmlFor="set">
                 Expansion Set
               </Label>
-              <Select value={selectedSetCode} onValueChange={setSelectedSetCode}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select a set..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {sets.map((set) => (
-                    <SelectItem key={set.id} value={set.code}>
-                      <span className="flex items-center gap-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={set.icon_svg_uri} alt="" className="w-4 h-4 invert opacity-70" />
-                        {set.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    type="button"
+                    aria-expanded={open}
+                    className={cn(
+                      "w-full justify-between h-12 border-white/10 bg-white/5 hover:bg-white/10 hover:text-primary hover:border-primary/30",
+                      selectedSetCode ? "text-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    {selectedSetCode
+                      ? (() => {
+                          const set = sets.find((s) => s.code === selectedSetCode)
+                          return set ? (
+                            <span className="flex items-center gap-2 truncate text-foreground">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={set.icon_svg_uri} alt={set.name} className="w-4 h-4 invert opacity-70" />
+                              {set.name}
+                            </span>
+                          ) : "Select set..."
+                        })()
+                      : "Select set..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search set..." />
+                    <CommandList>
+                      <CommandEmpty>No set found.</CommandEmpty>
+                      <CommandGroup>
+                        {sets.map((set) => (
+                          <CommandItem
+                            key={set.id}
+                            value={set.code}
+                            keywords={[set.name]}
+                            onSelect={() => {
+                              setSelectedSetCode(set.code === selectedSetCode ? "" : set.code)
+                              setOpen(false)
+                            }}
+                            className="pr-8 relative cursor-pointer"
+                          >
+                            <span className="flex items-center gap-2 truncate">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={set.icon_svg_uri} alt={set.name} className="w-4 h-4 invert opacity-70" />
+                              {set.name}
+                            </span>
+                            <Check
+                              className={cn(
+                                "absolute right-2 h-4 w-4",
+                                selectedSetCode === set.code ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 

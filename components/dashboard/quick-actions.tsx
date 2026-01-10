@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus, Play, CalendarPlus, List, Users, Shield } from 'lucide-react';
-import { CreateGuildDialog } from '@/components/guilds/create-guild-dialog';
 
 interface QuickActionsProps {
   eventId?: string;
@@ -61,27 +60,12 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
       </CardHeader>
       <CardContent className="space-y-4">
 
-        {/* Create Guild (New Primary Action) */}
-        <div className="space-y-2">
-          <CreateGuildDialog>
-            <Button
-              className="w-full h-12 font-heading tracking-wide bg-gradient-to-r from-amber-700 to-yellow-600 hover:from-amber-600 hover:to-yellow-500 border-none text-white shadow-lg shadow-amber-900/20"
-            >
-              <Shield className="w-5 h-5 mr-2" />
-              Create Guild
-            </Button>
-          </CreateGuildDialog>
-          <p className="text-[10px] text-muted-foreground/60 text-center uppercase tracking-widest font-heading">
-            Establish a permanent home for your group.
-          </p>
-        </div>
-
         <div className="relative py-2">
             <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-white/5" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
-            <span className="bg-[#09090b] px-3 text-muted-foreground/40 font-heading">Events</span>
+            <span className="bg-[#09090b] px-3 text-zinc-400 font-heading">Events</span>
             </div>
         </div>
         
@@ -89,8 +73,7 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
         <div className="space-y-2">
             <Button
             asChild
-            className="w-full h-12 font-heading tracking-wide"
-            variant="secondary"
+            className="w-full h-12 font-heading tracking-wide bg-gradient-to-r from-amber-700 to-yellow-600 hover:from-amber-600 hover:to-yellow-500 border-none text-white shadow-lg shadow-amber-900/20"
             >
             <Link href="/events/new">
                 <CalendarPlus className="w-5 h-5 mr-2" />
@@ -104,7 +87,7 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
             <span className="w-full border-t border-white/5" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
-            <span className="bg-[#09090b] px-3 text-muted-foreground/40 font-heading">Or One-Shot</span>
+            <span className="bg-[#09090b] px-3 text-zinc-400 font-heading">Or One-Shot</span>
             </div>
         </div>
 
@@ -113,7 +96,7 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
             <Button
             asChild
             variant="outline"
-            className="w-full h-12 text-muted-foreground hover:text-foreground bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
+            className="w-full h-12 text-amber-400 hover:text-amber-300 bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
             >
             <Link href={newTournamentHref}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -123,7 +106,7 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
             <Button
             asChild
             variant="outline"
-            className="w-full h-12 text-muted-foreground hover:text-foreground bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
+            className="w-full h-12 text-emerald-400 hover:text-emerald-300 bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
             >
             <Link href={casualGameHref}>
                 <Play className="w-4 h-4 mr-2" />
