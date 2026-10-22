@@ -164,17 +164,17 @@ export default function FixMatchResult() {
 
   return (
     <Card className="glass-panel">
-      <CardHeader className="border-b border-white/5 pb-6">
+      <CardHeader className="border-b border-border pb-6">
         <CardTitle className="text-xl text-foreground font-heading tracking-wide">Fix Match Result</CardTitle>
-        <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">
+        <CardDescription className="text-muted-foreground text-xs uppercase tracking-widest">
           System Administration Override
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-8">
         <div className="space-y-2">
-          <Label className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest px-1 font-heading">Select Match</Label>
+          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 font-heading">Select Match</Label>
           <Select value={selectedMatchId} onValueChange={setSelectedMatchId}>
-            <SelectTrigger className="w-full h-12 bg-white/5 border-white/10 text-foreground">
+            <SelectTrigger className="w-full h-12 bg-muted border-border text-foreground">
               <SelectValue placeholder="Choose a match..." />
             </SelectTrigger>
             <SelectContent>
@@ -198,8 +198,8 @@ export default function FixMatchResult() {
         {selectedMatch && selectedMatch.participants.length >= 2 && (
           <>
             {/* Current Results */}
-            <div className="p-4 bg-white/5 rounded-lg border border-white/5">
-              <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mb-3">Currently Stored:</p>
+            <div className="p-4 bg-muted rounded-lg border border-border">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Currently Stored:</p>
               <div className="space-y-2">
                 {selectedMatch.participants.map((p) => (
                   <div key={p.profile_id} className="text-foreground flex justify-between items-center">
@@ -207,7 +207,7 @@ export default function FixMatchResult() {
                     <span className={`text-xs uppercase font-bold px-2 py-0.5 rounded border ${
                       p.result === 'win' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
                       p.result === 'loss' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                      'bg-zinc-800 text-muted-foreground border-white/5'
+                      'bg-card text-muted-foreground border-border'
                     }`}>
                       {p.result || 'pending'} <span className="opacity-40 mx-1">•</span> {p.games_won}
                     </span>
@@ -218,10 +218,10 @@ export default function FixMatchResult() {
 
             {/* Game Score Inputs */}
             <div className="space-y-4">
-              <Label className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest px-1 font-heading">Set Correct Scores</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 font-heading">Set Correct Scores</Label>
               
               {/* Player 1 */}
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/5">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border">
                 <span className="text-foreground font-medium text-sm">
                   {selectedMatch.participants[0]?.profile?.display_name || 
                    selectedMatch.participants[0]?.profile?.username || 'Player 1'}
@@ -231,7 +231,7 @@ export default function FixMatchResult() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
+                    className="h-9 w-9 bg-card border-border hover:bg-muted"
                     onClick={() => setPlayer1Games(Math.max(0, player1Games - 1))}
                   >
                     <Minus className="h-4 w-4" />
@@ -243,7 +243,7 @@ export default function FixMatchResult() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
+                    className="h-9 w-9 bg-card border-border hover:bg-muted"
                     onClick={() => setPlayer1Games(Math.min(2, player1Games + 1))}
                   >
                     <Plus className="h-4 w-4" />
@@ -252,7 +252,7 @@ export default function FixMatchResult() {
               </div>
 
               {/* Player 2 */}
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/5">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border">
                 <span className="text-foreground font-medium text-sm">
                   {selectedMatch.participants[1]?.profile?.display_name || 
                    selectedMatch.participants[1]?.profile?.username || 'Player 2'}
@@ -262,7 +262,7 @@ export default function FixMatchResult() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
+                    className="h-9 w-9 bg-card border-border hover:bg-muted"
                     onClick={() => setPlayer2Games(Math.max(0, player2Games - 1))}
                   >
                     <Minus className="h-4 w-4" />
@@ -274,7 +274,7 @@ export default function FixMatchResult() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9 bg-zinc-800 border-white/5 hover:bg-zinc-700"
+                    className="h-9 w-9 bg-card border-border hover:bg-muted"
                     onClick={() => setPlayer2Games(Math.min(2, player2Games + 1))}
                   >
                     <Plus className="h-4 w-4" />
@@ -299,7 +299,7 @@ export default function FixMatchResult() {
         <Button
           onClick={handleSubmit}
           disabled={!selectedMatchId || !selectedMatch || selectedMatch.participants.length < 2 || isSubmitting}
-          className="w-full h-14 bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(225,29,72,0.3)] hover:shadow-[0_0_20px_rgba(225,29,72,0.5)] disabled:opacity-50 font-heading"
+          className="w-full h-14 bg-rose-600 hover:bg-rose-700 text-foreground font-bold uppercase tracking-widest  hover: disabled:opacity-50 font-heading"
         >
           {isSubmitting ? 'Correcting Record...' : 'Overwrite Match Result'}
         </Button>

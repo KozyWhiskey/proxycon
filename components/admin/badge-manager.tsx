@@ -76,12 +76,12 @@ export default function BadgeManager() {
 
   return (
     <Card className="glass-panel">
-      <CardHeader className="border-b border-white/5 pb-6">
+      <CardHeader className="border-b border-border pb-6">
         <CardTitle className="text-xl text-foreground font-heading tracking-wide flex items-center gap-2">
           <Award className="w-5 h-5 text-primary" />
           Badge Management
         </CardTitle>
-        <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">
+        <CardDescription className="text-muted-foreground text-xs uppercase tracking-widest">
           Manually award badges to users
         </CardDescription>
       </CardHeader>
@@ -128,11 +128,11 @@ export default function BadgeManager() {
           </div>
           
           {foundUsers.length > 0 && (
-            <div className="grid grid-cols-1 gap-2 mt-2 max-h-40 overflow-y-auto border border-white/10 rounded-md p-2">
+            <div className="grid grid-cols-1 gap-2 mt-2 max-h-40 overflow-y-auto border border-border rounded-md p-2">
               {foundUsers.map(u => (
                 <div 
                   key={u.id} 
-                  className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-white/5 ${selectedUser === u.id ? 'bg-primary/20 border border-primary/50' : ''}`}
+                  className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted ${selectedUser === u.id ? 'bg-primary/20 border border-primary/50' : ''}`}
                   onClick={() => setSelectedUser(u.id)}
                 >
                   <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden">

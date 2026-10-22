@@ -1,65 +1,70 @@
-import { createClient } from '@/utils/supabase/server';
 import { User } from '@supabase/supabase-js';
-import { Profile } from './types';
 import { redirect } from 'next/navigation';
+import { Profile } from './types';
+import { PlayerMode, resolvePlayer } from './player-session';
 
 export interface CurrentUser {
   user: User;
   profile: Profile | null;
+  mode: PlayerMode;
+  isAdmin: boolean;
 }
 
 /**
- * Gets the current authenticated user and their profile.
- * Returns null if no user is logged in.
+ * The signed-in browser and the player it is acting as.
+ * A phone session can point at a profile that has no login of its own.
  */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const supabase = await createClient();
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const ctx = await resolvePlayer();
+  if (!ctx.authUser) return null;
 
-  if (userError || !user) {
-    return null;
+  let profile: Profile | null = null;
+  if (ctx.playerId) {
+    const { data } = await ctx.supabase.from('profiles').select('*').eq('id', ctx.playerId).maybeSingle();
+    profile = data;
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  return {
-    user,
-    profile: profile || null
-  };
+  return { user: ctx.authUser, profile, mode: ctx.mode, isAdmin: ctx.isAdmin };
 }
 
 /**
- * Ensures the user is authenticated and has a valid profile.
- * Redirects to /login if not authenticated.
- * Redirects to /onboarding if profile is missing/incomplete.
+ * Pages that belong to one player. A phone that has not picked a name goes back to the list.
  */
 export async function requireProfile(): Promise<{ user: User; profile: Profile }> {
   const authData = await getCurrentUser();
 
-  if (!authData || !authData.user) {
-    redirect('/login');
+  if (!authData?.user) redirect('/');
+
+  if (!authData.profile?.display_name) {
+    if (!authData.user.is_anonymous) redirect('/onboarding');
+    redirect('/');
   }
 
-  if (!authData.profile || !authData.profile.username) {
-    redirect('/onboarding');
-  }
-
-  return {
-    user: authData.user,
-    profile: authData.profile
-  };
+  return { user: authData.user, profile: authData.profile };
 }
 
 /**
- * @deprecated Use getCurrentUser() instead.
- * Kept for backward compatibility during refactor.
+ * The playgroup directory. The house laptop can open it without becoming a player.
+ * A phone that has not picked a name still goes back to the list.
+ */
+export async function requirePlaygroup(): Promise<CurrentUser> {
+  const authData = await getCurrentUser();
+
+  if (!authData?.user) redirect('/');
+  if (authData.mode === 'house') return authData;
+
+  if (!authData.profile?.display_name) {
+    if (!authData.user.is_anonymous) redirect('/onboarding');
+    redirect('/');
+  }
+
+  return authData;
+}
+
+/**
+ * The player this browser is acting as. Deck, result, and profile writes use this id.
  */
 export async function getCurrentUserId(): Promise<string | null> {
-  const user = await getCurrentUser();
-  return user?.user.id || null;
+  const current = await getCurrentUser();
+  return current?.profile?.id || null;
 }

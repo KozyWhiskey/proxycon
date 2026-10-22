@@ -8,6 +8,7 @@ export interface Profile {
   display_name: string | null; // "Jace Beleren"
   role: 'user' | 'admin'; // RBAC role
   avatar_url: string | null;
+  color: string | null;
   bio: string | null;
   favorite_card_image: string | null;
   created_at: string;
@@ -67,6 +68,7 @@ export interface Deck {
   format: string;
   colors: string[] | null;
   commander_name: string | null;
+  partner_name?: string | null;
   mana_cost?: string | null;
   type_line?: string | null;
   oracle_text?: string | null;
@@ -94,6 +96,12 @@ export interface Tournament {
   round_duration_minutes: number;
   set_code?: string | null;
   set_name?: string | null;
+  set_codes?: string[] | null;
+  card_source?: 'set' | 'sets' | 'cube' | 'none' | null;
+  cube_list?: string | null;
+  starts_on?: string | null;
+  invite_code?: string | null;
+  singleton?: boolean | null;
   created_at: string;
 }
 

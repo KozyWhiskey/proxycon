@@ -22,7 +22,8 @@ export default function UserHeader({
 
   const handleLogout = async () => {
     try {
-      await logout();
+      const result = await logout();
+      if (result?.message) { toast.error(result.message); return; }
       toast.success('Logged out successfully');
     } catch (error) {
       if (error && typeof error === 'object' && 'digest' in error) {

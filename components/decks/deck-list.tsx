@@ -13,7 +13,7 @@ interface DeckListProps {
 export default function DeckList({ decks, isOwner = false, variant = 'grid' }: DeckListProps) {
   if (!decks || decks.length === 0) {
     return (
-      <div className="text-center py-12 border border-white/5 rounded-xl bg-white/5">
+      <div className="text-center py-12 border border-border rounded-xl bg-muted">
         <p className="text-muted-foreground italic">No decks found.</p>
       </div>
     );

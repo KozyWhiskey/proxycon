@@ -12,6 +12,7 @@ import {
   convertDbMatchToMatchResult,
   MatchResult
 } from '@/lib/swiss-pairing';
+import { matchPlayerKey, rosterKey, seatName } from '@/lib/activity';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -41,10 +42,11 @@ export default async function TournamentDashboardPage({ params }: PageProps) {
   // Fetch tournament participants
   const { data: participants } = await supabase
     .from('tournament_participants')
-    .select('profile_id')
-    .eq('tournament_id', tournamentId);
+    .select('id, profile_id, draft_seat')
+    .eq('tournament_id', tournamentId)
+    .eq('dropped', false);
 
-  const profileIds = participants?.map((p) => p.profile_id) || [];
+  const profileIds = (participants || []).map((p) => rosterKey(p));
 
   // Fetch all matches
   // SIMPLIFIED QUERY TO DEBUG FETCHING
@@ -64,14 +66,14 @@ export default async function TournamentDashboardPage({ params }: PageProps) {
   // Fetch all match participants using explicit match IDs
   const { data: allParticipants } = await supabase
     .from('match_participants')
-    .select('id, match_id, profile_id, result, games_won')
+    .select('id, match_id, profile_id, participant_id, seat_number, result, games_won')
     .in('match_id', matchIds);
 
-  // Normalize participants
+  // Normalize participants. Open seats use the participant id as their standings key.
   const normalizedParticipants: MatchParticipant[] = (allParticipants || []).map((p: any) => ({
     id: p.id,
     match_id: p.match_id,
-    profile_id: p.profile_id,
+    profile_id: matchPlayerKey(p),
     result: p.result,
     games_won: p.games_won
   }));
@@ -90,7 +92,7 @@ export default async function TournamentDashboardPage({ params }: PageProps) {
       matchHistory.push(convertDbMatchToMatchResult(
         match.id, 
         match.round_number, 
-        parts.map(p => ({ playerId: p.profile_id, result: p.result }))
+        parts.map(p => ({ playerId: p.profile_id, result: p.result, gamesWon: p.games_won || 0 }))
       ));
     }
   });
@@ -111,16 +113,25 @@ export default async function TournamentDashboardPage({ params }: PageProps) {
   });
 
   // Fetch profiles
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, username, display_name')
-    .in('id', profileIds);
+  const realIds = (participants || []).map((p) => p.profile_id).filter((value): value is string => Boolean(value));
+  const { data: profiles } = realIds.length
+    ? await supabase.from('profiles').select('id, username, display_name').in('id', realIds)
+    : { data: [] as { id: string; username: string | null; display_name: string | null }[] };
+  const profileById = new Map((profiles || []).map((profile) => [profile.id, profile]));
+  const boardProfiles: Profile[] = (participants || []).map((person) => {
+    const profile = person.profile_id ? profileById.get(person.profile_id) : undefined;
+    return {
+      id: rosterKey(person),
+      username: profile?.username || '',
+      display_name: seatName(person.draft_seat, profile?.display_name || profile?.username),
+    };
+  });
 
   const initialData = {
     tournament: tournament as Tournament,
     matches: currentMatches as Match[],
     participants: normalizedParticipants,
-    profiles: (profiles || []) as Profile[],
+    profiles: boardProfiles,
   };
 
   return (

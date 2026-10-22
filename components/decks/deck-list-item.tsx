@@ -43,17 +43,18 @@ export default function DeckListItem({ deck, isOwner = false }: DeckListItemProp
   return (
     <>
       <Card 
-        className="glass-panel group overflow-hidden border-white/5 hover:border-primary/50 transition-all cursor-pointer bg-white/5 hover:bg-white/10"
+        className="glass-panel group overflow-hidden border-border hover:border-primary/50 transition-all cursor-pointer bg-muted hover:bg-muted"
         onClick={() => setIsInspectorOpen(true)}
       >
         <div className="flex flex-row h-32 md:h-40">
           {/* Left: Card Image */}
-          <div className="relative w-24 md:w-32 flex-shrink-0 bg-black/50 border-r border-white/10">
+          <div className="relative w-24 md:w-32 flex-shrink-0 bg-card border-r border-border">
             {deck.image_url ? (
               <Image
                 src={deck.image_url}
                 alt={deck.name}
                 fill
+                unoptimized
                 className="object-cover"
               />
             ) : (
@@ -112,7 +113,7 @@ export default function DeckListItem({ deck, isOwner = false }: DeckListItemProp
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="h-8 w-8 border-white/10 hover:bg-white/20"
+                    className="h-8 w-8 border-border hover:bg-white/20"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsEditOpen(true);
@@ -166,7 +167,7 @@ export default function DeckListItem({ deck, isOwner = false }: DeckListItemProp
       {/* Delete Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
-         <div className="p-6 space-y-4 bg-zinc-950 border border-white/10 rounded-lg">
+         <div className="p-6 space-y-4 bg-card border border-border rounded-lg">
             <h3 className="text-lg font-bold">Delete Deck?</h3>
             <p className="text-sm text-muted-foreground">Are you sure you want to delete <strong>{deck.name}</strong>?</p>
             <div className="flex justify-end gap-2">

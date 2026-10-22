@@ -61,22 +61,23 @@ export default function ProfileForm({
         <Input
           value={userName || ''}
           disabled
-          className="h-12 bg-white/5 border-white/10 text-muted-foreground"
+          className="h-12 bg-muted border-border text-muted-foreground"
         />
         <p className="text-xs text-muted-foreground">Your registered account name.</p>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-foreground">Nickname</Label>
+        <Label className="text-foreground">Play name</Label>
         <Input
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          placeholder="Display name (optional)"
-          className="h-12 bg-white/5 border-white/10 text-foreground"
-          maxLength={50}
+          placeholder="Name on the table"
+          className="h-12 bg-muted border-border text-foreground"
+          maxLength={40}
+          required
         />
         <p className="text-xs text-muted-foreground">
-          This will be displayed on brackets and matches instead of your full name.
+          Changing this updates every event you have already played.
         </p>
       </div>
 
@@ -88,7 +89,7 @@ export default function ProfileForm({
             setColor(value === 'auto' ? undefined : value);
           }}
         >
-          <SelectTrigger className="h-12 bg-white/5 border-white/10 text-foreground">
+          <SelectTrigger className="h-12 bg-muted border-border text-foreground">
             <SelectValue placeholder="Auto (based on name)" />
           </SelectTrigger>
           <SelectContent>
@@ -115,7 +116,7 @@ export default function ProfileForm({
               ))}
             </div>
 
-            <div className="px-2 py-1.5 border-t border-white/10 mt-1">
+            <div className="px-2 py-1.5 border-t border-border mt-1">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Guilds (Two-Color)
               </div>
@@ -143,7 +144,7 @@ export default function ProfileForm({
           value={avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
           placeholder="https://example.com/avatar.jpg"
-          className="h-12 bg-white/5 border-white/10 text-foreground"
+          className="h-12 bg-muted border-border text-foreground"
         />
       </div>
 

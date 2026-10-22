@@ -6,36 +6,25 @@ import { completeOnboarding } from '@/app/onboarding/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function OnboardingForm() {
+export default function OnboardingForm({ suggestion }: { suggestion: string }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    username: '',
-    displayName: '',
-    favoriteCard: ''
-  })
+  const [playName, setPlayName] = useState(suggestion)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
     setIsLoading(true)
-
-    try {
-      const result = await completeOnboarding(formData)
-      
-      if (result.success) {
-        toast.success("Profile created! Welcome to the league.")
-        router.push('/')
-        router.refresh()
-      } else {
-        toast.error(result.message || "Failed to create profile")
-        setIsLoading(false)
-      }
-    } catch (error) {
-      toast.error("An unexpected error occurred")
+    const result = await completeOnboarding({ displayName: playName })
+    if (result.success) {
+      toast.success('Play name saved.')
+      router.push('/')
+      router.refresh()
+    } else {
+      toast.error(result.message || 'Could not save the play name.')
       setIsLoading(false)
     }
   }
@@ -43,67 +32,29 @@ export default function OnboardingForm() {
   return (
     <Card className="w-full max-w-md glass-panel">
       <CardHeader>
-        <CardTitle className="text-2xl text-center text-foreground font-heading">Setup Your Profile</CardTitle>
-        <CardDescription className="text-center text-muted-foreground">
-          Create your player identity to start tracking stats.
+        <CardTitle className="text-2xl text-center font-heading">Play name</CardTitle>
+        <CardDescription className="text-center">
+          This is the name on every table. The Google name is only a suggestion. Changing it later updates every event you have already played.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-foreground">Username</Label>
+            <Label htmlFor="playName">Play name</Label>
             <Input
-              id="username"
-              placeholder="@jace_beleren"
+              id="playName"
               required
-              className="bg-white/5 border-white/10 text-foreground"
-              value={formData.username}
-              onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-            />
-            <p className="text-xs text-muted-foreground">Your unique handle for the league.</p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="displayName" className="text-foreground">Display Name</Label>
-            <Input
-              id="displayName"
-              placeholder="Jace Beleren"
-              required
-              className="bg-white/5 border-white/10 text-foreground"
-              value={formData.displayName}
-              onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-            />
-            <p className="text-xs text-muted-foreground">How you'll appear in tournament brackets.</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="favoriteCard" className="text-foreground">Favorite Card (Optional)</Label>
-            <Input
-              id="favoriteCard"
-              placeholder="Jace, the Mind Sculptor"
-              className="bg-white/5 border-white/10 text-foreground"
-              value={formData.favoriteCard}
-              onChange={(e) => setFormData(prev => ({ ...prev, favoriteCard: e.target.value }))}
+              maxLength={40}
+              value={playName}
+              onChange={(event) => setPlayName(event.target.value)}
+              className="bg-card border-border"
             />
           </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            type="submit" 
-            className="w-full"
-            variant="default"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating Profile...
-              </>
-            ) : (
-              'Complete Setup'
-            )}
+          <Button type="submit" className="w-full font-heading" disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save play name
           </Button>
-        </CardFooter>
+        </CardContent>
       </form>
     </Card>
   )

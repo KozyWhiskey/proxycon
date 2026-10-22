@@ -1,8 +1,8 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { resolvePlayer } from '@/lib/player-session';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
 
 function generateInviteCode(): string {
@@ -21,12 +21,12 @@ export async function createEvent(
   endDate?: string,
   organizationId?: string | null
 ): Promise<CreateEventResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ctx = await resolvePlayer();
+  if (!ctx.playerId) return { success: false, message: 'Choose your name first.' };
+  const supabase = ctx.supabase;
 
-  if (!user) {
-    return { success: false, message: 'Not authenticated' };
-  }
+  if (!name.trim()) return { success: false, message: 'Give the event a name.' };
+  if (!startDate || !endDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate) || !Number.isFinite(Date.parse(startDate)) || !Number.isFinite(Date.parse(endDate)) || endDate < startDate) return { success: false, message: 'Choose a start date and an end date on or after it.' };
 
   const inviteCode = generateInviteCode();
 
@@ -34,8 +34,8 @@ export async function createEvent(
   const { data: event, error: eventError } = await supabase
     .from('events')
     .insert({
-      owner_id: user.id,
-      name,
+      owner_id: ctx.playerId,
+      name: name.trim(),
       start_date: startDate || null,
       end_date: endDate || null,
       invite_code: inviteCode,
@@ -55,7 +55,7 @@ export async function createEvent(
     .from('event_members')
     .insert({
       event_id: event.id,
-      profile_id: user.id,
+      profile_id: ctx.playerId,
       role: 'owner',
     });
 
@@ -70,12 +70,9 @@ export async function createEvent(
 }
 
 export async function joinEvent(inviteCode: string): Promise<CreateEventResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, message: 'Not authenticated' };
-  }
+  const ctx = await resolvePlayer();
+  if (!ctx.playerId) return { success: false, message: 'Choose your name first.' };
+  const supabase = ctx.supabase;
 
   // 1. Find event by code
   const { data: event, error: findError } = await supabase
@@ -93,7 +90,7 @@ export async function joinEvent(inviteCode: string): Promise<CreateEventResult> 
     .from('event_members')
     .select('event_id')
     .eq('event_id', event.id)
-    .eq('profile_id', user.id)
+    .eq('profile_id', ctx.playerId)
     .single();
 
   if (existing) {
@@ -105,7 +102,7 @@ export async function joinEvent(inviteCode: string): Promise<CreateEventResult> 
     .from('event_members')
     .insert({
       event_id: event.id,
-      profile_id: user.id,
+      profile_id: ctx.playerId,
       role: 'player',
     });
 
@@ -137,8 +134,16 @@ export async function searchProfiles(query: string) {
 }
 
 export async function addEventMember(eventId: string, profileId: string) {
-  const supabase = await createClient();
-  
+  const ctx = await resolvePlayer();
+  if (!ctx.authUser) return { success: false, message: 'Sign in first.' };
+  const supabase = ctx.supabase;
+  const { data: member } = ctx.playerId
+    ? await supabase.from('event_members').select('profile_id').eq('event_id', eventId).eq('profile_id', ctx.playerId).maybeSingle()
+    : { data: null };
+  if (!member && !ctx.isAdmin && ctx.mode !== 'house') return { success: false, message: 'Join the event before adding players.' };
+  const { data: target } = await supabase.from('profiles').select('id').eq('id', profileId).maybeSingle();
+  if (!target) return { success: false, message: 'Choose an existing player profile.' };
+
   // Check if already a member
   const { data: existing } = await supabase
     .from('event_members')
@@ -148,7 +153,7 @@ export async function addEventMember(eventId: string, profileId: string) {
     .single();
 
   if (existing) {
-    return { success: false, message: 'User is already a member of this event.' };
+    return { success: true, message: 'Already in the event.' };
   }
 
   const { error } = await supabase
@@ -161,10 +166,11 @@ export async function addEventMember(eventId: string, profileId: string) {
 
   if (error) {
     console.error('Error adding member:', error);
-    return { success: false, message: 'Failed to add member.' };
+    return { success: false, message: 'Could not add this player. Check your event permissions and try again.' };
   }
 
-  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/events/${eventId}`, 'layout');
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -209,7 +215,7 @@ export async function getEventMembers(eventId: string) {
   }
 
   // Flatten the structure for easier consumption
-  return members.map((m: any) => {
+  return members.map((m) => {
     const profile = Array.isArray(m.profile) ? m.profile[0] : m.profile;
     return {
       id: profile?.id,
@@ -223,22 +229,15 @@ export async function getEventMembers(eventId: string) {
 }
 
 export async function endEvent(eventId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ctx = await resolvePlayer();
+  if (!ctx.playerId && !ctx.isAdmin) return { success: false, message: 'Choose your name first.' };
+  const supabase = ctx.supabase;
 
-  if (!user) {
-    return { success: false, message: 'Not authenticated' };
-  }
+  const { data: member } = ctx.playerId
+    ? await supabase.from('event_members').select('role').eq('event_id', eventId).eq('profile_id', ctx.playerId).maybeSingle()
+    : { data: null };
 
-  // Check if user is owner
-  const { data: member } = await supabase
-    .from('event_members')
-    .select('role')
-    .eq('event_id', eventId)
-    .eq('profile_id', user.id)
-    .single();
-
-  if (!member || member.role !== 'owner') {
+  if (!ctx.isAdmin && member?.role !== 'owner') {
      return { success: false, message: 'Only the event owner can end the event.' };
   }
 
@@ -259,22 +258,15 @@ export async function endEvent(eventId: string) {
 }
 
 export async function reactivateEvent(eventId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ctx = await resolvePlayer();
+  if (!ctx.playerId && !ctx.isAdmin) return { success: false, message: 'Choose your name first.' };
+  const supabase = ctx.supabase;
 
-  if (!user) {
-    return { success: false, message: 'Not authenticated' };
-  }
+  const { data: member } = ctx.playerId
+    ? await supabase.from('event_members').select('role').eq('event_id', eventId).eq('profile_id', ctx.playerId).maybeSingle()
+    : { data: null };
 
-  // Check if user is owner
-  const { data: member } = await supabase
-    .from('event_members')
-    .select('role')
-    .eq('event_id', eventId)
-    .eq('profile_id', user.id)
-    .single();
-
-  if (!member || member.role !== 'owner') {
+  if (!ctx.isAdmin && member?.role !== 'owner') {
      return { success: false, message: 'Only the event owner can reactivate the event.' };
   }
 

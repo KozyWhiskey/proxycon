@@ -3,8 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
-import { getURL } from "@/lib/utils";
+
+async function callbackUrl(nextPath?: string) {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host");
+  const proto = headerList.get("x-forwarded-proto") || "http";
+  const origin = host ? `${proto}://${host}` : "http://localhost:3000";
+  if (nextPath) return `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+  return `${origin}/auth/callback`;
+}
+
+function safeNext(value: FormDataEntryValue | null): string {
+  if (typeof value !== "string") return "/";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/";
+  return value;
+}
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -24,7 +39,7 @@ export async function login(formData: FormData) {
     }
 
     revalidatePath("/", "layout");
-    redirect("/");
+    redirect(safeNext(formData.get("next")));
   } 
   // Otherwise fall back to Magic Link / OTP
   else {
@@ -32,7 +47,7 @@ export async function login(formData: FormData) {
       email,
       options: {
         // This ensures the link sent to email points to the correct domain
-        emailRedirectTo: `${getURL()}auth/callback`,
+        emailRedirectTo: await callbackUrl(),
       },
     });
 
@@ -55,7 +70,7 @@ export async function signup(formData: FormData) {
     password,
     options: {
       // This ensures the confirmation link points to the correct domain
-      emailRedirectTo: `${getURL()}auth/callback`,
+      emailRedirectTo: await callbackUrl(),
     },
   };
 
@@ -69,12 +84,13 @@ export async function signup(formData: FormData) {
   redirect("/login?message=Check email to continue sign in process");
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(formData?: FormData) {
   const supabase = await createClient();
+  const next = safeNext(formData?.get("next") ?? null);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${getURL()}auth/callback`,
+      redirectTo: await callbackUrl(next),
     },
   });
 
@@ -87,12 +103,13 @@ export async function signInWithGoogle() {
   }
 }
 
-export async function signInWithDiscord() {
+export async function signInWithDiscord(formData?: FormData) {
   const supabase = await createClient();
+  const next = safeNext(formData?.get("next") ?? null);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "discord",
     options: {
-      redirectTo: `${getURL()}auth/callback`,
+      redirectTo: await callbackUrl(next),
     },
   });
 

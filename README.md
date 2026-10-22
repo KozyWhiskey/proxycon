@@ -1,116 +1,34 @@
-# Upkeep Companion App
+# ProxyCon
 
-A mobile-first, desktop-optimized companion web application for Magic: The Gathering tournament weekends. Built for groups of friends, with a focus on usability, instant feedback, and frictionless interactions.
+A phone-first companion for a Magic: The Gathering weekend with friends. One event holds the people. Inside it, quick games and tournaments run at the same time. The app tracks what is being played, what each person is playing, who they play next, and the stats for that event.
 
-## 🎯 Project Overview
+The product end state is [`.dev-docs/PROJECT_SUMMARY.md`](.dev-docs/PROJECT_SUMMARY.md).
 
-Upkeep is a **multi-event platform** that handles:
+## What it is for
 
-- **Event Management**: Create and manage multiple events (e.g., "Upkeep", "Weekly Draft").
-- **Tournament Brackets**: Swiss-style pairings with draft seat-based Round 1 pairings.
-- **Casual Play**: Log Commander, 1v1, and 2HG games, linked to specific events.
-- **Deck Tracking**: Manage your personal deck library with Scryfall integration (including art selection).
-- **Player Stats**: Track wins and tournament performance per event.
-- **Live Feed**: Recent match history with AI-generated commentary.
+- Create an event such as ProxyCon 2026, or a one-night draft. People join it on their own phones.
+- Play a Commander pod as a quick match. Record the winner, or a draw.
+- Run a set draft, chaos draft, cube, or sealed. Seats, rounds, scores, and 1st through 3rd.
+- Leave a tournament in setup before it starts. More than one game can be live.
+- See the room: live games, pairings, running match points, and a dashboard anyone in the event can correct.
 
-### Design Philosophy
+Guilds, a public player directory, badges, and a career record are not the product. Deck photos and budget-deck links come later.
 
-- **Mobile First**: All interactions optimized for one-thumb use on phones.
-- **Desktop Optimized**: Responsive grids and expanded views for laptops/tablets.
-- **Dark Mode**: Forged in the dark basement aesthetic.
-- **V3 Architecture**: Secure Supabase authentication (Email/Password) and normalized schema.
+## Tech
 
-## 🛠️ Tech Stack
+- Next.js 16 (App Router), TypeScript
+- Tailwind CSS and shadcn/ui
+- Supabase Auth and Postgres
+- Scryfall for card data
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + Shadcn UI (Dark theme: Slate)
-- **Database**: Supabase (Cloud PostgreSQL)
-- **Auth**: Supabase Auth
-- **AI**: Vercel AI SDK with OpenAI (GPT-4o) & Google Gemini
-- **API**: Scryfall API
+## Run it
 
-## 🚀 Getting Started
+1. Install dependencies with `npm install`.
+2. Create `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Start the app with `npm run dev`.
+4. Open http://localhost:3000. Use the network address on the dev-server log when a phone in the house needs to reach it.
 
-### Prerequisites
+## Docs
 
-- Node.js 18+ and npm
-- A Supabase project
-- Environment variables configured
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd upkeep
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   Create a `.env.local` file:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-   GOOGLE_GENERATIVE_AI_API_KEY=your-gemini-api-key-here
-   ```
-
-4. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-## ✨ Features
-
-### ✅ Implemented (V3 & V4)
-
-- **V4 Guilds & Communities**:
-  - **Guild Creation**: Establish permanent gaming groups with custom themes and branding.
-  - **Invite System**: Share invite codes or links to summon friends to your guild.
-  - **The Sanctuary**: A dedicated Guild Dashboard aggregating feed, events, and roster.
-  - **Linked Events**: Host events under a Guild to share stats and history.
-- **V3 Architecture**: Fully normalized database schema (`profiles`, `events`, `event_members`).
-- **Multi-Event System**: 
-  - Dedicated "Global Dashboard" for personal stats.
-  - "Event Dashboard" for tournament weekends.
-  - Seamless "Create vs. Join" workflows.
-  - **Lifecycle Management**: Owners can end/archive events to separate active campaigns from history.
-- **Deck Tracker**: 
-  - **Scryfall Integration**: Search cards, auto-populate details.
-  - **Art Selection**: Choose specific prints/art for your Commander.
-  - **Rich Card Data**: Displays mana symbols, set symbols, and rich oracle text.
-- **Admin & Moderation**:
-  - **God Mode**: System-wide admin panel (`/admin`) to fix match results, game scores, and manage users.
-  - **Member Management**: Unified dialogs for searching global profiles and managing rosters for events and guilds.
-- **Achievements & Badges**:
-  - **Trophy Case**: Profile section showcasing earned badges.
-  - **Automated Awards**: Unlock badges for win streaks ("The Hot Hand") and participation ("Iron Man").
-  - **AI Director**: "The Snarky Director" (powered by OpenAI) analyzes match results and Commander choices to generate unique, funny, and sometimes mean achievements (e.g., "The Arithmetic Nerd" for Atraxa players).
-- **Tournament Engine**: 
-  - Swiss-style brackets using MTG tiebreakers (Points > OMW% > GW%).
-  - Draft seat selection.
-  - Round timers.
-- **Casual Mode**: Log Commander, 1v1, or 2HG games.
-- **Community & Stats**:
-  - **Player Directory**: Browse all registered players with activity summaries.
-  - **Deep-Dive Profiles**: View detailed career stats, deck libraries, and match history for any player.
-  - **Global Leaderboards**: Track top performers across all events.
-- **UX/UI Polish**: 
-  - Context-aware Quick Actions.
-  - Responsive layouts (Mobile Stacked -> Desktop Grid).
-
-## 📚 Documentation
-
-- **PROJECT_SUMMARY.md**: High-level overview.
-- **UX_UI_STANDARDS.md**: Design system and responsive guidelines.
-- **DATABASE_STRUCTURE.md**: Schema definition (V3).
-- **TOURNAMENT_STRUCTURE.md**: Pairing engine logic.
-
----
-
-**Status**: Active Development (V4 Platform)  
-**Last Updated**: January 8, 2026
+- [Product spec](.dev-docs/PROJECT_SUMMARY.md)
+- Schema SQL is in `scripts/sql/`

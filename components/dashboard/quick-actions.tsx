@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus, Play, CalendarPlus, List, Users, Shield } from 'lucide-react';
+import { Plus, Play, CalendarPlus } from 'lucide-react';
 
 interface QuickActionsProps {
   eventId?: string;
@@ -34,7 +34,7 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
           >
             <Link href={newTournamentHref}>
               <Plus className="w-5 h-5 mr-2" />
-              New Tournament
+              New sitting
             </Link>
           </Button>
           <Button
@@ -82,61 +82,16 @@ export default function QuickActions({ eventId }: QuickActionsProps) {
             </Button>
         </div>
 
-        <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-white/5" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
-            <span className="bg-[#09090b] px-3 text-zinc-400 font-heading">Or One-Shot</span>
-            </div>
-        </div>
-
-        {/* One-Shot Actions */}
-        <div className="grid grid-cols-2 gap-3">
-            <Button
-            asChild
-            variant="outline"
-            className="w-full h-12 text-amber-400 hover:text-amber-300 bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
-            >
-            <Link href={newTournamentHref}>
-                <Plus className="w-4 h-4 mr-2" />
-                Tournament
-            </Link>
-            </Button>
-            <Button
-            asChild
-            variant="outline"
-            className="w-full h-12 text-emerald-400 hover:text-emerald-300 bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
-            >
-            <Link href={casualGameHref}>
-                <Play className="w-4 h-4 mr-2" />
-                Casual
-            </Link>
-            </Button>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <Button
-            asChild
-            variant="ghost"
-            className="w-full h-10 text-muted-foreground hover:text-primary hover:bg-white/5 font-heading tracking-wide text-xs"
-          >
-            <Link href="/tournaments">
-              <List className="w-4 h-4 mr-2" />
-              History
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            className="w-full h-10 text-muted-foreground hover:text-primary hover:bg-white/5 font-heading tracking-wide text-xs"
-          >
-            <Link href="/players">
-              <Users className="w-4 h-4 mr-2" />
-              Community
-            </Link>
-          </Button>
-        </div>
+        <Button
+          asChild
+          variant="outline"
+          className="w-full h-12 text-emerald-400 hover:text-emerald-300 bg-white/5 border-white/10 hover:bg-white/10 font-heading tracking-wide"
+        >
+          <Link href={casualGameHref}>
+            <Play className="w-4 h-4 mr-2" />
+            Log a game
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );

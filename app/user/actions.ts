@@ -17,8 +17,8 @@ interface UpdateProfileResult {
  */
 export async function updateMyProfile(data: {
   nickname: string | null;
-  color: string | null;
-  avatar_url: string | null;
+  color?: string | null;
+  avatar_url?: string | null;
 }): Promise<UpdateProfileResult> {
   try {
     const userId = await getCurrentUserId();
@@ -30,11 +30,17 @@ export async function updateMyProfile(data: {
     const supabase = await createClient();
 
     // V3: Update 'profiles' table
-    const updateData = {
+    const updateData: {
+      display_name: string | null;
+      avatar_url?: string | null;
+      color?: string | null;
+      updated_at: string;
+    } = {
       display_name: data.nickname?.trim() || null,
-      avatar_url: data.avatar_url?.trim() || null,
       updated_at: new Date().toISOString()
     };
+    if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url?.trim() || null;
+    if (data.color !== undefined) updateData.color = data.color;
 
     const { error: profileError } = await supabase
       .from('profiles')
@@ -134,10 +140,21 @@ export async function createNewPlayer(): Promise<{ success: boolean; message?: s
  * Logs out the current user.
  */
 export async function logout() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.is_anonymous) {
+      const { error } = await supabase.rpc('clear_player_binding');
+      if (error) return { message: 'Could not switch players. Check your connection and try again.' };
+    } else {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) return { message: 'Could not log out. Check your connection and try again.' };
+    }
+  } catch {
+    return { message: 'Could not log out. Check your connection and try again.' };
+  }
   revalidatePath('/', 'layout');
-  redirect('/login');
+  redirect('/');
 }
 
 
@@ -145,5 +162,5 @@ export async function logout() {
  * @deprecated Use updateMyProfile instead
  */
 export async function updateMyNickname(nickname: string | null): Promise<UpdateProfileResult> {
-  return updateMyProfile({ nickname, color: null, avatar_url: null });
+  return updateMyProfile({ nickname });
 }

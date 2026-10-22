@@ -59,7 +59,7 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
 
     return (
       <Card className="glass-panel opacity-80">
-        <CardHeader className="border-b border-white/5 pb-6">
+        <CardHeader className="border-b border-border pb-6">
           <CardTitle className="text-xl text-foreground font-heading tracking-wide flex items-center gap-2">
             <Trophy className="w-5 h-5 text-muted-foreground" />
             Trophy Case
@@ -75,13 +75,13 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
 
   return (
     <Card className="glass-panel">
-      <CardHeader className={`border-b border-white/5 ${isDashboard ? 'pb-4' : 'pb-6'}`}>
+      <CardHeader className={`border-b border-border ${isDashboard ? 'pb-4' : 'pb-6'}`}>
         <CardTitle className={`${isDashboard ? 'text-lg' : 'text-xl'} text-foreground font-heading tracking-wide flex items-center gap-2`}>
           <Trophy className={`${isDashboard ? 'w-4 h-4' : 'w-5 h-5'} text-primary`} />
           Trophy Case
         </CardTitle>
         {!isDashboard && (
-          <CardDescription className="text-muted-foreground/60 text-xs uppercase tracking-widest">
+          <CardDescription className="text-muted-foreground text-xs uppercase tracking-widest">
             {filteredBadges.length} Achievements Unlocked
           </CardDescription>
         )}
@@ -92,14 +92,14 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
             const isUrl = badge.icon_url?.startsWith('http');
             const rarity = badge.metadata?.rarity;
             
-            let rarityClass = 'border-white/10 bg-white/5 hover:border-primary/30';
+            let rarityClass = 'border-border bg-muted hover:border-primary/30';
             
             if (rarity === 'mythic') {
-              rarityClass = 'border-orange-500/50 bg-orange-500/5 hover:border-orange-500/80 shadow-[0_0_15px_rgba(249,115,22,0.1)]';
+              rarityClass = 'border-orange-500/50 bg-orange-500/5 hover:border-orange-500/80 ';
             } else if (rarity === 'rare') {
-              rarityClass = 'border-amber-400/50 bg-amber-400/5 hover:border-amber-400/80 shadow-[0_0_15px_rgba(251,191,36,0.1)]';
+              rarityClass = 'border-amber-400/50 bg-amber-400/5 hover:border-amber-400/80 ';
             } else if (rarity === 'uncommon') {
-              rarityClass = 'border-blue-400/50 bg-blue-400/5 hover:border-blue-400/80 shadow-[0_0_15px_rgba(96,165,250,0.1)]';
+              rarityClass = 'border-blue-400/50 bg-blue-400/5 hover:border-blue-400/80 ';
             }
             
             return (
@@ -134,7 +134,7 @@ export function TrophyCase({ badges, variant = 'full' }: TrophyCaseProps) {
                         </p>
                       )}
                       {!isDashboard && badge.event_name && (
-                        <UiBadge variant="outline" className="mt-3 text-[10px] border-white/10 text-muted-foreground">
+                        <UiBadge variant="outline" className="mt-3 text-[10px] border-border text-muted-foreground">
                           {badge.event_name}
                         </UiBadge>
                       )}

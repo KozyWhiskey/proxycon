@@ -60,6 +60,7 @@ export interface MatchParticipant {
   profile_id: string;
   result: 'win' | 'loss' | 'draw' | null;
   games_won: number;
+  seat_number?: number | null;
 }
 
 export interface DashboardInitialData {
@@ -247,25 +248,38 @@ function useTournamentSync(tournamentId: string, initialData: DashboardInitialDa
       // Fetch participants using explicit match IDs (Simpler, more robust than join)
       const { data: allParticipants } = await supabase
         .from('match_participants')
-        .select('id, match_id, profile_id, result, games_won')
+        .select('id, match_id, profile_id, participant_id, seat_number, result, games_won')
         .in('match_id', matchIds);
 
       const normalizedParticipants = (allParticipants || []).map((p: any) => ({
         id: p.id,
         match_id: p.match_id,
-        profile_id: p.profile_id,
+        profile_id: p.profile_id || p.participant_id,
         result: p.result,
-        games_won: p.games_won
+        games_won: p.games_won,
+        seat_number: p.seat_number,
       }));
 
       if (tournament && matches) {
-        setData(prev => ({
-          ...prev,
-          tournament: tournament as Tournament,
-          matches: matches as Match[],
-          participants: normalizedParticipants,
-          // Profiles rarely change, keep existing
-        }));
+        setData(prev => {
+          const known = new Map(prev.profiles.map((profile) => [profile.id, profile]));
+          for (const person of normalizedParticipants) {
+            if (person.profile_id && !known.has(person.profile_id)) {
+              known.set(person.profile_id, {
+                id: person.profile_id,
+                username: '',
+                display_name: person.seat_number ? `Seat ${person.seat_number}` : 'Open seat',
+              });
+            }
+          }
+          return {
+            ...prev,
+            tournament: tournament as Tournament,
+            matches: matches as Match[],
+            participants: normalizedParticipants,
+            profiles: Array.from(known.values()),
+          };
+        });
         setLastUpdated(new Date());
       }
     } catch (error) {
@@ -341,7 +355,7 @@ export default function BigScreenDashboard({ tournamentId, initialData, serverSt
         matchHistory.push(convertDbMatchToMatchResult(
           match.id, 
           match.round_number, 
-          parts.map(p => ({ playerId: p.profile_id, result: p.result }))
+          parts.map(p => ({ playerId: p.profile_id, result: p.result, gamesWon: p.games_won || 0 }))
         ));
       }
 

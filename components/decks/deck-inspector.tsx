@@ -17,24 +17,25 @@ interface DeckInspectorProps {
 
 export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorProps) {
   return (
-    <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-white/10 p-0 gap-0">
+    <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border p-0 gap-0">
       <div className="md:grid md:grid-cols-5 h-full">
         
         {/* Left Column: Art (Hero Image) */}
-        <div className="relative h-64 md:h-auto md:col-span-2 bg-black/50 overflow-hidden group">
+        <div className="relative h-64 md:h-auto md:col-span-2 bg-card overflow-hidden group">
           {deck.image_uris?.art_crop || deck.image_uris?.large || deck.image_url ? (
             <>
               <Image
                 src={deck.image_uris?.large || deck.image_uris?.normal || deck.image_url || ''}
                 alt={deck.commander_name || deck.name}
                 fill
+                unoptimized
                 className="object-cover object-top md:object-center"
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-zinc-950/80" />
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground bg-zinc-900">
+            <div className="flex items-center justify-center h-full text-muted-foreground bg-card">
               No Art Available
             </div>
           )}
@@ -46,16 +47,16 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
           {/* Header */}
           <div className="space-y-2">
             <div className="flex justify-between items-start gap-4">
-              <h2 className="text-2xl font-bold font-heading tracking-wide text-foreground leading-tight">
+              <DialogTitle className="text-2xl font-bold leading-tight text-foreground">
                 {deck.name}
-              </h2>
+              </DialogTitle>
               {/* Desktop Edit Button */}
               {isOwner && (
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={onEdit} 
-                  className="hidden md:flex shrink-0 border-white/10 hover:bg-white/10"
+                  className="hidden md:flex shrink-0 border-border hover:bg-muted"
                 >
                   <Edit2 className="w-4 h-4" />
                 </Button>
@@ -63,7 +64,7 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
             </div>
             
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-              <span className="bg-white/5 px-2 py-0.5 rounded border border-white/5">
+              <span className="bg-muted px-2 py-0.5 rounded border border-border">
                 {deck.format}
               </span>
               
@@ -82,7 +83,7 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
             </div>
           </div>
 
-          <div className="w-full h-px bg-white/10" />
+          <div className="w-full h-px bg-muted" />
 
           {/* Commander Details */}
           <div className="space-y-4 flex-1">
@@ -97,9 +98,9 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
               </div>
             </div>
 
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10 space-y-3">
+            <div className="bg-muted rounded-lg p-4 border border-border space-y-3">
               {deck.type_line && (
-                <div className="pb-3 border-b border-white/5">
+                <div className="pb-3 border-b border-border">
                   <p className="font-semibold text-sm">{deck.type_line}</p>
                 </div>
               )}

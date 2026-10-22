@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { Home, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -33,7 +32,7 @@ export default function PageHeader({
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-white/10">
+    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {/* Back/Home Button */}
@@ -42,7 +41,7 @@ export default function PageHeader({
               onClick={handleBack}
               variant="ghost"
               size="icon"
-              className="h-12 w-12 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-white/5"
+              className="h-12 w-12 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
               aria-label={backLabel}
             >
               {backHref === '/' ? (

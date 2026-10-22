@@ -18,14 +18,15 @@ export async function createDeck(formData: FormData): Promise<DeckActionResult> 
   const supabase = await createClient();
   const authData = await getCurrentUser();
 
-  if (!authData || !authData.user) {
-    return { success: false, message: 'Not authenticated' };
+  if (!authData?.profile) {
+    return { success: false, message: 'Choose your name first.' };
   }
 
   const name = formData.get('name') as string;
   const format = formData.get('format') as string;
   const colors = formData.getAll('colors') as string[]; // Array of strings
   const commanderName = formData.get('commanderName') as string | null;
+  const partnerName = formData.get('partnerName') as string | null;
   const imageUrl = formData.get('imageUrl') as string | null;
   const description = formData.get('description') as string | null;
   const manaCost = formData.get('manaCost') as string | null;
@@ -44,11 +45,12 @@ export async function createDeck(formData: FormData): Promise<DeckActionResult> 
   const { data, error } = await supabase
     .from('decks')
     .insert({
-      owner_id: authData.user.id,
+      owner_id: authData.profile.id,
       name,
       format,
       colors: colors.length > 0 ? colors : null,
       commander_name: commanderName || null,
+      partner_name: partnerName || null,
       image_url: imageUrl || null,
       description: description || null,
       mana_cost: manaCost || null,
@@ -76,14 +78,15 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
   const supabase = await createClient();
   const authData = await getCurrentUser();
 
-  if (!authData || !authData.user) {
-    return { success: false, message: 'Not authenticated' };
+  if (!authData?.profile) {
+    return { success: false, message: 'Choose your name first.' };
   }
 
   const name = formData.get('name') as string;
   const format = formData.get('format') as string;
   const colors = formData.getAll('colors') as string[];
   const commanderName = formData.get('commanderName') as string | null;
+  const partnerName = formData.get('partnerName') as string | null;
   const imageUrl = formData.get('imageUrl') as string | null;
   const description = formData.get('description') as string | null;
   const manaCost = formData.get('manaCost') as string | null;
@@ -105,6 +108,7 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
       format,
       colors: colors.length > 0 ? colors : null,
       commander_name: commanderName || null,
+      partner_name: partnerName || null,
       image_url: imageUrl || null,
       description: description || null,
       mana_cost: manaCost || null,
@@ -115,7 +119,7 @@ export async function updateDeck(deckId: string, formData: FormData): Promise<De
       image_uris: imageUris,
     })
     .eq('id', deckId)
-    .eq('owner_id', authData.user.id); // Ensure ownership
+    .eq('owner_id', authData.profile.id); // Ensure ownership
 
   if (error) {
     return { success: false, message: error.message };
@@ -132,15 +136,15 @@ export async function deleteDeck(deckId: string): Promise<DeckActionResult> {
   const supabase = await createClient();
   const authData = await getCurrentUser();
 
-  if (!authData || !authData.user) {
-    return { success: false, message: 'Not authenticated' };
+  if (!authData?.profile) {
+    return { success: false, message: 'Choose your name first.' };
   }
 
   const { error } = await supabase
     .from('decks')
     .delete()
     .eq('id', deckId)
-    .eq('owner_id', authData.user.id); // Ensure ownership
+    .eq('owner_id', authData.profile.id); // Ensure ownership
 
   if (error) {
     return { success: false, message: error.message };
@@ -157,14 +161,14 @@ export async function getUsersDecks(): Promise<{ decks: any[] | null; error?: st
   const supabase = await createClient();
   const authData = await getCurrentUser();
 
-  if (!authData || !authData.user) {
-    return { decks: null, error: 'Not authenticated' };
+  if (!authData?.profile) {
+    return { decks: null, error: 'Choose your name first.' };
   }
 
   const { data, error } = await supabase
     .from('decks')
     .select('*')
-    .eq('owner_id', authData.user.id)
+    .eq('owner_id', authData.profile.id)
     .order('created_at', { ascending: false });
 
   if (error) {

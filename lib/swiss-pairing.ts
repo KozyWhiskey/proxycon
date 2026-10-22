@@ -20,6 +20,8 @@ export interface MatchResult {
   player2Id: string | null; // null indicates bye
   player1Result: 'win' | 'loss' | 'draw' | null;
   player2Result: 'win' | 'loss' | 'draw' | null;
+  player1GamesWon?: number;
+  player2GamesWon?: number;
   roundNumber: number;
 }
 
@@ -180,6 +182,15 @@ export function calculateStandings(
     }
     if (!player2.opponents.includes(match.player1Id)) {
       player2.opponents.push(match.player1Id);
+    }
+
+    const games1 = match.player1GamesWon ?? 0;
+    const games2 = match.player2GamesWon ?? 0;
+    if (games1 + games2 > 0) {
+      player1.gamesWon += games1;
+      player2.gamesWon += games2;
+      player1.gamesPlayed += games1 + games2;
+      player2.gamesPlayed += games1 + games2;
     }
     
     // Process results
@@ -599,7 +610,7 @@ export function generateRound1Pairings(
 export function convertDbMatchToMatchResult(
   matchId: string,
   roundNumber: number,
-  participants: { playerId: string; result: 'win' | 'loss' | 'draw' | null }[]
+  participants: { playerId: string; result: 'win' | 'loss' | 'draw' | null; gamesWon?: number }[]
 ): MatchResult {
   // Single participant = bye
   if (participants.length === 1) {
@@ -610,6 +621,8 @@ export function convertDbMatchToMatchResult(
       player2Id: null,
       player1Result: 'win', // Bye is automatic win
       player2Result: null,
+      player1GamesWon: participants[0].gamesWon ?? BYE_GAMES_WON,
+      player2GamesWon: 0,
     };
   }
   
@@ -621,6 +634,8 @@ export function convertDbMatchToMatchResult(
     player2Id: participants[1].playerId,
     player1Result: participants[0].result,
     player2Result: participants[1].result,
+    player1GamesWon: participants[0].gamesWon ?? 0,
+    player2GamesWon: participants[1].gamesWon ?? 0,
   };
 }
 

@@ -15,7 +15,7 @@ export default async function MatchReportingPage({ params }: PageProps) {
   const supabase = await createClient();
 
   // Get current user and their decks
-  const { user } = await requireProfile();
+  const { profile } = await requireProfile();
   const { decks, error: decksError } = await getUsersDecks(); // Fetch decks for the current user
 
   if (decksError) {
@@ -44,9 +44,26 @@ export default async function MatchReportingPage({ params }: PageProps) {
     notFound();
   }
 
-  // Check if match is already completed
-  const isCompleted = participants.some((p) => p.result !== null);
-  if (isCompleted) {
+  const isCompleted = participants.every((p) => p.result !== null);
+
+  const { data: tournamentRow } = await supabase
+    .from('tournaments')
+    .select('event_id')
+    .eq('id', tournamentId)
+    .single();
+
+  let canCorrect = false;
+  if (tournamentRow?.event_id) {
+    const { data: membership } = await supabase
+      .from('event_members')
+      .select('role')
+      .eq('event_id', tournamentRow.event_id)
+      .eq('profile_id', profile.id)
+      .maybeSingle();
+    canCorrect = membership?.role === 'owner' || membership?.role === 'admin';
+  }
+
+  if ((isCompleted && !canCorrect) || participants.length < 2) {
     // Match already has a result, redirect back to tournament
     return (
       <main className="min-h-screen bg-background pb-24">
@@ -109,8 +126,8 @@ export default async function MatchReportingPage({ params }: PageProps) {
   const player2Name = matchParticipants[1]?.profile?.display_name || matchParticipants[1]?.profile?.username || 'Player 2';
 
   // Determine which participant is the current user (if any)
-  const player1IsCurrentUser = matchParticipants[0]?.profile_id === user.id;
-  const player2IsCurrentUser = matchParticipants[1]?.profile_id === user.id;
+  const player1IsCurrentUser = matchParticipants[0]?.profile_id === profile.id;
+  const player2IsCurrentUser = matchParticipants[1]?.profile_id === profile.id;
 
   return (
     <main className="min-h-screen bg-background pb-24">
@@ -125,10 +142,11 @@ export default async function MatchReportingPage({ params }: PageProps) {
           tournamentId={tournamentId}
           matchId={matchId}
           participants={matchParticipants}
-          userDecks={decks || []} // Pass fetched decks
-          player1ProfileId={player1IsCurrentUser ? user.id : undefined} 
-          player2ProfileId={player2IsCurrentUser ? user.id : undefined}
+          userDecks={decks || []}
+          player1ProfileId={player1IsCurrentUser ? profile.id : undefined}
+          player2ProfileId={player2IsCurrentUser ? profile.id : undefined}
           format={match.game_type}
+          correcting={isCompleted && canCorrect}
         />
       </div>
     </main>

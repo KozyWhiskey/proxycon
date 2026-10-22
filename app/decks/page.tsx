@@ -11,9 +11,7 @@ export default async function DecksPage() {
   const supabase = await createClient();
   const authData = await getCurrentUser();
 
-  if (!authData || !authData.user) {
-    redirect('/login');
-  }
+  if (!authData?.profile) redirect('/');
 
   // Fetch only the profile for the UserHeader, not the linkedPlayer from V1
   // This page assumes V2 profile is available.

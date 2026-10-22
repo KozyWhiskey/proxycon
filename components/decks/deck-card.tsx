@@ -42,7 +42,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
   return (
     <>
       <Card 
-        className="glass-panel relative overflow-hidden group min-h-[160px] border-white/10 hover:border-primary/50 transition-colors cursor-pointer"
+        className="glass-panel relative overflow-hidden group min-h-[160px] border-border hover:border-primary/50 transition-colors cursor-pointer"
         onClick={() => setIsInspectorOpen(true)}
       >
         {deck.image_url && (
@@ -51,6 +51,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
               src={deck.image_url}
               alt={deck.name}
               fill
+              unoptimized
               className="object-cover object-top"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-transparent" />
@@ -65,7 +66,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
           </CardHeader>
           <CardContent className="flex justify-between items-end">
             <div>
-              <p className="text-muted-foreground font-medium text-sm drop-shadow-md flex flex-wrap gap-2 items-center">
+              <div className="text-muted-foreground font-medium text-sm drop-shadow-md flex flex-wrap gap-2 items-center">
                 <span>{deck.format}</span>
                  {deck.mana_cost && <ManaCost manaCost={deck.mana_cost} size={14} className="opacity-80" />}
                  {deck.set_code && (
@@ -76,7 +77,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
                     title={deck.set_name || deck.set_code}
                    />
                  )}
-              </p>
+              </div>
               {deck.commander_name && (
                   <span className="block text-xs text-muted-foreground/80 font-normal mt-0.5">
                     {deck.commander_name}
@@ -93,7 +94,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
                         color === 'B' ? 'bg-[#150b00]' : 
                         color === 'R' ? 'bg-[#d3202a]' : 
                         'bg-[#00733e]'
-                      } border border-white/20 shadow-sm`}
+                      } border border-border shadow-sm`}
                       title={color}
                     />
                   ))}
@@ -105,7 +106,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground border-white/10 bg-black/20 backdrop-blur-sm hover:bg-black/40"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground border-border bg-card backdrop-blur-sm hover:bg-card"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsEditOpen(true);

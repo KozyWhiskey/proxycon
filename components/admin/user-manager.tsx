@@ -1,107 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getUsers, updateUserRole } from '@/app/admin/actions';
-import { Profile } from '@/lib/types';
+import Link from 'next/link';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateUserRole } from '@/app/admin/actions';
+import { AddPlayerForm } from '@/components/who/add-player-form';
+import type { Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Shield, User } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function UserManager() {
-  const [users, setUsers] = useState<Profile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+export default function UserManager({ users, guestProfileIds = [], currentUserId }: {
+  users: Profile[];
+  guestProfileIds?: string[];
+  currentUserId: string;
+}) {
+  const [search, setSearch] = useState('');
+  const [pending, start] = useTransition();
+  const router = useRouter();
+  const shown = users.filter(user => `${user.display_name || ''} ${user.username || ''}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  async function loadUsers() {
-    setIsLoading(true);
-    const result = await getUsers();
-    if (result.success && result.data) {
-      setUsers(result.data);
-    }
-    setIsLoading(false);
+  function changeRole(user: Profile) {
+    start(async () => {
+      try {
+        const result = await updateUserRole(user.id, user.role === 'admin' ? 'user' : 'admin');
+        if (!result.success) { toast.error(result.message || 'Could not change this role.'); return; }
+        toast.success('Player role updated.');
+        router.refresh();
+      } catch { toast.error('Could not change this role. Check your connection and try again.'); }
+    });
   }
 
-  async function handleRoleToggle(userId: string, currentRole: 'user' | 'admin') {
-    setIsUpdating(userId);
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    const result = await updateUserRole(userId, newRole);
-    
-    if (result.success) {
-      toast.success('User role updated');
-      await loadUsers();
-    } else {
-      toast.error(result.message);
-    }
-    setIsUpdating(null);
-  }
-
-  if (isLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
-  }
-
-  return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Manage user roles and permissions.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarImage src={user.avatar_url || undefined} />
-                    <AvatarFallback>{user.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{user.display_name}</div>
-                    <div className="text-xs text-muted-foreground">@{user.username}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
-                    {user.role === 'admin' ? <Shield className="w-3 h-3 mr-1" /> : <User className="w-3 h-3 mr-1" />}
-                    {user.role}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {new Date(user.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    disabled={isUpdating === user.id}
-                    onClick={() => handleRoleToggle(user.id, user.role)}
-                  >
-                    {isUpdating === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                      user.role === 'admin' ? 'Revoke Admin' : 'Make Admin'
-                    )}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
+  return <section className="panel space-y-5">
+    <AddPlayerForm heading="Add a player" />
+    <div><h2 className="text-2xl">Players</h2><p className="subtle mt-2">Browse profiles and manage administrator access. Your own admin role stays protected.</p></div>
+    <Input aria-label="Find a player account" placeholder="Find a player" className="max-w-md" value={search} onChange={event => setSearch(event.target.value)} />
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Player</th><th>Account</th><th className="text-right">Access</th></tr></thead><tbody>{shown.map(user => {
+      const guest = guestProfileIds.includes(user.id);
+      const self = user.id === currentUserId;
+      const name = user.display_name?.trim() || user.username || 'Player';
+      return <tr key={user.id}><td><Link href={`/players/${user.id}`} className="flex items-center gap-3"><Avatar><AvatarImage src={user.avatar_url || undefined} alt="" /><AvatarFallback>{name.slice(0,2).toUpperCase()}</AvatarFallback></Avatar><span><strong className="font-medium">{name}{self ? ' (you)' : ''}</strong>{user.username && <small className="block text-muted-foreground">@{user.username.replace(/^@/,'').trim()}</small>}</span></Link></td><td className="text-muted-foreground">{guest ? 'Weekend guest' : user.role === 'admin' ? 'Administrator' : 'Player'}</td><td className="text-right"><Button variant="outline" size="sm" disabled={pending || guest || self} onClick={() => changeRole(user)}>{self ? 'Your admin account' : guest ? 'Player access' : user.role === 'admin' ? 'Revoke admin' : 'Make admin'}</Button></td></tr>;
+    })}</tbody></table></div>
+    {!shown.length && <p role="status" className="subtle">No players found.</p>}
+  </section>;
 }

@@ -1,329 +1,118 @@
-import { Suspense } from "react";
-import { createClient } from "@/utils/supabase/server";
-import { requireProfile } from "@/lib/get-current-user";
-import { getUserGuilds } from "@/app/guilds/actions";
-import ActiveTournament from "@/components/dashboard/active-tournament";
-import ActiveEvents from "@/components/dashboard/active-events";
-import MyStats from "@/components/dashboard/my-stats";
-import QuickActions from "@/components/dashboard/quick-actions";
-import MyGuilds from "@/components/dashboard/my-guilds";
-import PendingInvites from "@/components/dashboard/pending-invites";
-import UserHeader from "@/components/dashboard/user-header";
-import Feed from "@/components/dashboard/feed";
-import { TrophyCase } from "@/components/profile/trophy-case";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+import Link from 'next/link';
+import { Plus, ArrowUpRight, CalendarDays } from 'lucide-react';
+import { eventDates } from '@/lib/display';
+import { LiveRefresh } from '@/components/events/live-refresh';
+import { createClient } from '@/utils/supabase/server';
+import { getCurrentUser } from '@/lib/get-current-user';
+import { joinEventById } from '@/app/weekend/actions';
+import { ActButton } from '@/components/weekend/act-button';
+import { LiveSlip } from '@/components/weekend/live-slip';
+import { Button } from '@/components/ui/button';
+import { NamePicker } from '@/components/who/name-picker';
+import { LogoutButton } from '@/components/auth/logout-button';
 
-export default async function Dashboard() {
+export default async function HomePage() {
+  const current = await getCurrentUser();
   const supabase = await createClient();
-  const { user, profile } = await requireProfile();
-
-  // Fetch Guilds
-  const userGuilds = await getUserGuilds(user.id);
-  const pendingInvites = userGuilds.filter(g => g.status === 'invited');
-
-  // --- 1. Fetch Active Events ---
-  const { data: activeEventsRaw } = await supabase
-    .from('events')
-    .select(`
-      id, name, start_date, end_date, is_active,
-      event_members!inner(role)
-    `)
-    .eq('event_members.profile_id', user.id)
-    .eq('is_active', true)
-    .order('start_date', { ascending: false })
-    .limit(3);
-
-  const activeEvents = activeEventsRaw?.map(e => ({
-    id: e.id,
-    name: e.name,
-    start_date: e.start_date,
-    end_date: e.end_date,
-    is_active: e.is_active,
-    role: e.event_members[0]?.role
-  })) || [];
-
-  // --- 2. Fetch Active Tournament ---
-  // Find tournaments where the user is a participant and status is active/pending
-  const { data: activeTournamentData } = await supabase
-    .from('tournaments')
-    .select(`
-      id, name, format, status,
-      tournament_participants!inner(profile_id)
-    `)
-    .eq('tournament_participants.profile_id', user.id)
-    .in('status', ['active', 'pending'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  let currentMatch = null;
-  if (activeTournamentData) {
-    // If there is an active tournament, find the user's current match
-    const { data: matchData } = await supabase
-      .from('matches')
-      .select(`
-        id, round_number,
-        match_participants!inner(
-          id, profile_id, result,
-          profile:profiles(id, display_name, username)
-        )
-      `)
-      .eq('tournament_id', activeTournamentData.id)
-      .eq('match_participants.profile_id', user.id)
-      .order('round_number', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (matchData) {
-        // We need to fetch the *full* match participants, not just the user's
-        // The previous query inner joined on the user, so it only returns the user's participant row?
-        // Actually, Supabase inner join filters the parent rows, but the nested select might return all if configured correctly.
-        // However, standard SQL behavior would filter. To be safe, let's fetch the match details separately.
-        
-        const { data: fullMatchData } = await supabase
-        .from('matches')
-        .select(`
-            id, round_number,
-            participants:match_participants(
-            id, profile_id, result,
-            profile:profiles(id, display_name, username)
-            )
-        `)
-        .eq('id', matchData.id)
-        .single();
-        
-        if (fullMatchData) {
-             // Map to the shape expected by ActiveTournament
-             // The component expects `participants` array on the match object
-             currentMatch = fullMatchData;
-        }
-    }
+  if (!current?.user) {
+    return <main className="page form-page"><h1 className="text-3xl">The phone session did not start.</h1><p className="subtle mt-4">Supabase is blocking phone sign-in. Open Authentication, then Providers, and turn on Anonymous. Reload this page after that.</p><Button asChild className="mt-6"><a href="https://supabase.com/dashboard/project/apnwvugvwlfopxtryjwk/auth/providers" target="_blank" rel="noreferrer">Open Anonymous sign-in settings</a></Button><Button asChild variant="outline" className="mt-3"><Link href="/login">Sign in with an account</Link></Button></main>;
   }
+  if (!current.profile && current.mode !== 'house') {
+    const { data: roster } = await supabase.from('profiles').select('id, display_name, color').eq('selectable', true).not('display_name', 'is', null).order('display_name');
+    const players = (roster || []).flatMap((player) => {
+      const name = player.display_name?.trim();
+      return name ? [{ id: player.id, name, color: player.color }] : [];
+    });
+    return <NamePicker players={players} />;
+  }
+  const profile = current.profile;
+  const playerId = profile?.id || '';
 
-  // --- 3. Fetch Stats ---
-  // A simplified stats fetch for the dashboard
-  
-  // Get all completed matches for the user
-  const { data: userMatches } = await supabase
+  const { data: events } = await supabase
+    .from('events')
+    .select('id, name, start_date, end_date, is_active')
+    .order('start_date', { ascending: false });
+
+  const { data: memberships } = await supabase
+    .from('event_members')
+    .select('event_id')
+    .eq('profile_id', playerId);
+  const joined = new Set((memberships || []).map((row) => row.event_id));
+
+  const { data: openSeats } = await supabase
     .from('match_participants')
-    .select('result, match:matches(tournament_id, game_type)')
-    .eq('profile_id', user.id)
-    .not('result', 'is', null);
+    .select('match_id, result')
+    .eq('profile_id', playerId)
+    .is('result', null);
+  const openIds = [...new Set((openSeats || []).map((seat) => seat.match_id).filter(Boolean))] as string[];
+  const { data: openMatches } = openIds.length
+    ? await supabase
+      .from('matches')
+      .select('id, event_id, tournament_id, table_label, table_number, game_type, format_label, round_number, started_at')
+      .in('id', openIds)
+    : { data: [] as OpenMatch[] };
 
-  let tournamentWins = 0;
-  let tournamentLosses = 0;
-  let tournamentDraws = 0;
-  let casualWins = 0;
+  const matchIds = (openMatches || []).map((match) => match.id);
+  const { data: opponents } = matchIds.length
+    ? await supabase
+      .from('match_participants')
+      .select('match_id, profile_id, profile:profiles(display_name, username)')
+      .in('match_id', matchIds)
+    : { data: [] as OpponentRow[] };
 
-  userMatches?.forEach((m) => {
-    // Check if match is tournament or casual
-    const isTournament = !!(m.match as any)?.tournament_id;
-    
-    if (isTournament) {
-      if (m.result === 'win') tournamentWins++;
-      else if (m.result === 'loss') tournamentLosses++;
-      else if (m.result === 'draw') tournamentDraws++;
-    } else {
-      if (m.result === 'win') casualWins++;
-    }
-  });
-
-  const totalTournamentMatches = tournamentWins + tournamentLosses + tournamentDraws;
-  const tournamentWinRate = totalTournamentMatches > 0 
-    ? ((tournamentWins / totalTournamentMatches) * 100).toFixed(1) 
-    : "0.0";
-
-  // Fetch casual win details (limit 5)
-  const { data: casualWinDetailsRaw } = await supabase
-    .from('match_participants')
-    .select(`
-      created_at,
-      match:matches!inner(
-        game_type,
-        created_at
-      )
-    `)
-    .eq('profile_id', user.id)
-    .eq('result', 'win')
-    .is('match.tournament_id', null)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  const casualWinDetails = casualWinDetailsRaw?.map(d => ({
-    gameType: (d.match as any)?.game_type || 'Casual',
-    createdAt: (d.match as any)?.created_at || new Date().toISOString(),
-    boardGameName: null,
-    opponents: []
-  })) || [];
-
-  // --- 4. Fetch Feed ---
-  // Recent 5 matches system-wide
-  const { data: feedMatches } = await supabase
-    .from('matches')
-    .select(`
-      id, tournament_id, round_number, game_type, created_at,
-      participants:match_participants(
-        id, player_id:profile_id, result,
-        player:profiles(id, name:username, nickname:display_name)
-      )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  // Recent 5 badges system-wide (for feed)
-  const { data: feedBadges } = await supabase
-    .from('profile_badges')
-    .select(`
-      id, awarded_at,
-      badges (name, description, icon_url),
-      profile:profiles (display_name)
-    `)
-    .order('awarded_at', { ascending: false })
-    .limit(5);
-
-  // Combine and sort feed items
-  const feedItems = [
-    ...(feedMatches || []).map((m: any) => ({
-      type: 'match' as const,
-      id: m.id,
-      tournament_id: m.tournament_id,
-      round_number: m.round_number,
-      game_type: m.game_type,
-      created_at: m.created_at,
-      participants: m.participants.map((p: any) => ({
-        id: p.id,
-        player_id: p.player_id,
-        result: p.result,
-        player: {
-          id: p.player.id,
-          name: p.player.name,
-          nickname: p.player.nickname
-        }
-      }))
-    })),
-    ...(feedBadges || []).map((b: any) => ({
-      type: 'badge' as const,
-      id: b.id,
-      awarded_at: b.awarded_at,
-      badge: {
-        name: b.badges?.name,
-        description: b.badges?.description,
-        icon_url: b.badges?.icon_url
-      },
-      profile: {
-        display_name: b.profile?.display_name || 'Unknown'
-      }
-    }))
-  ].sort((a, b) => {
-    const dateA = a.type === 'match' ? new Date(a.created_at) : new Date(a.awarded_at);
-    const dateB = b.type === 'match' ? new Date(b.created_at) : new Date(b.awarded_at);
-    return dateB.getTime() - dateA.getTime();
-  }).slice(0, 5);
-
-  // --- 5. Fetch Badges (User's Trophy Case) ---
-  const { data: rawBadges } = await supabase
-    .from('profile_badges')
-    .select(`
-      awarded_at,
-      badges (id, slug, name, description, icon_url, metadata),
-      events (name)
-    `)
-    .eq('profile_id', user.id)
-    .order('awarded_at', { ascending: false });
-
-  const badges = rawBadges?.map((item: any) => ({
-    ...item.badges,
-    awarded_at: item.awarded_at,
-    event_name: item.events?.name
-  })) || [];
+  const slips = (openMatches || [])
+    .map((match) => {
+      const people = (opponents || [])
+        .filter((seat) => seat.match_id === match.id && seat.profile_id !== playerId)
+        .map((seat) => {
+          const profile = Array.isArray(seat.profile) ? seat.profile[0] : seat.profile;
+          return profile?.display_name || profile?.username || 'Opponent';
+        });
+      return {
+        id: match.id,
+        tournament: Boolean(match.tournament_id),
+        href: match.tournament_id
+          ? `/tournament/${match.tournament_id}`
+          : `/events/${match.event_id}/match/${match.id}`,
+        kicker: match.table_label || (match.table_number ? `Table ${match.table_number}` : match.format_label || 'Game'),
+        title: people.length ? people.join(', ') : 'Waiting on a seat',
+        detail: match.tournament_id
+          ? match.started_at ? `Round ${match.round_number} is live` : `Round ${match.round_number} pairings are posted`
+          : 'Quick match',
+      };
+    })
+    .sort((a, b) => Number(b.tournament) - Number(a.tournament));
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">
-      {/* 1. Header Section */}
-      <header className="flex flex-col gap-2">
-         <UserHeader 
-           displayName={profile.display_name || profile.username || 'Player'}
-           username={profile.username}
-           avatarUrl={profile.avatar_url}
-         />
-         <Separator className="bg-white/10 mt-4" />
-      </header>
-
-      {/* 2. Main Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        
-        {/* Left Column: Actions & Active Status (Desktop: 8 cols) */}
-        <div className="md:col-span-8 flex flex-col gap-6">
-          <section className="flex flex-col gap-6">
-             <Suspense fallback={<Skeleton className="h-[200px] w-full rounded-xl bg-white/5" />}>
-               
-               {/* Pending Invites */}
-               <PendingInvites invites={pendingInvites} userId={user.id} />
-
-               {/* Active Tournament (Full Width) */}
-               {activeTournamentData ? (
-                <ActiveTournament 
-                  tournament={activeTournamentData as any} 
-                  currentMatch={currentMatch as any}
-                  currentProfileId={user.id}
-                />
-               ) : (
-                <ActiveTournament 
-                  tournament={null} 
-                  currentMatch={null}
-                  currentProfileId={user.id}
-                />
-               )}
-               
-               {/* Show Active Events row below if any exist */}
-               {activeEvents.length > 0 && (
-                 <div className="w-full">
-                    <ActiveEvents events={activeEvents} />
-                 </div>
-               )}
-            </Suspense>
-          </section>
-
-          <section>
-             <QuickActions />
-          </section>
-
-          <section className="hidden md:block">
-             <Feed items={feedItems} />
-          </section>
-        </div>
-
-        {/* Right Column: Stats (Desktop: 4 cols) */}
-        <div className="md:col-span-4 flex flex-col gap-6">
-          <section>
-             <MyStats 
-               casualWins={casualWins}
-               casualWinDetails={casualWinDetails}
-               tournamentFirstPlace={0} // Placeholder for now as calculation is complex
-               tournamentSecondPlace={0}
-               tournamentThirdPlace={0}
-               tournamentWins={tournamentWins}
-               tournamentLosses={tournamentLosses}
-               tournamentDraws={tournamentDraws}
-               tournamentWinRate={tournamentWinRate}
-             />
-          </section>
-          
-          <section>
-             <MyGuilds guilds={userGuilds} userId={user.id} />
-          </section>
-
-          <section>
-            <TrophyCase badges={badges} variant="dashboard" />
-          </section>
-
-          {/* Mobile Only Feed (Shown below stats on mobile) */}
-          <section className="md:hidden">
-             <Feed items={feedItems} />
-          </section>
-        </div>
-      </div>
-    </div>
+    <main className="page"><LiveRefresh />
+      <header className="page-heading"><div><p className="eyebrow">Your playgroup</p><h1>Events</h1><p className="subtle">{profile ? `Welcome back, ${profile.display_name}. Find your next table.` : 'House screen. Open a game and record it on the player who played.'}</p></div><div className="flex flex-wrap gap-2"><LogoutButton isGuest={current.user.is_anonymous} variant="outline" /><Button asChild><Link href="/events/new"><Plus size={16} className="mr-2" />Create event</Link></Button></div></header>
+      {slips.length > 0 && <section className="stack" aria-label="Your live matches">{slips.map(slip => <LiveSlip key={slip.id} href={slip.href} kicker={slip.kicker} title={slip.title} detail={slip.detail} />)}</section>}
+      <section><div className="section-heading"><h2>Your events</h2><span className="subtle">{(events || []).length} events</span></div>
+       <div className="event-grid">{(events || []).map(event => {
+         const mine = joined.has(event.id);
+         return <article className="event-card" key={event.id}><div className="event-card-top"><span className={`status ${event.is_active !== false ? 'live' : ''}`}>{event.is_active === false ? 'Closed' : 'Open to join'}</span><h2><Link href={`/events/${event.id}`}>{event.name}</Link></h2></div><div className="event-card-body"><div><p className="subtle">{eventDates(event.start_date,event.end_date)}</p><span className="subtle">{mine ? 'You’re in the playgroup' : 'Join the playgroup to play'}</span></div>{mine ? <Button asChild variant="outline"><Link href={`/events/${event.id}`}>Open <ArrowUpRight size={15} className="ml-2" /></Link></Button> : <ActButton label="Join event" action={joinEventById.bind(null,event.id)} />}</div></article>;
+       })}</div>
+       {!(events || []).length && <div className="empty-state"><CalendarDays size={28} className="text-primary" /><h3>Your next game night starts here.</h3><p>Create an event, share it with your friends, then add a draft or a quick Commander game.</p><Button asChild><Link href="/events/new">Create your first event</Link></Button></div>}
+      </section>
+      <div className="panel flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-xl">Bring your favorite decks.</h2><p className="subtle mt-2">Save commanders once. Pick them again at your next table.</p></div><Button asChild variant="outline"><Link href="/decks">My decks <ArrowUpRight size={15} className="ml-2" /></Link></Button></div>
+    </main>
   );
+}
+
+interface OpenMatch {
+  id: string;
+  event_id: string | null;
+  tournament_id: string | null;
+  table_label: string | null;
+  table_number: number | null;
+  game_type: string;
+  format_label: string | null;
+  round_number: number | null;
+  started_at: string | null;
+}
+
+interface OpponentRow {
+  match_id: string;
+  profile_id: string | null;
+  profile: { display_name: string | null; username: string | null } | { display_name: string | null; username: string | null }[] | null;
 }

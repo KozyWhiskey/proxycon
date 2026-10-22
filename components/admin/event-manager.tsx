@@ -47,7 +47,7 @@ export default function EventManager() {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-slate-800">
       <CardHeader>
         <CardTitle>Event Management</CardTitle>
         <CardDescription>Oversee all events on the platform.</CardDescription>

@@ -77,7 +77,7 @@ export function RichTextDisplay({ text, className = '' }: RichTextDisplayProps) 
               return (
                 <Tooltip key={subKey}>
                   <TooltipTrigger asChild>
-                    <span className="cursor-help border-b border-dotted border-white/30 hover:border-primary/50 transition-colors">
+                    <span className="cursor-help border-b border-dotted border-border hover:border-primary/50 transition-colors">
                       {subPart}
                     </span>
                   </TooltipTrigger>

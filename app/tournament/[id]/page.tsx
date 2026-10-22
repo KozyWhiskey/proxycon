@@ -1,491 +1,351 @@
-import { createClient } from '@/utils/supabase/server';
-import { notFound, redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { AddPlayers } from '@/components/events/add-players';
+import { addTournamentPlayer } from '@/app/weekend/actions';
+import { LiveRefresh } from '@/components/events/live-refresh';
+import { LiveSlip } from '@/components/weekend/live-slip';
 import Link from 'next/link';
-import RoundGeneratedToast from '@/components/tournament/round-generated-toast';
-import RoundTimer from '@/components/tournament/round-timer';
-import PageHeader from '@/components/ui/page-header';
-import { Monitor, Trophy, Users, Crown } from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
+import { gamesWonFor, loadEventBoard, matchPlayers, nameOf, standingsFor, currentRound } from '@/lib/event-board';
+import { chartSeatCount, manualTieGroups, needsSeats, placeLabel, podForSeat, suggestedRounds, tournamentLabel, type HistoryMatch } from '@/lib/weekend';
 import {
-  calculateStandings,
-  sortStandings,
-  convertDbMatchToMatchResult,
-  formatOMWPercentage,
-  type MatchResult,
-} from '@/lib/swiss-pairing';
+  addFinal,
+  addSeat,
+  claimSeat,
+  clearPairings,
+  deleteTournament,
+  dropPlayer,
+  joinTournament,
+  postPairings,
+  randomizeSeats,
+  startRound,
+} from '@/app/weekend/actions';
+import { ActButton } from '@/components/weekend/act-button';
+import { FinishForm } from '@/components/weekend/finish-form';
+import { MatchReporter } from '@/components/weekend/match-reporter';
+import { RoundClock } from '@/components/weekend/round-clock';
+import { SeatChart } from '@/components/weekend/seat-chart';
+import { MatchDay, MovePlayer, RoundEditor, SealedSwap, TableName } from '@/components/weekend/tournament-tools';
 
-import ForceStartButton from '@/components/tournament/force-start-button';
-import { cn } from '@/lib/utils';
-
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function TournamentPage({ params }: PageProps) {
+export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-
-  // Fetch tournament
-  const { data: tournament, error: tournamentError } = await supabase
+  const { data: tournament } = await supabase
     .from('tournaments')
-    .select('id, event_id, name, format, status, max_rounds, round_duration_minutes')
+    .select('id, event_id, format')
     .eq('id', id)
-    .single();
-
-  if (tournamentError || !tournament) {
-    notFound();
-  }
-
-  // If tournament is pending, redirect to seating page
-  if (tournament.status === 'pending') {
-    redirect(`/tournament/${id}/seating`);
-  }
-
-  const backHref = tournament.event_id ? `/events/${tournament.event_id}` : '/';
-  const backLabel = tournament.event_id ? 'Event Dashboard' : 'Home';
-
-  // Fetch all matches for this tournament, grouped by round
-  const { data: matches } = await supabase
-    .from('matches')
-    .select('id, round_number, game_type')
-    .eq('tournament_id', id)
-    .order('round_number', { ascending: true });
-
-  if (!matches || matches.length === 0) {
-    return (
-      <main className="min-h-screen bg-background p-4 pb-24">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h1 className="text-4xl font-bold font-heading text-foreground">{tournament.name}</h1>
-          <Card className="glass-panel">
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground">No matches found for this tournament.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    );
-  }
-
-  // Get the current round (highest round number)
-  const currentRound = Math.max(...matches.map((m) => m.round_number || 1));
-  const currentRoundMatches = matches.filter((m) => m.round_number === currentRound);
-
-  // Fetch timer state for current round (use first match of round)
-  const { data: timerMatch } = await supabase
-    .from('matches')
-    .select('started_at, paused_at, remaining_seconds')
-    .eq('tournament_id', id)
-    .eq('round_number', currentRound)
-    .limit(1)
     .maybeSingle();
-
-  // Get all tournament participants
-  const { data: tournamentParticipants } = await supabase
-    .from('tournament_participants')
-    .select('profile_id')
-    .eq('tournament_id', id);
-
-  const profileIds = tournamentParticipants?.map((tp) => tp.profile_id) || [];
-
-  // Fetch all match participants for standings calculation
-  const matchIds = matches.map((m) => m.id);
-  const { data: allParticipants } = await supabase
-    .from('match_participants')
-    .select('match_id, profile_id, result, games_won')
-    .in('match_id', matchIds);
-
-  // Build match history for Swiss standings calculation
-  const participantsByMatch = new Map<string, { profileId: string; result: 'win' | 'loss' | 'draw' | null; gamesWon: number }[]>();
-  allParticipants?.forEach((p) => {
-    if (!participantsByMatch.has(p.match_id)) {
-      participantsByMatch.set(p.match_id, []);
-    }
-    participantsByMatch.get(p.match_id)!.push({
-      profileId: p.profile_id,
-      result: p.result as 'win' | 'loss' | 'draw' | null,
-      gamesWon: p.games_won || 0,
-    });
-  });
-
-  // Convert to MatchResult format for Swiss standings
-  const matchHistory: MatchResult[] = [];
-  for (const match of matches) {
-    const participants = participantsByMatch.get(match.id) || [];
-    if (participants.length > 0) {
-      matchHistory.push(
-        convertDbMatchToMatchResult(
-          match.id,
-          match.round_number || 1,
-          participants.map((p) => ({ playerId: p.profileId, result: p.result }))
-        )
-      );
-    }
+  if (!tournament?.event_id) notFound();
+  if (!needsSeats(tournament.format) && tournament.format !== 'sealed') {
+    redirect(`/events/${tournament.event_id}/play`);
   }
 
-  // Calculate standings using MTG Swiss rules (3-1-0 point system, OMW% tiebreaker)
-  const standingsMap = calculateStandings(profileIds, matchHistory);
-  
-  // Also track games won from the database for display
-  const gamesWonMap = new Map<string, number>();
-  allParticipants?.forEach((p) => {
-    const current = gamesWonMap.get(p.profile_id) || 0;
-    gamesWonMap.set(p.profile_id, current + (p.games_won || 0));
-  });
+  const board = await loadEventBoard(tournament.event_id);
+  if (!board) notFound();
+  const row = board.tournaments.find((item) => item.id === id);
+  if (!row) notFound();
 
-  // Fetch profile details for standings
-  const { data: standingsProfiles } = await supabase
-    .from('profiles')
-    .select('id, username, display_name')
-    .in('id', profileIds);
-
-  const profilesMap = new Map(standingsProfiles?.map((p) => [p.id, p]) || []);
-
-  // Convert to sorted array using MTG tiebreakers (Points > OMW% > GW%)
-  const sortedStandings = sortStandings(Array.from(standingsMap.values()));
-  
-  const standings = sortedStandings.map((standing) => ({
-    id: standing.playerId,
-    wins: standing.matchWins,
-    losses: standing.matchLosses,
-    draws: standing.matchDraws,
-    points: standing.points,
-    totalGamesWon: gamesWonMap.get(standing.playerId) || 0,
-    omwPercentage: standing.opponentMatchWinPercentage,
-    mwPercentage: standing.matchWinPercentage,
-    gwPercentage: standing.gameWinPercentage,
-    receivedBye: standing.receivedBye,
-    profile: profilesMap.get(standing.playerId),
-  }));
-
-  // Fetch participants for current round matches
-  const matchDetails = await Promise.all(
-    currentRoundMatches.map(async (match) => {
-      const { data: participants } = await supabase
-        .from('match_participants')
-        .select('id, profile_id, result, games_won')
-        .eq('match_id', match.id);
-
-      if (!participants || participants.length === 0) {
-        return { match, participants: [] };
-      }
-
-      // Fetch profile details
-      const profileIds = participants.map((p) => p.profile_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .in('id', profileIds);
-
-      const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-      return {
-        match,
-        participants: participants.map((p) => ({
-          ...p,
-          profile: profilesMap.get(p.profile_id),
-        })),
-      };
-    })
-  );
-
-  interface ParticipantWithProfile {
-    id: string;
-    profile_id: string;
-    result: string | null;
-    games_won: number | null;
-    profile?: {
-      id: string;
-      username: string;
-      display_name: string | null;
-    };
+  const roster = board.roster.filter((person) => person.tournament_id === id);
+  const joined = roster.filter((person) => person.profile_id && !person.dropped);
+  const mine = joined.find((person) => person.profile_id === board.userId);
+  const round = currentRound(board, id);
+  const posted = round.matches.length > 0 && round.matches.every((match) => !match.started_at);
+  const started = round.matches.some((match) => match.started_at);
+  const startedAt = round.matches.find((match) => match.started_at)?.started_at;
+  const standings = standingsFor(board, id);
+  const history: HistoryMatch[] = [];
+  for (const match of board.matches.filter((item) => item.tournament_id === id && !item.is_final)) {
+    const seats = matchPlayers(board, match.id).filter((seat) => seat.participant_id && seat.result);
+    if (seats.length === 1) {
+      history.push({ player1: seats[0].participant_id!, player2: null, result1: 'win', result2: null });
+    } else if (seats.length >= 2 && seats[0].result && seats[1].result) {
+      history.push({
+        player1: seats[0].participant_id!,
+        player2: seats[1].participant_id!,
+        result1: seats[0].result,
+        result2: seats[1].result,
+      });
+    }
   }
-
-  const getMatchStatus = (participants: ParticipantWithProfile[]) => {
-    const winner = participants.find((p) => p.result === 'win');
-    const hasDraw = participants.every((p) => p.result === 'draw');
-    const hasResult = participants.some((p) => p.result !== null);
-
-    if (!hasResult) {
-      return 'Waiting for Result';
-    }
-
-    // Show game score if available
-    if (participants.length === 2) {
-      const p1Games = participants[0].games_won || 0;
-      const p2Games = participants[1].games_won || 0;
-      const hasGameScore = p1Games > 0 || p2Games > 0;
-
-      if (hasDraw && hasGameScore) {
-        return `Draw (${p1Games}-${p2Games})`;
-      }
-
-      if (winner && winner.profile && hasGameScore) {
-        const winnerGames = winner.games_won || 0;
-        const loser = participants.find((p) => p.result === 'loss');
-        const loserGames = loser?.games_won || 0;
-        return `${winner.profile.display_name || winner.profile.username} Won (${winnerGames}-${loserGames})`;
-      }
-    }
-
-    if (hasDraw) {
-      return 'Draw';
-    }
-
-    if (winner && winner.profile) {
-      return `${winner.profile.display_name || winner.profile.username} Won`;
-    }
-
-    // Check for bye (only one participant with win)
-    if (participants.length === 1 && participants[0].result === 'win') {
-      return `${participants[0].profile?.display_name || participants[0].profile?.username || 'Player'} (Bye)`;
-    }
-
-    return 'Match Completed';
-  };
-
-  const subtitle = `Round ${currentRound} of ${tournament.max_rounds || '?'} • ${tournament.format}${
-    tournament.status === 'completed' ? ' • Completed' : ''
-  }`;
+  const ties = row.status === 'completed' ? [] : manualTieGroups(standings, history);
+  const finalMatch = board.matches.find((match) => match.tournament_id === id && match.is_final);
+  const seatNumbers = roster.map((person) => person.draft_seat || 0);
+  const seatCount = chartSeatCount(seatNumbers, joined.length);
+  const seats = Array.from({ length: seatCount }, (_, index) => index + 1);
+  const bringer = row.brought_by ? nameOf(board, row.brought_by) : null;
+  const openNames = round.matches
+    .filter((match) => match.started_at && matchPlayers(board, match.id).some((seat) => !seat.result))
+    .map((match) => match.table_label || `Table ${match.table_number}`);
 
   return (
-    <main className="min-h-screen bg-background pb-24">
-      <PageHeader
-        title={tournament.name}
-        subtitle={subtitle}
-        backHref={backHref}
-        backLabel={backLabel}
-      />
-      <RoundGeneratedToast />
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
-        {/* Dashboard Link */}
-        <Button
-          asChild
-          variant="outline"
-          className="w-full h-12 border-primary/20 text-primary hover:bg-primary/10 hover:text-primary transition-all group"
-        >
-          <Link href={`/tournament/${id}/dashboard`}>
-            <Monitor className="w-5 h-5 mr-2 group-hover:text-glow" />
-            Open Shared Screen Dashboard
-          </Link>
-        </Button>
-
-        {/* Round Timer */}
-        {tournament.status === 'active' && (
-          <RoundTimer
-            tournamentId={id}
-            roundNumber={currentRound}
-            initialTimerData={{
-              roundDurationMinutes: tournament.round_duration_minutes || 50,
-              startedAt: timerMatch?.started_at || null,
-              pausedAt: timerMatch?.paused_at || null,
-              remainingSeconds: timerMatch?.remaining_seconds ?? null,
-            }}
-          />
+    <main className="page form-page">
+      <LiveRefresh />
+      <header className="space-y-2">
+        <Link href={`/events/${tournament.event_id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
+        <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">{tournamentLabel(row.format)}</p>
+        <h1 className="font-heading text-4xl">{row.name}</h1>
+        <p className="text-sm text-muted-foreground">
+          {joined.length} players · {row.max_rounds} rounds
+          {joined.length >= 6 ? ` · suggestion is ${suggestedRounds(joined.length)}` : ''}
+          {(row.prize_1st || row.prize_2nd || row.prize_3rd) ? ' · prizes named' : ' · no prizes'}
+          {row.pod_count === 2 ? ' · two pods' : ''}
+        </p>
+        {(bringer || row.product_note) && (
+          <p className="text-sm text-muted-foreground">{bringer ? `${bringer} is bringing them.` : ''} {row.product_note}</p>
         )}
+        {(row.prize_1st || row.prize_2nd || row.prize_3rd) && (
+          <p className="text-sm text-muted-foreground">
+            {[row.prize_1st && `1st ${row.prize_1st}`, row.prize_2nd && `2nd ${row.prize_2nd}`, row.prize_3rd && `3rd ${row.prize_3rd}`].filter(Boolean).join(' · ')}
+          </p>
+        )}
+      </header>
 
-        {/* Standings */}
-        <Card className="glass-panel">
-          <CardHeader className="border-b border-white/5 pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-foreground font-heading flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                Standings
-              </CardTitle>
-              <span className="text-xs text-muted-foreground uppercase tracking-widest font-medium">MTG Swiss (3-1-0)</span>
+      {round.matches.filter(match => matchPlayers(board, match.id).some(p => p.profile_id === board.userId && !p.result)).map(match => <LiveSlip key={match.id} href={`#match-${match.id}`} kicker={match.table_label || `Table ${match.table_number}`} title={matchPlayers(board,match.id).filter(p=>p.profile_id !== board.userId).map(p=>p.name).join(' vs ') || 'You have the bye'} detail={`Round ${round.round} · ${match.started_at ? 'In progress' : 'Pairings posted'}`} />)}
+
+      {board.joined && !mine && !row.field_locked && row.status !== 'completed' && (
+        <ActButton label="Join tournament" action={joinTournament.bind(null, id)} />
+      )}
+      {row.field_locked && !mine && <p className="text-sm text-muted-foreground">The field locked when round 1 started.</p>}
+
+      {row.status !== 'completed' && board.joined && (
+        <details className="disclosure" open={round.round === 0 && !row.field_locked}><summary>Tournament settings</summary><div>
+          <RoundEditor
+            tournamentId={id}
+            rounds={row.max_rounds || 3}
+            locked={Boolean(row.field_locked)}
+            pods={row.pod_count || 1}
+            note={row.product_note || ''}
+            bringing={Boolean(row.brought_by)}
+            showPods={needsSeats(row.format) && round.matches.length === 0 && board.matches.every((match) => match.tournament_id !== id || match.is_final)}
+            prize1st={row.prize_1st || ''}
+            prize2nd={row.prize_2nd || ''}
+            prize3rd={row.prize_3rd || ''}
+            duration={row.round_duration_minutes || 50}
+          />
+        </div></details>
+      )}
+
+      {board.joined && !row.field_locked && row.status !== 'completed' && (
+        <AddPlayers kind="tournament" players={board.members.filter(member => !joined.some(player => player.profile_id === member.id)).map(member => ({ id:member.id, name:member.name }))} action={addTournamentPlayer.bind(null,id)} />
+      )}
+
+      {needsSeats(row.format) && round.round === 0 && row.status !== 'completed' && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-heading text-2xl">Seats{row.pod_count === 2 ? ' · two pods' : ''}</h2>
+            <div className="flex flex-wrap gap-2">
+              <ActButton label="Add seat" variant="outline" action={addSeat.bind(null, id)} />
+              <ActButton label="Fill empty" variant="outline" action={randomizeSeats.bind(null, id, 'fill')} />
+              <ActButton label="Reshuffle" variant="outline" action={randomizeSeats.bind(null, id, 'reshuffle')} />
             </div>
-          </CardHeader>
-          <CardContent className="pt-4">
+          </div>
+          {row.pod_count === 2 && <p className="text-sm text-muted-foreground">Round 1 stays inside each pod. Later rounds can cross.</p>}
+          <div className={`grid gap-4 ${row.pod_count === 2 ? 'sm:grid-cols-2' : ''}`}>
+            {[1, ...(row.pod_count === 2 ? [2] : [])].map((pod) => {
+              const podSeats = seats.filter((number) => {
+                const holder = roster.find((person) => person.draft_seat === number);
+                if (row.pod_count !== 2) return true;
+                return (holder?.pod || podForSeat(2, number, seatCount)) === pod;
+              });
+              return (
+                <div key={pod} className="space-y-2">
+                  {row.pod_count === 2 && <h3 className="font-heading text-lg">Pod {pod}</h3>}
+                  <SeatChart
+                      canControl={board.joined}
+                    tournamentId={id}
+                    seats={podSeats.map((number) => {
+                      const holder = roster.find((person) => person.draft_seat === number);
+                      const member = board.members.find((person) => person.id === holder?.profile_id);
+                      return {
+                        number,
+                        name: holder?.profile_id ? nameOf(board, holder.profile_id) : null,
+                        participantId: holder?.profile_id ? holder.id : null,
+                        color: member?.color || null,
+                      };
+                    })}
+                    people={joined.map((person) => ({
+                      participantId: person.id,
+                      name: nameOf(board, person.profile_id),
+                    }))}
+                  />
+                  {board.joined && podSeats.some((number) => !roster.find((person) => person.draft_seat === number)?.profile_id) && (
+                    <div className="flex flex-wrap gap-2">
+                      {podSeats.filter((number) => !roster.find((person) => person.draft_seat === number)?.profile_id).map((number) => (
+                        <ActButton key={number} label={`Claim ${number}`} variant="outline" action={claimSeat.bind(null, id, number)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {joined.some((person) => !person.draft_seat) && (
             <div className="space-y-2">
-              {standings.map((standing, index) => (
-                <div
-                  key={standing.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-white/5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 text-center font-bold text-lg text-muted-foreground/50">
-                      {index + 1}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className={cn(
-                        "font-medium text-lg font-heading",
-                        index === 0 ? "text-primary text-glow" : "text-foreground"
-                      )}>
-                        {standing.profile?.display_name || standing.profile?.username || 'Unknown Player'}
-                      </span>
-                      {standing.receivedBye && (
-                        <span className="text-xs text-primary/70">Received Bye</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="text-center min-w-[40px]">
-                      <div className="text-primary font-bold text-xl">{standing.points}</div>
-                      <div className="text-muted-foreground text-[10px] uppercase tracking-wider">pts</div>
-                    </div>
-                    <div className="text-center min-w-[50px] hidden sm:block">
-                      <div className="text-cyan-500 font-medium font-mono">
-                        {formatOMWPercentage(standing.omwPercentage)}
-                      </div>
-                      <div className="text-muted-foreground text-[10px] uppercase tracking-wider">OMW%</div>
-                    </div>
-                    <div className="text-center min-w-[60px]">
-                      <div className="text-foreground font-medium font-mono tracking-wider">
-                        {standing.wins}-{standing.losses}-{standing.draws}
-                      </div>
-                      <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Record</div>
-                    </div>
-                  </div>
+              <h3 className="font-heading text-lg">Joined, no seat</h3>
+              {joined.filter((person) => !person.draft_seat).map((person) => (
+                <div key={person.id} className="flex items-center justify-between">
+                  <span>{nameOf(board, person.profile_id)}</span>
+                  <MovePlayer tournamentId={id} participantId={person.id} seat={null} seatCount={seatCount} />
                 </div>
               ))}
             </div>
-            {/* Point system legend */}
-            <div className="mt-4 pt-4 border-t border-white/5">
-              <p className="text-xs text-muted-foreground text-center uppercase tracking-widest">
-                Win = 3 • Draw = 1 • Loss = 0
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tournament Prizes */}
-        {tournament.status === 'completed' && ((tournament as any).prize_1st || (tournament as any).prize_2nd || (tournament as any).prize_3rd) && (
-          <Card className="glass-panel border-primary/20">
-            <CardHeader className="border-b border-white/5">
-              <CardTitle className="text-primary flex items-center gap-2 font-heading">
-                <Crown className="w-5 h-5" />
-                Tournament Prizes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-4">
-              {(tournament as any).prize_1st && standings[0] && (
-                <div className="flex items-center gap-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
-                  <span className="text-3xl">🥇</span>
-                  <div className="flex-1">
-                    <p className="text-foreground font-bold font-heading text-lg">
-                      {standings[0].profile?.display_name || standings[0].profile?.username || 'Unknown'}
-                    </p>
-                    <p className="text-primary font-medium">{(tournament as any).prize_1st}</p>
-                  </div>
-                </div>
-              )}
-              {(tournament as any).prize_2nd && standings[1] && (
-                <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-lg border border-white/10">
-                  <span className="text-3xl">🥈</span>
-                  <div className="flex-1">
-                    <p className="text-foreground font-semibold text-lg">
-                      {standings[1].profile?.display_name || standings[1].profile?.username || 'Unknown'}
-                    </p>
-                    <p className="text-muted-foreground">{(tournament as any).prize_2nd}</p>
-                  </div>
-                </div>
-              )}
-              {(tournament as any).prize_3rd && standings[2] && (
-                <div className="flex items-center gap-4 p-4 bg-amber-900/10 rounded-lg border border-amber-900/20">
-                  <span className="text-3xl">🥉</span>
-                  <div className="flex-1">
-                    <p className="text-foreground font-semibold text-lg">
-                      {standings[2].profile?.display_name || standings[2].profile?.username || 'Unknown'}
-                    </p>
-                    <p className="text-amber-700">{(tournament as any).prize_3rd}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold font-heading text-foreground flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            Current Matches
-          </h2>
-          
-          {matchDetails.length > 0 ? (
-            matchDetails.map(({ match, participants }) => {
-              const status = getMatchStatus(participants);
-              const isCompleted = participants.some((p) => p.result !== null);
-
-              // Handle bye (single participant)
-              if (participants.length === 1) {
-                const profile = participants[0].profile;
-                return (
-                  <Card
-                    key={match.id}
-                    className="glass-panel border-primary/20"
-                  >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-primary font-heading">Bye</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-lg text-foreground mb-1 font-medium">
-                        {profile?.display_name || profile?.username || 'Unknown Player'}
-                      </p>
-                      <p className="text-sm text-muted-foreground italic">Automatic Win (2-0)</p>
-                    </CardContent>
-                  </Card>
-                );
-              }
-
-              // Normal match with two players
-              const player1 = participants[0]?.profile;
-              const player2 = participants[1]?.profile;
-
-              return (
-                <Card
-                  key={match.id}
-                  className={cn(
-                    "glass-panel transition-colors",
-                    !isCompleted && "border-primary/20 bg-primary/5"
-                  )}
-                >
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-foreground font-heading flex justify-between items-center">
-                      <span className={cn(participants[0].result === 'win' && "text-emerald-500 text-glow")}>
-                        {player1?.display_name || player1?.username || 'Player 1'}
-                      </span>
-                      <span className="text-muted-foreground/50 text-sm font-sans font-normal">vs</span>
-                      <span className={cn(participants[1].result === 'win' && "text-emerald-500 text-glow")}>
-                        {player2?.display_name || player2?.username || 'Player 2'}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground text-center uppercase tracking-widest">{status}</p>
-                    {!isCompleted && (
-                      <Button
-                        asChild
-                        className="w-full h-12 text-lg font-medium"
-                        variant="default" // Primary/Gold
-                      >
-                        <Link href={`/tournament/${id}/match/${match.id}`}>
-                          Report Result
-                        </Link>
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })
-          ) : (
-            <Card className="glass-panel border-dashed">
-              <CardContent className="pt-6 flex flex-col items-center py-12">
-                <p className="text-muted-foreground text-center text-lg">No pairings found for Round {currentRound}.</p>
-                {tournament.status === 'active' && (
-                   <>
-                     <p className="text-xs text-muted-foreground/60 text-center mt-2 max-w-md">
-                       The pairings for this round may still be generating. If this persists, the tournament state may need a nudge.
-                     </p>
-                     <div className="mt-6">
-                        <ForceStartButton tournamentId={id} />
-                     </div>
-                   </>
-                )}
-              </CardContent>
-            </Card>
           )}
+        </section>
+      )}
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-heading text-2xl">{round.round ? `Round ${round.round}` : 'Pairings'}</h2>
+          {startedAt && <p className="text-sm text-muted-foreground">Started {new Date(startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}</p>}
         </div>
-      </div>
+        {started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null && (
+          <RoundClock
+            tournamentId={id}
+            durationMinutes={row.round_duration_minutes || 50}
+            anchor={row.clock_anchor}
+            pausedAt={row.clock_paused_at}
+            remainingSeconds={row.clock_remaining_seconds}
+            canControl={board.joined}
+          />
+        )}
+        {posted && <p className="text-sm text-primary">Pairings are posted. The round has not started.</p>}
+        {openNames.length > 0 && <p className="text-sm text-muted-foreground">Still open: {openNames.join(', ')}.</p>}
+        {[...round.matches].sort((a,b) => Number(matchPlayers(board,b.id).some(p=>p.profile_id===board.userId)) - Number(matchPlayers(board,a.id).some(p=>p.profile_id===board.userId))).map((match) => {
+          const players = matchPlayers(board, match.id);
+          const bye = players.length === 1;
+          return (
+            <article id={`match-${match.id}`} key={match.id} className="space-y-3 rounded-xl border border-border p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="font-heading text-xl">{match.table_label || `Table ${match.table_number}`}</h3>
+                {match.is_rematch && <span className="text-xs uppercase tracking-widest text-primary">Rematch</span>}
+              </div>
+              <p>{bye ? `${players[0]?.name || 'Player'} has the bye` : players.map((player) => player.name).join(' vs ')}</p>
+              {players.some((player) => player.result) && (
+                <p className="text-sm text-muted-foreground">
+                  {players.map((player) => {
+                    const showGames = !bye && players.some((seat) => (seat.games_won || 0) > 0);
+                    return `${player.name} ${player.result}${showGames ? ` (${player.games_won || 0})` : ''}`;
+                  }).join(' · ')}
+                </p>
+              )}
+              {board.joined && <TableName matchId={match.id} label={match.table_label || `Table ${match.table_number || 1}`} />}
+              {board.joined && <MatchDay matchId={match.id} day={match.played_on || ''} locked={Boolean(match.completed_at)} />}
+              {board.joined && match.started_at && !bye && (
+                <details className="disclosure"><summary>Report or correct result</summary><div><MatchReporter
+                  matchId={match.id}
+                  showGamesWon
+                  players={players.filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name }))}
+                /></div></details>
+              )}
+            </article>
+          );
+        })}
+        {board.joined && row.status !== 'completed' && (
+          <div className="flex flex-wrap gap-2">
+            {!posted && (round.round === 0 || round.matches.every((match) => matchPlayers(board, match.id).every((seat) => seat.result))) && round.round < (row.max_rounds || 1) && (
+              <ActButton label={round.round ? 'Post next round' : 'Post pairings'} action={postPairings.bind(null, id)} />
+            )}
+            {posted && <ActButton label="Clear pairings" variant="outline" action={clearPairings.bind(null, id)} />}
+            {posted && <ActButton label="Start round" action={startRound.bind(null, id)} />}
+          </div>
+        )}
+        {posted && round.round === 1 && !needsSeats(row.format) && (
+          <SealedSwap
+            tournamentId={id}
+            players={joined.map((person) => ({ id: person.id, name: nameOf(board, person.profile_id) }))}
+          />
+        )}
+      </section>
+
+      {finalMatch && (
+        <section className="space-y-3 rounded-xl border border-primary/30 p-4">
+          <h2 className="font-heading text-2xl">Final</h2>
+          <p>{matchPlayers(board, finalMatch.id).map((player) => player.name).join(' vs ')}</p>
+          <p className="text-sm text-muted-foreground">{matchPlayers(board, finalMatch.id).every(player => player.result) ? matchPlayers(board, finalMatch.id).map(player => `${player.name}: ${player.result}`).join(' · ') : 'Awaiting final result'}</p>
+          {board.joined && (
+            <details className="disclosure"><summary>Report or correct result</summary><div><MatchReporter
+              matchId={finalMatch.id}
+              showGamesWon
+              players={matchPlayers(board, finalMatch.id).filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name }))}
+            /></div></details>
+          )}
+        </section>
+      )}
+
+      <section className="space-y-3">
+        <h2 className="font-heading text-2xl">Match points</h2>
+        <p className="text-xs text-muted-foreground">Higher opponent percentage means tougher opponents. Game scores are not used.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase tracking-widest text-muted-foreground">
+              <tr>
+                <th className="py-2">Place</th>
+                <th>Player</th>
+                <th>Points</th>
+                <th>Record</th>
+                <th>Games</th>
+                <th>Opponents</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((player, index) => (
+                <tr key={player.id} className="border-t border-border">
+                  <td className="py-2 font-heading">{player.place ? placeLabel(player.place) : index + 1}</td>
+                  <td>{player.name}{player.dropped ? ' · dropped' : ''}</td>
+                  <td>{player.points}</td>
+                  <td>{player.wins}–{player.losses}–{player.draws}</td>
+                  <td>{gamesWonFor(board, id, player.id)}</td>
+                  <td>{Math.round(player.omw * 1000) / 10}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {board.joined && row.status !== 'completed' && row.field_locked && (
+        <section className="space-y-4 rounded-xl border border-border p-4">
+          <h2 className="font-heading text-xl">Finish</h2>
+          {!finalMatch && <ActButton label="Add top-two final" variant="outline" action={addFinal.bind(null, id)} />}
+          <FinishForm
+            tournamentId={id}
+            ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
+            tieGroups={ties}
+          />
+        </section>
+      )}
+
+      {row.status === 'completed' && (
+        <section className="space-y-2">
+          <h2 className="font-heading text-2xl">Places</h2>
+          {standings.filter((player) => player.place).map((player) => {
+            const prize = player.place === 1 ? row.prize_1st : player.place === 2 ? row.prize_2nd : player.place === 3 ? row.prize_3rd : null;
+            return (
+              <p key={player.id}>
+                <span className="font-heading text-primary">{placeLabel(player.place || 0)}</span> {player.name}
+                {prize ? ` · ${prize}` : ''}
+              </p>
+            );
+          })}
+          <p className="text-sm text-muted-foreground">Replacing a result clears the places. The prize text stays. Finish again after that.</p>
+        </section>
+      )}
+
+      {board.joined && (
+        <section className="space-y-2">
+          <h2 className="font-heading text-xl">Players</h2>
+          {joined.map((person) => (
+            <div key={person.id} className="flex items-center justify-between gap-3 text-sm">
+              <span>{nameOf(board, person.profile_id)}{person.dropped ? ' · dropped' : ''}</span>
+              {!person.dropped && row.status !== 'completed' && (
+                <ActButton label="Drop" variant="ghost" action={dropPlayer.bind(null, id, person.id)} />
+              )}
+            </div>
+          ))}
+          {round.round === 0 && row.status !== 'completed' && (
+            <ActButton label="Delete tournament" variant="ghost" action={deleteTournament.bind(null, id)} />
+          )}
+        </section>
+      )}
     </main>
   );
 }

@@ -4,9 +4,12 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 interface OnboardingData {
-  username: string
   displayName: string
-  favoriteCard?: string
+}
+
+function handleFrom(name: string) {
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 16) || 'player'
+  return `${base}${Math.floor(Math.random() * 9000 + 1000)}`
 }
 
 export async function completeOnboarding(data: OnboardingData) {
@@ -17,15 +20,19 @@ export async function completeOnboarding(data: OnboardingData) {
     return { success: false, message: 'Not authenticated' }
   }
 
-  // Create or Update the Profile
+  if (user.is_anonymous) return { success: false, message: 'Open the weekend guest link to choose your name.' }
+
+  const playName = data.displayName.trim()
+  if (!playName) return { success: false, message: 'Enter a play name.' }
+
+  const { data: existing } = await supabase.from('profiles').select('username').eq('id', user.id).maybeSingle()
+
   const { error: profileError } = await supabase
     .from('profiles')
     .upsert({
       id: user.id,
-      username: data.username,
-      display_name: data.displayName, // V3: display_name
-      favorite_card_image: data.favoriteCard || null,
-      bio: '', 
+      username: existing?.username || handleFrom(playName),
+      display_name: playName,
       updated_at: new Date().toISOString()
     })
 

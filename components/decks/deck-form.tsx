@@ -48,6 +48,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   const [format, setFormat] = useState(initialData?.format || 'Commander');
   const [colors, setColors] = useState<string[]>(initialData?.colors || []);
   const [commanderName, setCommanderName] = useState(initialData?.commander_name || '');
+  const [partnerName, setPartnerName] = useState(initialData?.partner_name || '');
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [manaCost, setManaCost] = useState(initialData?.mana_cost || '');
@@ -153,6 +154,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
     formData.append('format', format);
     colors.forEach((c) => formData.append('colors', c));
     if (commanderName) formData.append('commanderName', commanderName);
+    if (partnerName) formData.append('partnerName', partnerName);
     if (imageUrl) formData.append('imageUrl', imageUrl);
     if (description) formData.append('description', description);
     if (manaCost) formData.append('manaCost', manaCost);
@@ -188,14 +190,15 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
           {/* Desktop Left Column: Image Preview */}
           <div className="hidden md:block md:col-span-5 lg:col-span-4 space-y-4">
              {imageUrl ? (
-              <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-white/10 shadow-2xl group hover:border-primary/50 transition-colors">
-                <Image 
-                  src={imageUrl} 
-                  alt="Commander Art" 
-                  fill 
+              <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-border shadow-2xl group hover:border-primary/50 transition-colors">
+                <Image
+                  src={imageUrl}
+                  alt="Commander Art"
+                  fill
+                  unoptimized
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                 <div className="absolute inset-0 bg-card opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                    <Button 
                     type="button"
                     variant="secondary"
@@ -210,18 +213,18 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     type="button"
                     variant="outline" 
                     onClick={() => setIsFullArtOpen(true)}
-                    className="gap-2 shadow-xl bg-black/40 border-white/20 hover:bg-black/60 text-white"
+                    className="gap-2 shadow-xl bg-card border-border hover:bg-card text-foreground"
                    >
                      <Search className="w-4 h-4" />
                      View Full Art
                    </Button>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-                  <p className="text-xl font-bold text-white drop-shadow-md text-center font-heading tracking-wide">{commanderName}</p>
+                  <p className="text-xl font-bold text-foreground drop-shadow-md text-center font-heading tracking-wide">{commanderName}</p>
                 </div>
               </div>
             ) : (
-              <div className="w-full aspect-[2.5/3.5] bg-white/5 border-2 border-white/10 border-dashed rounded-xl flex flex-col items-center justify-center text-muted-foreground p-6 text-center hover:border-primary/30 transition-colors">
+              <div className="w-full aspect-[2.5/3.5] bg-muted border-2 border-border border-dashed rounded-xl flex flex-col items-center justify-center text-muted-foreground p-6 text-center hover:border-primary/30 transition-colors">
                 <ImageIcon className="w-12 h-12 mb-2 opacity-20" />
                 <p>Select a Commander to see card art</p>
               </div>
@@ -292,17 +295,28 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                 </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="partnerName">Partner</Label>
+              <Input
+                id="partnerName"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+                placeholder="Optional second commander"
+              />
+            </div>
+
             {/* Mobile-only Image Preview */}
             <div className="md:hidden">
               {imageUrl && (
-                <div className="mt-2 relative w-full h-80 rounded-xl overflow-hidden border border-white/10 group shadow-lg">
-                  <Image 
-                    src={imageUrl} 
-                    alt="Commander Art" 
-                    fill 
+                <div className="mt-2 relative w-full h-80 rounded-xl overflow-hidden border border-border group shadow-lg">
+                  <Image
+                    src={imageUrl}
+                    alt="Commander Art"
+                    fill
+                    unoptimized
                     className="object-cover object-top"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                  <div className="absolute inset-0 bg-card opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                     <Button 
                       type="button"
                       variant="secondary"
@@ -317,14 +331,14 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       type="button"
                       variant="outline" 
                       onClick={() => setIsFullArtOpen(true)}
-                      className="gap-2 shadow-xl bg-black/40 border-white/20 hover:bg-black/60 text-white"
+                      className="gap-2 shadow-xl bg-card border-border hover:bg-card text-foreground"
                      >
                        <Search className="w-4 h-4" />
                        View Full Art
                      </Button>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <p className="text-lg font-bold text-white drop-shadow-md text-center font-heading">{commanderName}</p>
+                    <p className="text-lg font-bold text-foreground drop-shadow-md text-center font-heading">{commanderName}</p>
                   </div>
                 </div>
               )}
@@ -332,7 +346,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
 
             <div className="space-y-2">
               <Label>Color Identity</Label>
-              <div className="flex flex-wrap gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+              <div className="flex flex-wrap gap-3 p-3 bg-muted rounded-lg border border-border">
                 {MTG_COLORS.map((color) => (
                   <div key={color} className="flex items-center space-x-2">
                     <Checkbox
@@ -341,7 +355,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       onCheckedChange={(checked) =>
                         handleColorChange(color, checked as boolean)
                       }
-                      className="border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-white w-5 h-5"
+                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:text-foreground w-5 h-5"
                     />
                     <label
                       htmlFor={`color-${color}`}
@@ -361,8 +375,8 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               </div>
               
               {oracleText ? (
-                 <div className="bg-zinc-900/50 border border-white/10 rounded-md p-4 min-h-[150px]">
-                    {typeLine && <p className="font-bold text-sm mb-2 border-b border-white/5 pb-2">{typeLine}</p>}
+                 <div className="bg-card border border-border rounded-md p-4 min-h-[150px]">
+                    {typeLine && <p className="font-bold text-sm mb-2 border-b border-border pb-2">{typeLine}</p>}
                     <RichTextDisplay text={oracleText} />
                  </div>
               ) : (
@@ -371,7 +385,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Card text, stats, or notes..."
-                  className="bg-zinc-900/50 border-white/10 text-muted-foreground min-h-[150px] font-mono text-sm focus-visible:ring-primary/20"
+                  className="bg-card border-border text-muted-foreground min-h-[150px] font-mono text-sm focus-visible:ring-primary/20"
                 />
               )}
             </div>
@@ -405,16 +419,17 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       src={card.image_uris.normal} 
                       alt={card.name} 
                       fill 
+                      unoptimized
                       className="object-cover"
                     />
                   </div>
                 ) : (
-                  <div className="aspect-[2.5/3.5] bg-zinc-800 flex items-center justify-center p-4 text-center text-muted-foreground text-sm">
+                  <div className="aspect-[2.5/3.5] bg-card flex items-center justify-center p-4 text-center text-muted-foreground text-sm">
                     No Image Available
                   </div>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                  <p className="text-xs font-bold text-white truncate">{card.name}</p>
+                  <p className="text-xs font-bold text-foreground truncate">{card.name}</p>
                   <p className="text-[10px] text-zinc-300 truncate">{card.type_line}</p>
                 </div>
               </div>
@@ -442,16 +457,17 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       src={card.image_uris.normal} 
                       alt={card.name} 
                       fill 
+                      unoptimized
                       className="object-cover"
                     />
                   </div>
                 ) : (
-                  <div className="aspect-[2.5/3.5] bg-zinc-800 flex items-center justify-center p-4 text-center text-muted-foreground text-sm">
+                  <div className="aspect-[2.5/3.5] bg-card flex items-center justify-center p-4 text-center text-muted-foreground text-sm">
                     No Image
                   </div>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                  <p className="text-xs font-bold text-white truncate">{card.set_name}</p>
+                  <p className="text-xs font-bold text-foreground truncate">{card.set_name}</p>
                   <p className="text-[10px] text-zinc-300 truncate">#{card.collector_number}</p>
                 </div>
               </div>
@@ -468,6 +484,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   src={imageUris?.border_crop || imageUris?.large || imageUris?.normal || imageUrl}
                   alt={commanderName}
                   fill
+                  unoptimized
                   className="object-contain"
                   priority
                 />

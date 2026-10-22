@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { submitResultWithGamesNoRedirect } from '@/app/tournament/actions';
+import { correctMatchResult, submitResultWithGamesNoRedirect } from '@/app/tournament/actions';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Minus, Plus, RefreshCw } from 'lucide-react';
@@ -37,7 +37,8 @@ interface MatchReportingFormProps {
   userDecks: Deck[]; 
   player1ProfileId?: string; 
   player2ProfileId?: string; 
-  format?: string; 
+  format?: string;
+  correcting?: boolean;
 }
 
 export default function MatchReportingForm({
@@ -48,6 +49,7 @@ export default function MatchReportingForm({
   player1ProfileId,
   player2ProfileId,
   format,
+  correcting = false,
 }: MatchReportingFormProps) {
   const router = useRouter();
   const [player1Games, setPlayer1Games] = useState(0);
@@ -95,12 +97,14 @@ export default function MatchReportingForm({
       const p1Id = player1.profile_id;
       const p2Id = player2.profile_id;
 
-      const response = await submitResultWithGamesNoRedirect(
-        matchId,
-        p1Id, player1Games, player1DeckId === 'none' ? null : player1DeckId,
-        p2Id, player2Games, player2DeckId === 'none' ? null : player2DeckId,
-        tournamentId
-      );
+      const response = correcting
+        ? await correctMatchResult(matchId, p1Id, player1Games, p2Id, player2Games, tournamentId)
+        : await submitResultWithGamesNoRedirect(
+            matchId,
+            p1Id, player1Games, player1DeckId === 'none' ? null : player1DeckId,
+            p2Id, player2Games, player2DeckId === 'none' ? null : player2DeckId,
+            tournamentId
+          );
 
       if (!response.success) {
         toast.error(response.message || 'Failed to submit result');
@@ -108,8 +112,11 @@ export default function MatchReportingForm({
         return;
       }
 
-      if (response.awardedBadges && response.awardedBadges.length > 0) {
-        response.awardedBadges.forEach((badge) => {
+      const awarded = !correcting && 'awardedBadges' in response
+        ? (response.awardedBadges as { name: string; description?: string; icon_url?: string }[] | undefined)
+        : undefined;
+      if (awarded && awarded.length > 0) {
+        awarded.forEach((badge) => {
           toast(`Badge Unlocked: ${badge.name}`, {
             description: badge.description,
             icon: badge.icon_url || '🏆',
@@ -117,10 +124,10 @@ export default function MatchReportingForm({
           });
         });
       } else {
-        toast.success('Result submitted');
+        toast.success(correcting ? 'Score corrected' : 'Result submitted');
       }
 
-      if (response.nextRoundGenerated) {
+      if (!correcting && 'nextRoundGenerated' in response && response.nextRoundGenerated) {
         router.push(`/tournament/${tournamentId}?roundGenerated=true`);
       } else {
         router.push(`/tournament/${tournamentId}`);
@@ -277,7 +284,7 @@ export default function MatchReportingForm({
                 Submitting...
               </>
             ) : (
-              'Confirm Result'
+              correcting ? 'Save correction' : 'Confirm Result'
             )}
           </Button>
         )}
