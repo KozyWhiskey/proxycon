@@ -43,8 +43,8 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | --- | --- | --- |
 | Events / `/` | Destination | Pass recorded 23 Oct 2026 (friend-group voice + hierarchy). Live-match, house, and empty-events states still open. |
 | Event / `/events/[id]` | Destination | Voice/empty-copy pass applied 23 Oct 2026. Own-match phone hierarchy still needs a live-slip recheck. |
-| Room / `/events/[id]/room` | Live operations | Current refinement: clock shading, controls and report popout. Full state pass pending: posted, playing, paused, elapsed, bye, completed. |
-| Tournament / `/tournament/[id]` | Live operations / setup | Current refinement: shared report copy/controls. Full pass pending: setup, seating, round, corrections and finish. |
+| Room / `/events/[id]/room` | Live operations | Voice/copy pass applied 23 Oct 2026 (playing + elapsed + report popout sampled). Full state coverage still open: posted, paused, bye, completed, setup seating. |
+| Tournament / `/tournament/[id]` | Live operations / setup | Finish promotion + voice pass 23 Oct 2026 (last-round all results in). Setup/seating/posted states still open. |
 | Tournament result / `/tournament/[id]/match/[matchId]` | Task | Required counters already verified; current refinement removes repeated instructions. Recheck posted/read-only/correction states. |
 | Quick-game result / `/events/[id]/match/[matchId]` | Task | Pending: pod, team, draw, optional decks and replay. |
 | Start game / `/events/[id]/play` | Task | Pending: format/player selection, optional details, validation. |
@@ -113,4 +113,24 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - Change applied: winner copy **“{name} won”**; setup caption **Joining · N seated**; empty **No live games.** / **No results yet.**; house eyebrow **House screen**; hub action buttons keep readable Create tournament on phone (13px, wrap-safe); tables stack still precedes room aside below 1000px.
 - Pre-fix evidence: [phone light](ux-screenshots/ember-event-play-audit-phone-light.png), [phone dark](ux-screenshots/ember-event-play-audit-phone-dark.jpg), [laptop light](ux-screenshots/ember-event-play-audit-laptop-light.jpg), [laptop dark](ux-screenshots/ember-event-play-audit-laptop-dark.png).
 - Remaining gaps: open personal match on phone; simultaneous Commander + tournament slips; 320px / 200% zoom.
-- Next page: Room full state pass, or Tournament detail.
+- Next page: Room (below).
+
+## Room `/events/[id]/room` — pass record · 23 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/room` live operations; Test tournament Playing; Round 3 elapsed (`0:00`); focus mode on; Craig; 3 open tables + 1 final.
+- Keep: Warm round stage; large clock; substantial Report/Correct controls; pairings beside standings at laptop; Playing / Final status language; “Waiting on Table…”; compact Games won report popout (Escape closes, Save disabled at 0–0); How ties are ranked disclosure.
+- Change applied: eyebrow **House / Tournament room**; empty **No tournament yet.**; status line always uses tournament name (not “Open on a phone”); tools link **Tournament page**; standings subtitle just **Live standings** / **Final places**.
+- Light phone / Dark phone / Light laptop / Dark laptop: [phone light](ux-screenshots/ember-room-audit-phone-light.png), [phone dark](ux-screenshots/ember-room-audit-phone-dark.png), [laptop light](ux-screenshots/ember-room-audit-laptop-light.png), [laptop dark](ux-screenshots/ember-room-audit-laptop-dark.png).
+- Interactions: opened Report result popout; Escape closed it; no results saved.
+- Remaining gaps: posted / paused / bye / completed / seating setup states; 320px / 200% zoom; long names.
+- Next page: Tournament detail (below).
+
+## Tournament `/tournament/[id]` — pass record · 23 October 2026
+
+- Route, page job, data/event state and role: `/tournament/346c777e-…` Test tournament; Round 3 of 3; all four results reported; not yet finished (by design Finish locks places).
+- Keep: Fraunces tournament name; event nav; personal live slip when open; required score counters on report/correct; FinishForm podium + lock places.
+- Change applied: status **All results in · ready to finish** when last round is fully reported; **Finish tournament** panel under the header (above matches); removed house FeaturePanel; FinishForm is podium-first with no checkbox (button locks places); ties only when needed; early finish stays collapsed; dropped “suggestion is N”; standings title + shared ties disclosure.
+- Why it looked “still open”: tournaments do not auto-complete. Places require Finish (PROJECT_SUMMARY). The detail page previously hid that behind “Review final places.”
+- Evidence: [laptop dark](ux-screenshots/ember-tournament-audit-laptop-dark.png). Phone / light still pending for this route.
+- Remaining gaps: setup/seating/posted phone hierarchy; light theme; do not auto-finish without owner confirmation.
+- Next page: Create tournament (task anchor) or Tournament result task recheck.

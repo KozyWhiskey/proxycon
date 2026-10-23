@@ -46,7 +46,7 @@ export default async function RoomPage({
     <main className="page room-page arena-room">
       <header className="room-top">
         <div>
-          <p className="eyebrow">THE HOUSE / TOURNAMENT ROOM</p>
+          <p className="eyebrow">House / Tournament room</p>
           <h1>{board.event.name}</h1>
           <p className="subtle mt-2">
             <Link href={`/events/${id}`}>← Play</Link>
@@ -76,8 +76,8 @@ export default async function RoomPage({
 
       {!featured && (
         <section className="empty-state">
-          <h3>The next tournament starts here.</h3>
-          <p>Create a draft, cube, or sealed. Quick matches live on their own pages from the event.</p>
+          <h3>No tournament yet.</h3>
+          <p>Create a draft, cube, or sealed to run from this screen. Quick games stay on the event Play page.</p>
           <Link className="text-link text-sm" href={`/events/${id}/tournaments/new`}>Create tournament →</Link>
         </section>
       )}
@@ -143,7 +143,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
               </div>
               <div className="room-round-details">
               <p className="room-status-line">
-                <Link href={`/tournament/${row.id}`}>{round.round ? row.name : 'Open on a phone'}</Link>
+                <Link href={`/tournament/${row.id}`}>{row.name}</Link>
                 {' · '}{joined.length} {joined.length === 1 ? 'player' : 'players'}
                 {row.status === 'completed' ? ' · finished' : started ? ' · live' : posted ? ' · posted, not started' : ' · setup'}
                 {startedLabel ? ` · started ${startedLabel}` : ''}
@@ -239,7 +239,24 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
           )}
 
           {posted && round.round === 1 && !needsSeats(row.format) && canRun && <SealedSwap tournamentId={row.id} players={joined.map(person => ({ id: person.id, name: nameOf(board, person.profile_id) }))} />}
-          {canRun && row.field_locked && readyToFinish && <section className="room-finish"><h3>Ready to finish</h3><FinishForm tournamentId={row.id} ranked={standings.map(player => ({ id: player.id, name: player.name }))} tieGroups={ties} prizes={[row.prize_1st, row.prize_2nd, row.prize_3rd]} finalResult={finalPlayers.map(player => ({ id: player.participant_id || '', result: player.result }))} />{!finalMatch && <div className="mt-4"><ActButton label="Add top-two final instead" variant="outline" action={addFinal.bind(null, row.id)} /></div>}</section>}
+          {canRun && row.field_locked && readyToFinish && (
+            <section className="room-finish" aria-label="Finish tournament">
+              <h3>Finish tournament</h3>
+              <p className="subtle mb-4">All results are in. Lock places from the standings below.</p>
+              <FinishForm
+                tournamentId={row.id}
+                ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
+                tieGroups={ties}
+                prizes={[row.prize_1st, row.prize_2nd, row.prize_3rd]}
+                finalResult={finalPlayers.map((player) => ({ id: player.participant_id || '', result: player.result }))}
+              />
+              {!finalMatch && (
+                <div className="mt-4">
+                  <ActButton label="Add top-two final instead" variant="outline" action={addFinal.bind(null, row.id)} />
+                </div>
+              )}
+            </section>
+          )}
           {canRun && !row.field_locked && <details className="disclosure"><summary>Tournament settings</summary><div><RoundEditor tournamentId={row.id} rounds={row.max_rounds || 3} locked={false} pods={row.pod_count || 1} note={row.product_note || ''} bringing={Boolean(row.brought_by)} showPods={needsSeats(row.format) && round.matches.length === 0} prize1st={row.prize_1st || ''} prize2nd={row.prize_2nd || ''} prize3rd={row.prize_3rd || ''} duration={row.round_duration_minutes || 50} /></div></details>}
           {recent.length > 0 && (
             <details className="room-recent"><summary>Previous round results</summary>
@@ -260,7 +277,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
         <aside className="room-rail">
           <div className="room-standings">
             <h3>Standings</h3>
-            <p>{row.status === 'completed' ? 'Final places' : 'Live standings'} · points / match record</p>
+            <p>{row.status === 'completed' ? 'Final places' : 'Live standings'}</p>
             <StandingsPages key={row.id} headings={<thead>
                   <tr>
                     <th scope="col" aria-label={row.status === 'completed' ? 'Place' : 'Position'}>#</th>
@@ -340,7 +357,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
               ))}
               {joined.length === 0 && <p className="room-note">Nobody has joined.</p>}
               <p className="room-quiet-links">
-                <Link href={`/tournament/${row.id}`}>Open on a phone</Link>
+                <Link href={`/tournament/${row.id}`}>Tournament page</Link>
                 <Link href={`/events/${eventId}`}>Event</Link>
               </p>
             </div>
