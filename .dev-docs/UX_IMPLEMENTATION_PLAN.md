@@ -8,7 +8,7 @@ Based on UX_DESIGN_REVIEW.md and PROJECT_SUMMARY.md. Started 22 October 2026.
 2. Player journey: event context throughout tournament pages, one mobile event navigation, direct match anchors, personal games first, live/setup/history ordering, distinct event records, accessible name/house selection.
 3. Tournament desk: compact house shell, tournament selector, readiness summary and seating, open tables first, visible reporting, compact clock, state-driven finishing, separate quick-game pages.
 4. Results and finishing: select outcome then save, preload corrections and scores, explain pairing consequences, preserve failed drafts, order ties with buttons, preview all places and optional prizes before Finish.
-5. Design system: semantic Light/Dark/System themes persisted per browser before first paint, green playmat/card stock/brass palette, restrained serif display typography and framed match slips, consistent controls and accessible focus.
+5. Design system: semantic Light/Dark/System themes persisted per browser before first paint, charcoal-and-orange palette, restrained serif display typography and framed match slips, consistent controls and accessible focus. Preserve commander artwork and the house room callout.
 6. Review and verification: independent Expert UX and Design agent reviews source and browser results; address actionable findings, run type/build checks and existing rules/account tests, inspect narrow phone and laptop in both themes.
 
 ## Acceptance criteria
@@ -23,6 +23,12 @@ Based on UX_DESIGN_REVIEW.md and PROJECT_SUMMARY.md. Started 22 October 2026.
 - Keyboard access, reduced motion, long names and browser zoom remain usable.
 
 ## Verification record
+
+### Refinement after visual-design checkpoint
+
+Checkpoint `443ce13` preserves the existing redesign and weekend workflows. The subsequent refinement keeps the palette, artwork, surfaces, and room controls. Personal matches precede event creation actions; an event record strip follows the matches. Live slips label opponents and provide a 44px result action. Returning-player home, setup, event tools, and profile use compact operational headings. Repeated directory/profile promotional panels become quieter navigation. Quick-game setup uses the existing event-management capability so the house link opens an operable form.
+
+Verified TypeScript, targeted ESLint, existing UX flow tests, and an isolated production webpack build. Browser review covers the returning-player event at 390 × 844, tournament setup on phone, and profile at 1366 × 768. The house quick-game form enables Start game after choosing two players. The focused room remains exactly one 768px-tall page at 1366 × 768, with all four 48px report controls and eight standings visible. No game or profile data was submitted during these checks.
 
 Implemented the six delivery stages locally. The application was not deployed and no tournament, seat, player result or account settings were changed during verification. Browser appearance was restored to System after testing.
 

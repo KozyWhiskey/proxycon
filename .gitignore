@@ -17,6 +17,7 @@
 /.next/
 /.next-preview/
 /.next-verify/
+/supabase/.temp/
 /out/
 
 # production

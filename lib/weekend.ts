@@ -457,7 +457,13 @@ export function swissPairings(
   random: () => number,
   sealed: boolean
 ): Pairing[] {
-  const records = buildRecords(players.map((player) => player.id), history);
+  // Dropped players still contribute their real records to opponent strength.
+  const recordIds = new Set(players.map((player) => player.id));
+  for (const match of history) {
+    recordIds.add(match.player1);
+    if (match.player2) recordIds.add(match.player2);
+  }
+  const records = buildRecords([...recordIds], history);
   const scored = players.map((player) => ({
     ...player,
     points: records.get(player.id)?.points || 0,

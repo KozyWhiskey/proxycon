@@ -42,12 +42,10 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
       })).filter((option) => option.value)
     : named.map((player) => ({ value: player.id, label: player.name }));
 
-  const scoreRequired = showGamesWon && !teams;
   const hasScore = named.every((player) => Number.isFinite(games[player.id])) && named.some((player) => (games[player.id] || 0) > 0);
-  const scoreReady = !scoreRequired || named.every((player) => Object.prototype.hasOwnProperty.call(games, player.id) && Number.isFinite(games[player.id]));
   const decision = matchOutcome(
     named.map((player) => ({ profile_id: player.id, team: player.team || null })),
-    scoreRequired || hasScore ? games : undefined,
+    hasScore ? games : undefined,
     choice === 'draw',
     choice && choice !== 'draw' ? choice.split(',') : [],
   );
@@ -58,7 +56,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   const previous = named.every((player) => player.result === 'draw')
     ? 'Draw'
     : `${named.filter((player) => player.result === 'win').map((player) => player.name).join(' & ')} won`;
-  const canSave = Boolean(effective) && (!scoreRequired || hasScore) && scoreReady;
+  const canSave = Boolean(effective);
 
   function select(value: string) {
     setChoice(value);
@@ -93,24 +91,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
         </div>
       )}
 
-      {scoreRequired ? (
-        <fieldset disabled={pending} className="space-y-3">
-          <legend className="mb-3 text-sm">Games won</legend>
-          <div className="space-y-3">
-            {named.map((player) => (
-              <div key={player.id} className="score-stepper">
-                <span>{player.name}</span>
-                <div>
-                  <Button type="button" aria-label={`Remove a game won by ${player.name}`} variant="outline" disabled={pending || !(games[player.id] || 0)} onClick={() => bump(player.id, -1)}>−</Button>
-                  <output aria-label={`${player.name} games won`}>{games[player.id] || 0}</output>
-                  <Button type="button" aria-label={`Add a game won by ${player.name}`} variant="outline" disabled={pending} onClick={() => bump(player.id, 1)}>+</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </fieldset>
-      ) : (
-        <>
+      <>
           <fieldset disabled={pending} className="space-y-3">
             <legend className="mb-3 text-sm">{teams ? 'Which team won?' : 'Who won?'}</legend>
             <div className="outcome-options">
@@ -140,8 +121,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
               </div>
             </details>
           )}
-        </>
-      )}
+      </>
 
       {effective && canSave && (
         <div className="result-review">
@@ -153,7 +133,6 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
           )}
         </div>
       )}
-      {scoreRequired && dirty && !hasScore && <p className="subtle">Enter games won for each player to save this result.</p>}
       {error && (
         <div>
           <p role="alert" className="text-destructive text-sm">{error}</p>
@@ -170,7 +149,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
             matchId,
             draw: effective === 'draw',
             winnerIds: effective === 'draw' ? [] : effective?.split(',') || [],
-            games: scoreRequired || hasScore ? Object.fromEntries(named.map((player) => [player.id, games[player.id] || 0])) : undefined,
+            games: hasScore ? Object.fromEntries(named.map((player) => [player.id, games[player.id] || 0])) : undefined,
             decks: decks ? Object.fromEntries(named.map((player) => [player.id, decks[player.id] || null])) : undefined,
             expected,
           }));

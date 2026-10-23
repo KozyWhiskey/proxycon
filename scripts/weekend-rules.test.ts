@@ -112,6 +112,25 @@ const rematch = paired.some((pair) => pair.rematch);
 assert.equal(rematch, false);
 assert.equal(paired.length, 2);
 
+// A dropped opponent still contributes their record to Swiss opponent strength.
+// Pair only active players, but rank their opponents using the full played history.
+const dropHistory: HistoryMatch[] = [
+  { player1: 'a', player2: 'g', result1: 'win', result2: 'loss' },
+  { player1: 'b', player2: 'h', result1: 'win', result2: 'loss' },
+  { player1: 'c', player2: 'e', result1: 'win', result2: 'loss' },
+  { player1: 'd', player2: 'f', result1: 'win', result2: 'loss' },
+  { player1: 'e', player2: 'f', result1: 'win', result2: 'loss' },
+  { player1: 'e', player2: 'g', result1: 'win', result2: 'loss' },
+  { player1: 'f', player2: 'h', result1: 'win', result2: 'loss' },
+];
+assert.deepEqual(swissPairings(
+  ['a', 'c', 'b', 'd'].map((id, i) => ({ id, points: 0, byes: 0, seat: i + 1 })),
+  dropHistory, () => 0, false,
+), [
+  { player1: 'c', player2: 'd', rematch: false },
+  { player1: 'a', player2: 'b', rematch: false },
+]);
+
 assert.deepEqual(streakFor(['win', 'win', 'draw', 'win']), { current: 1, best: 2 });
 assert.deepEqual(streakFor(['win', 'loss']), { current: 0, best: 1 });
 assert.deepEqual(streakFor(['win', 'win']), { current: 2, best: 2 });

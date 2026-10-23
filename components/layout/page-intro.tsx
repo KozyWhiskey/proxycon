@@ -4,9 +4,9 @@ import type { ReactNode } from 'react';
 
 const icons: Record<string, LucideIcon> = { calendar: CalendarDays, decks: Layers, room: Monitor, game: Swords, players: Users, profile: UserRound };
 
-export function PageIntro({ eyebrow, title, description, actions, children }: { eyebrow: string; title: ReactNode; description?: string; actions?: ReactNode; children?: ReactNode }) {
+export function PageIntro({ eyebrow, title, description, actions, children, compact = false }: { eyebrow: string; title: ReactNode; description?: string; actions?: ReactNode; children?: ReactNode; compact?: boolean }) {
   return (
-    <header className="collection-heading">
+    <header className={`collection-heading${compact ? ' is-compact' : ''}`}>
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>

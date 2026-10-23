@@ -1,0 +1,56 @@
+/* Keep the weekend's character; give tasks and live play the first word. */
+.collection-heading.is-compact { padding-bottom:22px; }
+.collection-heading.is-compact h1 { font-size:clamp(30px,3vw,42px); line-height:1.12; }
+.collection-heading.is-compact .eyebrow { margin-bottom:10px; }
+.collection-heading.is-compact .subtle { margin-top:10px; font-size:14px; }
+.task-page { max-width:980px; gap:24px; }
+.task-page > .panel { padding:28px; border-top:2px solid var(--action); }
+.task-page > [data-slot=card] { background:var(--arena-surface); box-shadow:var(--arena-shadow); border-top:2px solid var(--action); }
+.recent-pods { display:flex; flex-wrap:wrap; gap:8px 18px; }
+.recent-pods:empty { display:none; }
+.recent-pods a { display:flex; align-items:center; min-height:44px; }
+.utility-link { display:flex; align-items:center; gap:16px; padding:22px; border-block:1px solid var(--line); transition:background .2s; }
+.utility-link:hover { background:var(--surface-soft); }
+.utility-link > svg { color:var(--action); flex:none; }
+.utility-link > span { flex:1; min-width:0; }
+.utility-link strong,.utility-link small { display:block; }
+.utility-link strong { font:600 18px var(--font-geist-sans),sans-serif; }
+.utility-link small { font-size:13px; color:var(--muted-ink); margin-top:6px; line-height:1.5; }
+.collection-footer-links { display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start; }
+.collection-footer-links .feature-panel { min-height:0; }
+.collection-footer-links .utility-link { margin-top:8px; }
+.weekend-record-strip { display:flex; align-items:center; flex-wrap:wrap; gap:12px 28px; padding:16px 20px; background:var(--arena-surface); border:1px solid var(--line); border-radius:10px; }
+.weekend-record-strip > div { display:flex; align-items:baseline; gap:14px; }
+.weekend-record-strip > div > span { color:var(--muted-ink); font-size:13px; }
+.weekend-record-strip strong { font:600 23px var(--font-geist-mono),monospace; letter-spacing:-.06em; }
+.weekend-record-strip > a { display:inline-flex; align-items:center; gap:6px; color:var(--action); margin-left:auto; min-height:44px; font-size:13px; }
+.weekend-record-strip small { flex-basis:100%; color:var(--muted-ink); font-size:12px; }
+.hub-quick-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.arena-hub .hub-quick-actions a { min-height:46px; font-size:14px; }
+.slip-versus { font:500 15px var(--font-geist-sans),sans-serif; color:var(--muted-ink); margin-right:6px; }
+.match-slip .slip-action { display:inline-flex; align-items:center; justify-content:space-between; gap:18px; min-height:44px; padding:10px 14px; background:var(--selected); border:1px solid color-mix(in srgb,var(--action) 30%,var(--line)); border-radius:6px; }
+.arena-hub .slip-opponent .slip-action { font-size:14px; }
+.match-slip .live-label { font-size:13px; }
+.match-slip:focus-visible,.utility-link:focus-visible { outline:2px solid var(--action); outline-offset:4px; }
+@media(max-width:767px) {
+  .collection-heading.is-compact { gap:14px; padding-bottom:18px; }
+  .collection-heading.is-compact h1 { font-size:30px; }
+  .collection-heading.is-compact .subtle { font-size:13px; line-height:1.5; }
+  .task-page > .panel { padding:18px; }
+  .collection-footer-links { grid-template-columns:1fr; gap:16px; }
+  .collection-footer-links .utility-link { margin-top:0; }
+  .arena-hub.has-personal-games { gap:18px; padding-top:18px; }
+  .arena-hub.has-personal-games .arena-event-header { padding-bottom:16px; gap:12px; }
+  .arena-hub.has-personal-games .arena-event-header h1 { font-size:28px; }
+  .arena-hub.has-personal-games .arena-event-meta { margin-top:10px; font-size:11px; }
+  .arena-hub.has-personal-games .arena-event-header .eyebrow { font-size:9px; margin-bottom:8px; }
+  .weekend-record-strip { padding:14px 16px; gap:10px 20px; }
+  .weekend-record-strip > div { flex:1; flex-direction:column; gap:6px; }
+  .weekend-record-strip > a { margin-left:0; min-height:32px; }
+  .weekend-record-strip small { flex-basis:auto; margin-left:auto; max-width:130px; text-align:right; line-height:1.5; }
+  .hub-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .arena-hub .hub-quick-actions a { padding:10px; font-size:12px; }
+  .arena-hub .match-slip,.events-collection .match-slip { grid-template-columns:104px minmax(0,1fr); }
+  .match-slip .slip-table strong { font-size:18px; letter-spacing:-.045em; }
+  .match-slip .slip-opponent .slip-action { display:flex; width:100%; min-height:44px; }
+}

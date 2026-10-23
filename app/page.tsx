@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus, ArrowUpRight, CalendarDays } from 'lucide-react';
+import { Plus, ArrowUpRight, CalendarDays, Users } from 'lucide-react';
 import { eventDates } from '@/lib/display';
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentUser } from '@/lib/get-current-user';
@@ -78,15 +78,17 @@ export default async function HomePage() {
         title: people.length ? people.join(', ') : 'You have the bye',
         detail: match.tournament_id
           ? match.started_at ? `Round ${match.round_number} is live` : `Round ${match.round_number} pairings are posted`
-          : 'Quick match',
+          : 'Quick game · In progress',
+        actionLabel: match.started_at ? 'Report result' : 'View match',
       };
     })
     .sort((a, b) => Number(b.tournament) - Number(a.tournament));
 
   return (
     <main className="page collection-page events-collection">
-      <PageIntro eyebrow="PROXYCON / THE PLAYGROUP" title={<>Good games.<br /><em>Great company.</em></>} description={profile ? `Welcome back, ${profile.display_name}. Your next table is waiting.` : 'A night of Commander. A weekend of drafts. Bring everyone to the same table.'} actions={current.mode !== 'house' && <Button asChild><Link href="/events/new"><Plus size={16} />Create event</Link></Button>} />
-      {slips.length > 0 && <section className="stack" aria-label="Your live matches">{slips.map(slip => <LiveSlip key={slip.id} href={slip.href} kicker={slip.kicker} title={slip.title} detail={slip.detail} />)}</section>}
+      <PageIntro compact={slips.length > 0} eyebrow="PROXYCON / THE PLAYGROUP" title={slips.length ? 'Your games' : <>Good games.<br /><em>Great company.</em></>} description={slips.length ? `Welcome back, ${profile?.display_name || 'player'}. Here’s where you’re playing.` : profile ? `Welcome back, ${profile.display_name}. Your next table is waiting.` : 'A night of Commander. A weekend of drafts. Bring everyone to the same table.'} actions={!slips.length && current.mode !== 'house' && <Button asChild><Link href="/events/new"><Plus size={16} />Create event</Link></Button>} />
+      {slips.length > 0 && <section className="personal-games" aria-label="Your live matches">{slips.map(slip => <LiveSlip key={slip.id} href={slip.href} kicker={slip.kicker} title={slip.title} detail={slip.detail} actionLabel={slip.actionLabel} />)}</section>}
+      {slips.length > 0 && current.mode !== 'house' && <div className="action-row"><Button asChild variant="outline"><Link href="/events/new"><Plus size={16} />Create event</Link></Button></div>}
       <section><div className="arena-section-title"><h2><CalendarDays size={18} />Your events</h2><span className="arena-caption">{(events || []).length} events · one playgroup</span></div>
        <div className="event-grid">{(events || []).map(event => {
          const mine = joined.has(event.id); const house = current.mode === 'house';
@@ -95,7 +97,7 @@ export default async function HomePage() {
        })}</div>
        {!(events || []).length && <div className="empty-state"><CalendarDays size={28} className="text-primary" /><h3>Your next game night starts here.</h3><p>Create an event, share it with your friends, then add a draft or a quick Commander game.</p><Button asChild><Link href="/events/new">Create your first event</Link></Button></div>}
       </section>
-      {current.mode !== 'house' && <div className="feature-grid"><FeaturePanel icon="decks" eyebrow="YOUR DECKBOX" title={<>Old favorites.<br />New rivals.</>} description="Keep your commanders ready. Pick a saved deck when you sit down to play." href="/decks" action="Open my decks" /><FeaturePanel icon="players" tone="blue" eyebrow="THE PEOPLE AT THE TABLE" title={<>Know the player.<br />Meet the commander.</>} description="Browse the playgroup and see what everyone is bringing to the next game." href="/players" action="Meet the playgroup" /></div>}
+      {current.mode !== 'house' && <div className="collection-footer-links"><FeaturePanel icon="decks" eyebrow="YOUR DECKBOX" title={<>Old favorites.<br />New rivals.</>} description="Keep your commanders ready. Pick a saved deck when you sit down to play." href="/decks" action="Open my decks" /><Link className="utility-link" href="/players"><Users size={23} /><span><strong>The playgroup</strong><small>Players and their commander collections</small></span><ArrowUpRight size={18} /></Link></div>}
     </main>
   );
 }

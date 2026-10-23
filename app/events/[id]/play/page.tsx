@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { loadEventBoard } from '@/lib/event-board';
 import { commanderKey } from '@/lib/weekend';
 import { QuickMatchForm } from '@/components/weekend/quick-match-form';
+import { PageIntro } from '@/components/layout/page-intro';
 
 export default async function PlayPage({
   params,
@@ -29,14 +30,12 @@ export default async function PlayPage({
     : undefined;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 pb-28">
-      <Link href={`/events/${id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
-      <header>
-        <h1 className="font-heading text-4xl">Quick match</h1>
-        <p className="mt-2 text-sm text-muted-foreground">One table, one result. The same pod can play again.</p>
-      </header>
-      {board.joined ? (
+    <main className="page collection-page task-page">
+      <Link href={`/events/${id}`} className="subtle">← {board.event.name}</Link>
+      <PageIntro compact eyebrow="QUICK GAME" title="Start a game" description="Choose a format and players. Add commanders now or at the table." />
+      {board.canManage ? (
         <QuickMatchForm
+          key={previous?.id || 'new'}
           eventId={id}
           people={board.members.map((member) => ({ id: member.id, name: member.name }))}
           decks={board.decks.map((deck) => ({
@@ -50,11 +49,11 @@ export default async function PlayPage({
       ) : (
         <p className="text-muted-foreground">Join the event before starting a game.</p>
       )}
-      {board.matches.filter((match) => !match.tournament_id && matchPlayersHaveResult(board, match.id)).slice(0, 5).map((match) => (
+      <section className="recent-pods" aria-label="Play a recent game again">{board.matches.filter((match) => !match.tournament_id && matchPlayersHaveResult(board, match.id)).slice(0, 5).map((match) => (
         <Link key={match.id} href={`/events/${id}/play?again=${match.id}`} className="text-sm text-primary">
           Play again · {match.format_label || match.game_type}
         </Link>
-      ))}
+      ))}</section>
     </main>
   );
 }

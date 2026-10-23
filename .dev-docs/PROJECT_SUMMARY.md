@@ -120,6 +120,10 @@ One person can be in a live tournament match and a live Commander game at the sa
 
 Words on the screen: game, draft, seat, table, room.
 
+### Visual direction
+
+Keep the charcoal-and-orange palette, commander artwork, layered surfaces, and the “Take a seat. Run the room.” destination. Visual character should help people find the next useful action. On a phone, a returning player's table, opponent, round state, and result action take priority over discovery content; event records remain close to their games. Setup and settings use compact, direct headings. Expressive display copy and prominent feature panels belong where they help explain a destination, rather than repeating above every form. Room controls and standings must remain readable and usable at laptop sizes.
+
 ## Out of scope
 
 - Life totals during a game

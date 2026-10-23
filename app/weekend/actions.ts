@@ -224,7 +224,7 @@ async function people(supabase: Db, tournamentId: string) {
   return data || [];
 }
 
-async function historyOf(supabase: Db, tournamentId: string, participantIds: string[]): Promise<HistoryMatch[]> {
+async function historyOf(supabase: Db, tournamentId: string): Promise<HistoryMatch[]> {
   const { data: matches } = await supabase
     .from('matches')
     .select('id, is_final')
@@ -244,7 +244,8 @@ async function historyOf(supabase: Db, tournamentId: string, participantIds: str
   }
   const history: HistoryMatch[] = [];
   for (const [matchId, seatsInMatch] of grouped) {
-    const recorded = seatsInMatch.filter((seat) => seat.result && seat.participant_id && participantIds.includes(seat.participant_id));
+    // A dropped opponent remains part of a played match, never a synthetic bye.
+    const recorded = seatsInMatch.filter((seat) => seat.result && seat.participant_id);
     if (recorded.length === 0) continue;
     if (recorded.length === 1) {
       history.push({ player1: recorded[0].participant_id!, player2: null, result1: 'win', result2: null });
@@ -362,7 +363,7 @@ export async function postPairings(tournamentId: string): Promise<ActionResult> 
   } else if (nextRound === 1) {
     pairings = sealedRound1(roster.map((person) => person.id), Math.random);
   } else {
-    const history = await historyOf(supabase, tournamentId, roster.map((person) => person.id));
+    const history = await historyOf(supabase, tournamentId);
     pairings = swissPairings(
       roster.map((person) => ({
         id: person.id,
@@ -768,6 +769,18 @@ export async function randomizeSeats(tournamentId: string, mode: 'fill' | 'reshu
       const { error } = await supabase.from('tournament_participants').update({ draft_seat: seat, pod }).eq('id', person.id);
       if (error) return { success: false, message: error.message };
     }
+    // Growing the chart can move the pod boundary. Keep every claimed seat,
+    // then align all pod labels with the final chart (six seats split 3 + 3).
+    if (tournament.pod_count === 2) {
+      const seated = (await people(supabase, tournamentId)).filter(person => !person.dropped && person.draft_seat);
+      const count = chartSeatCount(seated.map(person => person.draft_seat || 0), joined.length);
+      for (const person of seated) {
+        const pod = podForSeat(2, person.draft_seat!, count);
+        if (person.pod === pod) continue;
+        const { error } = await supabase.from('tournament_participants').update({ pod }).eq('id', person.id);
+        if (error) return { success: false, message: error.message };
+      }
+    }
   }
 
   refresh(tournament.event_id, tournamentId);
@@ -872,10 +885,10 @@ export async function reportMatch(input: {
   if (input.expected && !matchesResultSnapshot(rows, input.expected)) return { success: false, message: 'This result changed while you were editing. Review the current result before saving your correction.' };
 
   const seatedIds = rows.map((seat) => seat.profile_id).filter((id): id is string => Boolean(id));
-  if (match.tournament_id && seatedIds.length >= 2) {
+  if (input.games && seatedIds.length >= 2) {
     const scores = input.games;
-    if (!scores || seatedIds.some((id) => !Number.isFinite(scores[id]))) {
-      return { success: false, message: 'Enter games won for each player (for example 2–0 or 2–1).' };
+    if (seatedIds.some((id) => !Number.isFinite(scores[id]))) {
+      return { success: false, message: 'Enter a valid game score for each player, or report the outcome without a score.' };
     }
   }
 
@@ -940,8 +953,9 @@ export async function dropPlayer(tournamentId: string, participantId: string): P
   const started = state.current.some((match) => match.started_at);
 
   if (!started) {
-    const history = await historyOf(supabase, tournamentId, [participantId]);
-    if (history.length === 0) await supabase.from('tournament_participants').delete().eq('id', participantId);
+    const history = await historyOf(supabase, tournamentId);
+    const hasPlayed = history.some(match => match.player1 === participantId || match.player2 === participantId);
+    if (!hasPlayed) await supabase.from('tournament_participants').delete().eq('id', participantId);
     else await supabase.from('tournament_participants').update({ dropped: true }).eq('id', participantId);
     if (state.current.length > 0) {
       const ids = state.current.map((match) => match.id);
@@ -1042,7 +1056,7 @@ export async function addFinal(tournamentId: string): Promise<ActionResult> {
   if (existing && existing.length > 0) return { success: false, message: 'The final is already posted.' };
 
   const roster = (await people(supabase, tournamentId)).filter((person) => person.profile_id);
-  const history = await historyOf(supabase, tournamentId, roster.map((person) => person.id));
+  const history = await historyOf(supabase, tournamentId);
   const ranked = rankPlayers(roster.map((person) => person.id), history);
   if (ranked.length < 2) return { success: false, message: 'The final needs two players.' };
   const ties = manualTieGroups(ranked, history);
@@ -1099,7 +1113,7 @@ export async function finishTournament(input: {
   }
 
   const roster = (await people(supabase, input.tournamentId)).filter((person) => person.profile_id);
-  const history = await historyOf(supabase, input.tournamentId, roster.map((person) => person.id));
+  const history = await historyOf(supabase, input.tournamentId);
   let ranked = rankPlayers(roster.map((person) => person.id), history);
   const ties = manualTieGroups(ranked, history);
   if (ties.length > 0) {
@@ -1144,11 +1158,22 @@ export async function finishTournament(input: {
     }
   }
 
+  // An early Finish ends play; automatically posted future tables are not live games.
+  // Keep every started match and its results, discarding only unstarted pairings.
+  const unstartedIds = state.current.filter(match => !match.started_at).map(match => match.id);
+  if (unstartedIds.length) {
+    const { error: seatsError } = await supabase.from('match_participants').delete().in('match_id', unstartedIds);
+    if (seatsError) return { success: false, message: 'Could not clear the unstarted tables. Try finishing again.' };
+    const { error: matchesError } = await supabase.from('matches').delete().in('id', unstartedIds).is('started_at', null);
+    if (matchesError) return { success: false, message: 'Could not clear the unstarted tables. Try finishing again.' };
+  }
   for (let index = 0; index < ranked.length; index += 1) {
-    await supabase.from('tournament_participants').update({ place: index + 1 }).eq('id', ranked[index].id);
+    const { data, error } = await supabase.from('tournament_participants').update({ place: index + 1 }).eq('id', ranked[index].id).select('id');
+    if (error || data?.length !== 1) return { success: false, message: 'Could not save all places. Review them and finish again.' };
   }
 
-  await supabase.from('tournaments').update({ status: 'completed' }).eq('id', input.tournamentId);
+  const { data: finished, error: finishError } = await supabase.from('tournaments').update({ status: 'completed' }).eq('id', input.tournamentId).select('id');
+  if (finishError || finished?.length !== 1) return { success: false, message: 'Could not finish the tournament. Try again.' };
   refresh(tournament.event_id, input.tournamentId);
   return { success: true, message: 'Finished. 1st, 2nd, and 3rd are labeled.' };
 }
