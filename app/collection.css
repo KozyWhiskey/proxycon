@@ -52,14 +52,18 @@
 .feature-panel p { line-height:1.7; color:var(--feature-muted); margin:16px 0 24px; max-width:380px; font-size:14px; }
 .feature-action { display:flex; align-items:center; gap:8px; color:var(--feature-light); font-size:14px; margin-top:auto; min-height:44px; }
 .event-pass { box-shadow:none; border-radius:12px; background:var(--surface); }
-.event-pass .event-card-top { min-height:228px; padding:25px; background:var(--surface); border-top:2px solid var(--action); }
-.event-pass.is-past .event-card-top { border-top-color:var(--line); background:var(--arena-surface); }
+.event-pass .event-card-top { min-height:228px; padding:25px; background:var(--surface); border-top:1px solid var(--line); }
+.event-pass.is-featured .event-card-top { border-top:2px solid var(--action); }
+.event-pass.is-past .event-card-top { border-top-color:var(--line); background:var(--surface-soft); min-height:0; }
 .event-pass-top { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
 .event-date-stamp { display:flex; flex-direction:column; align-items:center; padding-left:20px; border-left:1px solid var(--line); color:var(--link); }
 .event-date-stamp small { font:12px var(--font-data),monospace; text-transform:uppercase; letter-spacing:.13em; }
 .event-date-stamp strong { font:600 38px/1.15 var(--font-data),monospace; letter-spacing:-.08em; }
 .is-past .event-date-stamp { color:var(--muted-ink); }
 .event-pass .event-card-top h2 { font-family:var(--font-display),Georgia,serif; font-size:32px; max-width:85%; line-height:1.15; margin-top:18px; }
+.event-pass.is-past .event-date-stamp strong { font-size:28px; }
+.event-pass.is-past .event-card-top h2 { font-size:26px; color:var(--muted-ink); }
+.event-pass.is-past .event-card-body { background:var(--surface-soft); }
 .event-pass .event-card-top > p { margin-top:12px; }
 .event-pass .event-card-body { border-top:1px dashed var(--line); padding:18px 24px; background:var(--surface); }
 .event-membership { color:var(--muted-ink); font-size:12px; }

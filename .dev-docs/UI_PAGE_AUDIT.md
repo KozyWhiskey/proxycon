@@ -41,8 +41,8 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 
 | Page / route | Page role | Review status / special states |
 | --- | --- | --- |
-| Events / `/` | Destination | Pending full pass; picked player, live match, house and no events. |
-| Event / `/events/[id]` | Destination | Current refinement: room callout; full pass pending. Own matches, simultaneous games, setup/history. |
+| Events / `/` | Destination | Pass recorded 23 Oct 2026 (friend-group voice + hierarchy). Live-match, house, and empty-events states still open. |
+| Event / `/events/[id]` | Destination | Voice/empty-copy pass applied 23 Oct 2026. Own-match phone hierarchy still needs a live-slip recheck. |
 | Room / `/events/[id]/room` | Live operations | Current refinement: clock shading, controls and report popout. Full state pass pending: posted, playing, paused, elapsed, bye, completed. |
 | Tournament / `/tournament/[id]` | Live operations / setup | Current refinement: shared report copy/controls. Full pass pending: setup, seating, round, corrections and finish. |
 | Tournament result / `/tournament/[id]/match/[matchId]` | Task | Required counters already verified; current refinement removes repeated instructions. Recheck posted/read-only/correction states. |
@@ -95,4 +95,22 @@ Checks: TypeScript, targeted ESLint (zero errors/warnings), UX/required-score re
 
 Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.90:1 light on the warm feature; action text 6.43:1 at the darkest primary-button stop. Existing reduced-motion rules still suppress transitions/animations. These endpoint checks do not constitute full accessibility certification.
 
-Next complete page pass: **Events**, followed by **Event / Play**. Use the copyable prompt above and record all four theme/viewport combinations before closing each pass.
+## Events `/` — pass record · 23 October 2026
+
+- Route, page job, data/event state and role: `/` Events destination; Craig picked; no open personal match; three events including active Beta House Weekend; not house mode.
+- Keep: Ember Folio light/dark; Fraunces event names; five-mana divider; neutral Events nav; live-slip path when matches exist; Closed vs active cards.
+- Change applied: plain **Your games** hero for known players with events; Create event demoted to outline when events already exist; status **This weekend** / **Not joined** / **Closed**; membership **You’re in** / **Not joined yet**; removed “3 events · one playgroup”; deckbox FeaturePanel → quiet My decks utility link; GameStatus setup icon CalendarDays (no diamond); featured joined active card gets orange top rule + primary Open event; past cards quieted.
+- Light phone / Dark phone / Light laptop / Dark laptop: [phone light](ux-screenshots/ember-events-audit-phone-light.jpg), [phone dark](ux-screenshots/ember-events-audit-phone-dark.png), [laptop light](ux-screenshots/ember-events-audit-laptop-light.png), [laptop light footer](ux-screenshots/ember-events-audit-laptop-light-footer.png), [laptop dark](ux-screenshots/ember-events-audit-laptop-dark.jpg).
+- Interactions: Appearance control available; no writes.
+- Checks: `tsc --noEmit` pass; ESLint on `app/page.tsx` and `arena-ui.tsx` pass.
+- Remaining gaps: live-match phone hierarchy, house mode, empty events, 320px / 200% zoom not rechecked this pass.
+- Next page: Event / Play critique (below).
+
+## Event / Play `/events/[id]` — pass record · 23 October 2026
+
+- Route, page job, data/event state and role: `/events/[id]` destination Play; Craig; no open personal match; live tournaments + room callout.
+- Keep: Fraunces event title; mana divider; Play · Stats · Players · Room; warm **Take a seat. Run the room.**; live cards + progress; dark text on orange Start a game; W–L–D strip.
+- Change applied: winner copy **“{name} won”**; setup caption **Joining · N seated**; empty **No live games.** / **No results yet.**; house eyebrow **House screen**; hub action buttons keep readable Create tournament on phone (13px, wrap-safe); tables stack still precedes room aside below 1000px.
+- Pre-fix evidence: [phone light](ux-screenshots/ember-event-play-audit-phone-light.png), [phone dark](ux-screenshots/ember-event-play-audit-phone-dark.jpg), [laptop light](ux-screenshots/ember-event-play-audit-laptop-light.jpg), [laptop dark](ux-screenshots/ember-event-play-audit-laptop-dark.png).
+- Remaining gaps: open personal match on phone; simultaneous Commander + tournament slips; 320px / 200% zoom.
+- Next page: Room full state pass, or Tournament detail.

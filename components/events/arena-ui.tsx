@@ -1,4 +1,4 @@
-import { Check, Diamond, Layers } from 'lucide-react';
+import { Check, CalendarDays, Layers } from 'lucide-react';
 import { ManaIdentity } from '@/components/ui/mana-identity';
 import { COLOR_DISPLAY_NAMES } from '@/lib/player-colors';
 import Image from 'next/image';
@@ -8,7 +8,7 @@ export function PlayerAvatar({ name, color, small = false }: { name: string; col
 }
 
 export function GameStatus({ state, children }: { state: 'live' | 'setup' | 'complete'; children: React.ReactNode }) {
-  return <span className={`arena-status is-${state}`}>{state === 'complete' ? <Check size={12} /> : state === 'setup' ? <Diamond size={11} /> : <i />}{children}</span>;
+  return <span className={`arena-status is-${state}`}>{state === 'complete' ? <Check size={12} /> : state === 'setup' ? <CalendarDays size={11} /> : <i />}{children}</span>;
 }
 
 export function DeckArt({ src, name }: { src?: string | null; name: string }) {

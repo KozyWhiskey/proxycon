@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus, ArrowUpRight, CalendarDays, Users } from 'lucide-react';
+import { Plus, ArrowUpRight, CalendarDays, Users, Layers } from 'lucide-react';
 import { eventDates } from '@/lib/display';
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentUser } from '@/lib/get-current-user';
@@ -8,7 +8,7 @@ import { ActButton } from '@/components/weekend/act-button';
 import { LiveSlip } from '@/components/weekend/live-slip';
 import { Button } from '@/components/ui/button';
 import { NamePicker } from '@/components/who/name-picker';
-import { PageIntro, FeaturePanel } from '@/components/layout/page-intro';
+import { PageIntro } from '@/components/layout/page-intro';
 import { GameStatus } from '@/components/events/arena-ui';
 
 export default async function HomePage() {
@@ -84,20 +84,92 @@ export default async function HomePage() {
     })
     .sort((a, b) => Number(b.tournament) - Number(a.tournament));
 
+  const eventList = events || [];
+  const hasEvents = eventList.length > 0;
+  const emptyPlaygroup = !hasEvents;
+  const playerName = profile?.display_name || 'player';
+  const introTitle = emptyPlaygroup && !slips.length
+    ? <>Good games.<br /><em>Great company.</em></>
+    : 'Your games';
+  const introDescription = slips.length
+    ? `Welcome back, ${playerName}. Here’s where you’re playing.`
+    : emptyPlaygroup
+      ? (profile ? `Welcome back, ${profile.display_name}. Create an event when the group is ready.` : 'A night of Commander. A weekend of drafts. Bring everyone to the same table.')
+      : `Welcome back, ${playerName}.`;
+  const createIsPrimary = emptyPlaygroup && current.mode !== 'house';
+  const createEvent = current.mode !== 'house'
+    ? (
+      <Button asChild variant={createIsPrimary ? 'default' : 'outline'}>
+        <Link href="/events/new"><Plus size={16} />Create event</Link>
+      </Button>
+    )
+    : null;
+  let featuredId: string | null = null;
+  for (const event of eventList) {
+    if (event.is_active !== false && (joined.has(event.id) || current.mode === 'house')) {
+      featuredId = event.id;
+      break;
+    }
+  }
+
   return (
     <main className="page collection-page events-collection">
-      <PageIntro eyebrow="PROXYCON / THE PLAYGROUP" title={slips.length ? 'Your games' : <>Good games.<br /><em>Great company.</em></>} description={slips.length ? `Welcome back, ${profile?.display_name || 'player'}. Here’s where you’re playing.` : profile ? `Welcome back, ${profile.display_name}. Your next table is waiting.` : 'A night of Commander. A weekend of drafts. Bring everyone to the same table.'} actions={!slips.length && current.mode !== 'house' && <Button asChild><Link href="/events/new"><Plus size={16} />Create event</Link></Button>} />
+      <PageIntro
+        eyebrow="PROXYCON / THE PLAYGROUP"
+        title={introTitle}
+        description={introDescription}
+        actions={createEvent && (!slips.length || createIsPrimary) ? createEvent : undefined}
+      />
       {slips.length > 0 && <section className="personal-games" aria-label="Your live matches">{slips.map(slip => <LiveSlip key={slip.id} href={slip.href} kicker={slip.kicker} title={slip.title} detail={slip.detail} actionLabel={slip.actionLabel} />)}</section>}
-      {slips.length > 0 && current.mode !== 'house' && <div className="action-row"><Button asChild variant="outline"><Link href="/events/new"><Plus size={16} />Create event</Link></Button></div>}
-      <section><div className="arena-section-title"><h2><CalendarDays size={18} />Your events</h2><span className="arena-caption">{(events || []).length} events · one playgroup</span></div>
-       <div className="event-grid">{(events || []).map(event => {
-         const mine = joined.has(event.id); const house = current.mode === 'house';
-         const date = event.start_date ? new Date(`${event.start_date}T12:00:00Z`) : null;
-         return <article className={`event-card event-pass${event.is_active === false ? ' is-past' : ''}`} key={event.id}><div className="event-card-top"><div className="event-pass-top"><GameStatus state={event.is_active === false ? 'complete' : 'setup'}>{event.is_active === false ? 'Closed' : 'Open to join'}</GameStatus>{date && <span className="event-date-stamp"><small>{date.toLocaleDateString('en-US', { month:'short', timeZone:'UTC' })}</small><strong>{date.getUTCDate()}</strong></span>}</div><h2><Link href={`/events/${event.id}`}>{event.name}</Link></h2><p className="arena-caption">{eventDates(event.start_date,event.end_date)}</p></div><div className="event-card-body"><span className="event-membership">{house ? 'The house screen is ready' : mine ? 'You’re on the guest list' : 'Room for another player'}</span>{mine || house ? <Button asChild variant="outline"><Link href={house ? `/events/${event.id}/room` : `/events/${event.id}`}>{house ? 'Open room' : 'Open event'} <ArrowUpRight size={15} /></Link></Button> : <ActButton label="Join event" action={joinEventById.bind(null,event.id)} />}</div></article>;
-       })}</div>
-       {!(events || []).length && <div className="empty-state"><CalendarDays size={28} className="text-primary" /><h3>Your next game night starts here.</h3><p>Create an event, share it with your friends, then add a draft or a quick Commander game.</p><Button asChild><Link href="/events/new">Create your first event</Link></Button></div>}
+      {slips.length > 0 && createEvent && <div className="action-row">{createEvent}</div>}
+      <section>
+        <div className="arena-section-title"><h2><CalendarDays size={18} />Your events</h2></div>
+        <div className="event-grid">{eventList.map(event => {
+          const mine = joined.has(event.id);
+          const house = current.mode === 'house';
+          const past = event.is_active === false;
+          const featured = event.id === featuredId;
+          const date = event.start_date ? new Date(`${event.start_date}T12:00:00Z`) : null;
+          const status = past
+            ? <GameStatus state="complete">Closed</GameStatus>
+            : mine || house
+              ? <GameStatus state="live">This weekend</GameStatus>
+              : <GameStatus state="setup">Not joined</GameStatus>;
+          const membership = house ? 'House screen ready' : mine ? 'You’re in' : 'Not joined yet';
+          return (
+            <article className={`event-card event-pass${past ? ' is-past' : ''}${featured ? ' is-featured' : ''}`} key={event.id}>
+              <div className="event-card-top">
+                <div className="event-pass-top">
+                  {status}
+                  {date && <span className="event-date-stamp"><small>{date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })}</small><strong>{date.getUTCDate()}</strong></span>}
+                </div>
+                <h2><Link href={`/events/${event.id}`}>{event.name}</Link></h2>
+                <p className="arena-caption">{eventDates(event.start_date, event.end_date)}</p>
+              </div>
+              <div className="event-card-body">
+                <span className="event-membership">{membership}</span>
+                {mine || house
+                  ? <Button asChild variant={featured ? 'default' : 'outline'}><Link href={house ? `/events/${event.id}/room` : `/events/${event.id}`}>{house ? 'Open room' : 'Open event'} <ArrowUpRight size={15} /></Link></Button>
+                  : <ActButton label="Join event" action={joinEventById.bind(null, event.id)} />}
+              </div>
+            </article>
+          );
+        })}</div>
+        {emptyPlaygroup && (
+          <div className="empty-state">
+            <CalendarDays size={28} className="text-primary" />
+            <h3>No events yet.</h3>
+            <p>Create an event, share it with your friends, then add a draft or a quick Commander game.</p>
+            <Button asChild><Link href="/events/new">Create your first event</Link></Button>
+          </div>
+        )}
       </section>
-      {current.mode !== 'house' && <div className="collection-footer-links"><FeaturePanel icon="decks" eyebrow="YOUR DECKBOX" title={<>Old favorites.<br />New rivals.</>} description="Keep your commanders ready. Pick a saved deck when you sit down to play." href="/decks" action="Open my decks" /><Link className="utility-link" href="/players"><Users size={23} /><span><strong>The playgroup</strong><small>Players and their commander collections</small></span><ArrowUpRight size={18} /></Link></div>}
+      {current.mode !== 'house' && (
+        <div className="collection-footer-links">
+          <Link className="utility-link" href="/decks"><Layers size={23} /><span><strong>My decks</strong><small>Your commanders for the next game</small></span><ArrowUpRight size={18} /></Link>
+          <Link className="utility-link" href="/players"><Users size={23} /><span><strong>The playgroup</strong><small>Players and their commander collections</small></span><ArrowUpRight size={18} /></Link>
+        </div>
+      )}
     </main>
   );
 }

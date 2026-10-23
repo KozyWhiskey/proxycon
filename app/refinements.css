@@ -16,9 +16,8 @@
 .utility-link strong,.utility-link small { display:block; }
 .utility-link strong { font:600 18px var(--font-body),sans-serif; }
 .utility-link small { font-size:13px; color:var(--muted-ink); margin-top:6px; line-height:1.5; }
-.collection-footer-links { display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start; }
-.collection-footer-links .feature-panel { min-height:0; }
-.collection-footer-links .utility-link { margin-top:8px; }
+.collection-footer-links { display:grid; grid-template-columns:1fr 1fr; gap:0 28px; align-items:stretch; }
+.collection-footer-links .utility-link { margin:0; border-block:1px solid var(--line); }
 .weekend-record-strip { display:flex; align-items:center; flex-wrap:wrap; gap:12px 28px; padding:16px 20px; background:var(--arena-surface); border:1px solid var(--line); border-radius:12px; }
 .weekend-record-strip > div { display:flex; align-items:baseline; gap:14px; }
 .weekend-record-strip > div > span { color:var(--muted-ink); font-size:13px; }
@@ -26,7 +25,7 @@
 .weekend-record-strip > a { display:inline-flex; align-items:center; gap:6px; color:var(--link); margin-left:auto; min-height:44px; font-size:13px; }
 .weekend-record-strip small { flex-basis:100%; color:var(--muted-ink); font-size:12px; }
 .hub-quick-actions { display:flex; flex-wrap:wrap; gap:10px; }
-.arena-hub .hub-quick-actions a { min-height:46px; font-size:14px; }
+.arena-hub .hub-quick-actions a { min-height:46px; font-size:14px; white-space:normal; text-align:center; line-height:1.25; gap:8px; }
 .slip-versus { font:500 15px var(--font-body),sans-serif; color:var(--muted-ink); margin-right:6px; }
 .match-slip .slip-opponent > .slip-action { display:inline-flex; align-items:center; justify-content:space-between; gap:18px; min-height:44px; padding:10px 14px; background:var(--action); color:var(--action-ink); border:1px solid var(--action); border-radius:8px; }
 .arena-hub .slip-opponent .slip-action { font-size:14px; background:var(--action); color:var(--action-ink); border:1px solid var(--action); border-radius:8px; }
@@ -49,7 +48,7 @@
   .weekend-record-strip > a { margin-left:0; min-height:32px; }
   .weekend-record-strip small { flex-basis:auto; margin-left:auto; max-width:130px; text-align:right; line-height:1.5; }
   .hub-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .arena-hub .hub-quick-actions a { padding:10px; font-size:12px; }
+  .arena-hub .hub-quick-actions a { padding:10px 8px; font-size:13px; min-height:48px; }
   .arena-hub .match-slip,.events-collection .match-slip { grid-template-columns:104px minmax(0,1fr); }
   .match-slip .slip-table strong { font-size:18px; letter-spacing:-.045em; }
   .match-slip .slip-opponent .slip-action { display:flex; width:100%; min-height:44px; background:var(--action); color:var(--action-ink); border:1px solid var(--action); border-radius:8px; }
