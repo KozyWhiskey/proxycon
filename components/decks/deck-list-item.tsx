@@ -113,7 +113,7 @@ export default function DeckListItem({ deck, isOwner = false }: DeckListItemProp
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="h-8 w-8 border-border hover:bg-white/20"
+                    className="h-8 w-8 border-border hover:bg-muted"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsEditOpen(true);

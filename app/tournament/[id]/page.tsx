@@ -1,6 +1,6 @@
+import { EventNav } from '@/components/events/event-nav';
 import { AddPlayers } from '@/components/events/add-players';
 import { addTournamentPlayer } from '@/app/weekend/actions';
-import { LiveRefresh } from '@/components/events/live-refresh';
 import { LiveSlip } from '@/components/weekend/live-slip';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -13,18 +13,19 @@ import {
   claimSeat,
   clearPairings,
   deleteTournament,
-  dropPlayer,
   joinTournament,
   postPairings,
-  randomizeSeats,
   startRound,
 } from '@/app/weekend/actions';
 import { ActButton } from '@/components/weekend/act-button';
 import { FinishForm } from '@/components/weekend/finish-form';
 import { MatchReporter } from '@/components/weekend/match-reporter';
 import { RoundClock } from '@/components/weekend/round-clock';
+import { SeatRandomizer } from '@/components/weekend/seat-randomizer';
 import { SeatChart } from '@/components/weekend/seat-chart';
-import { MatchDay, MovePlayer, RoundEditor, SealedSwap, TableName } from '@/components/weekend/tournament-tools';
+import { MovePlayer, RoundEditor, SealedSwap } from '@/components/weekend/tournament-tools';
+import { FeaturePanel } from '@/components/layout/page-intro';
+import { GameStatus } from '@/components/events/arena-ui';
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -74,57 +75,87 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const bringer = row.brought_by ? nameOf(board, row.brought_by) : null;
   const openNames = round.matches
     .filter((match) => match.started_at && matchPlayers(board, match.id).some((seat) => !seat.result))
-    .map((match) => match.table_label || `Table ${match.table_number}`);
+    .map((match) => {
+      const players = matchPlayers(board, match.id);
+      if (players.length === 1) return `${players[0]?.name || 'Player'} bye`;
+      return players.map((player) => player.name).join(' vs ');
+    });
+  const showClock = started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null;
+  const settings = row.status !== 'completed' && board.canManage ? (
+    <details className="disclosure tournament-settings"><summary>Tournament settings</summary><div>
+      <RoundEditor
+        tournamentId={id}
+        rounds={row.max_rounds || 3}
+        locked={Boolean(row.field_locked)}
+        pods={row.pod_count || 1}
+        note={row.product_note || ''}
+        bringing={Boolean(row.brought_by)}
+        showPods={needsSeats(row.format) && round.matches.length === 0 && board.matches.every((match) => match.tournament_id !== id || match.is_final)}
+        prize1st={row.prize_1st || ''}
+        prize2nd={row.prize_2nd || ''}
+        prize3rd={row.prize_3rd || ''}
+        duration={row.round_duration_minutes || 50}
+      />
+    </div></details>
+  ) : null;
 
   return (
-    <main className="page form-page">
-      <LiveRefresh />
-      <header className="space-y-2">
-        <Link href={`/events/${tournament.event_id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
-        <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">{tournamentLabel(row.format)}</p>
-        <h1 className="font-heading text-4xl">{row.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {joined.length} players · {row.max_rounds} rounds
-          {joined.length >= 6 ? ` · suggestion is ${suggestedRounds(joined.length)}` : ''}
-          {(row.prize_1st || row.prize_2nd || row.prize_3rd) ? ' · prizes named' : ' · no prizes'}
-          {row.pod_count === 2 ? ' · two pods' : ''}
-        </p>
-        {(bringer || row.product_note) && (
-          <p className="text-sm text-muted-foreground">{bringer ? `${bringer} is bringing them.` : ''} {row.product_note}</p>
-        )}
-        {(row.prize_1st || row.prize_2nd || row.prize_3rd) && (
+    <><EventNav id={tournament.event_id} name={board.event.name} house={board.house} /><main className="page tournament-player-page arena-tournament-detail">
+
+      <header className="tournament-live-head">
+        <div className="tournament-live-copy">
+          <Link href={`/events/${tournament.event_id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
+          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">{tournamentLabel(row.format)}{round.round ? ` · Round ${round.round}` : ''}</p>
+          <h1 className="font-heading text-4xl">{row.name}</h1>
+          <GameStatus state={row.status === 'completed' ? 'complete' : started ? 'live' : 'setup'}>{row.status === 'completed' ? 'Completed' : started ? `Round ${round.round} in progress` : posted ? 'Pairings posted' : 'Joining & seating'}</GameStatus>
           <p className="text-sm text-muted-foreground">
-            {[row.prize_1st && `1st ${row.prize_1st}`, row.prize_2nd && `2nd ${row.prize_2nd}`, row.prize_3rd && `3rd ${row.prize_3rd}`].filter(Boolean).join(' · ')}
+            {joined.length} players · {row.max_rounds} rounds
+            {joined.length >= 6 ? ` · suggestion is ${suggestedRounds(joined.length)}` : ''}
+            {row.pod_count === 2 ? ' · two pods' : ''}
+            {startedAt ? ` · started ${new Date(startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}` : ''}
           </p>
+          {(bringer || row.product_note) && (
+            <p className="text-sm text-muted-foreground">{bringer ? `${bringer} is bringing them.` : ''} {row.product_note}</p>
+          )}
+          {(row.prize_1st || row.prize_2nd || row.prize_3rd) && (
+            <p className="text-sm text-muted-foreground">
+              {[row.prize_1st && `1st ${row.prize_1st}`, row.prize_2nd && `2nd ${row.prize_2nd}`, row.prize_3rd && `3rd ${row.prize_3rd}`].filter(Boolean).join(' · ')}
+            </p>
+          )}
+        </div>
+        {showClock && (
+          <RoundClock
+            tournamentId={id}
+            durationMinutes={row.round_duration_minutes || 50}
+            anchor={row.clock_anchor}
+            pausedAt={row.clock_paused_at}
+            remainingSeconds={row.clock_remaining_seconds}
+            canControl={board.canManage}
+          />
+        )}
+        {posted && board.canManage && row.status !== 'completed' && (
+          <div className="round-start-panel">
+            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">Round {round.round}</p>
+            <p className="text-sm text-muted-foreground">Pairings are posted. Start when tables are ready.</p>
+            <div className="flex flex-wrap gap-2">
+              <ActButton label="Start round" action={startRound.bind(null, id)} />
+              <ActButton label="Clear pairings" variant="outline" action={clearPairings.bind(null, id)} />
+            </div>
+          </div>
         )}
       </header>
+      <FeaturePanel icon="room" eyebrow="THE TOURNAMENT ROOM" title="The whole draft. One screen." description="Open the house view for current pairings, the round clock, and live standings." href={`/events/${board.event.id}/room?tournament=${id}`} action="Open tournament room" />
 
-      {round.matches.filter(match => matchPlayers(board, match.id).some(p => p.profile_id === board.userId && !p.result)).map(match => <LiveSlip key={match.id} href={`#match-${match.id}`} kicker={match.table_label || `Table ${match.table_number}`} title={matchPlayers(board,match.id).filter(p=>p.profile_id !== board.userId).map(p=>p.name).join(' vs ') || 'You have the bye'} detail={`Round ${round.round} · ${match.started_at ? 'In progress' : 'Pairings posted'}`} />)}
+      {round.matches.filter(match => matchPlayers(board, match.id).some(p => p.profile_id === board.userId && !p.result)).map(match => <LiveSlip record={(() => { const me = standings.find(p => p.profileId === board.userId); return me ? `${me.points} points · ${me.wins}–${me.losses}–${me.draws} match record` : undefined; })()} actionLabel={match.started_at ? "Report result" : "View match"} key={match.id} href={`/tournament/${id}/match/${match.id}`} kicker={match.table_label || `Table ${match.table_number}`} title={matchPlayers(board,match.id).filter(p=>p.profile_id !== board.userId).map(p=>p.name).join(' vs ') || 'You have the bye'} detail={`Round ${round.round} · ${match.started_at ? 'In progress' : 'Pairings posted'}`} />)}
 
       {board.joined && !mine && !row.field_locked && row.status !== 'completed' && (
         <ActButton label="Join tournament" action={joinTournament.bind(null, id)} />
       )}
-      {row.field_locked && !mine && <p className="text-sm text-muted-foreground">The field locked when round 1 started.</p>}
+      {board.userId && row.field_locked && !mine && <p className="text-sm text-muted-foreground">The field locked when round 1 started.</p>}
 
-      {row.status !== 'completed' && board.joined && (
-        <details className="disclosure" open={round.round === 0 && !row.field_locked}><summary>Tournament settings</summary><div>
-          <RoundEditor
-            tournamentId={id}
-            rounds={row.max_rounds || 3}
-            locked={Boolean(row.field_locked)}
-            pods={row.pod_count || 1}
-            note={row.product_note || ''}
-            bringing={Boolean(row.brought_by)}
-            showPods={needsSeats(row.format) && round.matches.length === 0 && board.matches.every((match) => match.tournament_id !== id || match.is_final)}
-            prize1st={row.prize_1st || ''}
-            prize2nd={row.prize_2nd || ''}
-            prize3rd={row.prize_3rd || ''}
-            duration={row.round_duration_minutes || 50}
-          />
-        </div></details>
-      )}
+      {!posted && !started && settings}
 
-      {board.joined && !row.field_locked && row.status !== 'completed' && (
+      {board.canManage && !row.field_locked && row.status !== 'completed' && (
         <AddPlayers kind="tournament" players={board.members.filter(member => !joined.some(player => player.profile_id === member.id)).map(member => ({ id:member.id, name:member.name }))} action={addTournamentPlayer.bind(null,id)} />
       )}
 
@@ -134,8 +165,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             <h2 className="font-heading text-2xl">Seats{row.pod_count === 2 ? ' · two pods' : ''}</h2>
             <div className="flex flex-wrap gap-2">
               <ActButton label="Add seat" variant="outline" action={addSeat.bind(null, id)} />
-              <ActButton label="Fill empty" variant="outline" action={randomizeSeats.bind(null, id, 'fill')} />
-              <ActButton label="Reshuffle" variant="outline" action={randomizeSeats.bind(null, id, 'reshuffle')} />
+                    <SeatRandomizer tournamentId={id} />
             </div>
           </div>
           {row.pod_count === 2 && <p className="text-sm text-muted-foreground">Round 1 stays inside each pod. Later rounds can cross.</p>}
@@ -150,7 +180,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 <div key={pod} className="space-y-2">
                   {row.pod_count === 2 && <h3 className="font-heading text-lg">Pod {pod}</h3>}
                   <SeatChart
-                      canControl={board.joined}
+                      canControl={board.canManage}
                     tournamentId={id}
                     seats={podSeats.map((number) => {
                       const holder = roster.find((person) => person.draft_seat === number);
@@ -192,33 +222,22 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </section>
       )}
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="round-board space-y-3">
+        {!showClock && !posted && (
           <h2 className="font-heading text-2xl">{round.round ? `Round ${round.round}` : 'Pairings'}</h2>
-          {startedAt && <p className="text-sm text-muted-foreground">Started {new Date(startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}</p>}
-        </div>
-        {started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null && (
-          <RoundClock
-            tournamentId={id}
-            durationMinutes={row.round_duration_minutes || 50}
-            anchor={row.clock_anchor}
-            pausedAt={row.clock_paused_at}
-            remainingSeconds={row.clock_remaining_seconds}
-            canControl={board.joined}
-          />
         )}
-        {posted && <p className="text-sm text-primary">Pairings are posted. The round has not started.</p>}
-        {openNames.length > 0 && <p className="text-sm text-muted-foreground">Still open: {openNames.join(', ')}.</p>}
+        {openNames.length > 0 && <p className="text-sm text-muted-foreground">Still open: {openNames.join(' · ')}</p>}
+        <div className="round-match-grid">
         {[...round.matches].sort((a,b) => Number(matchPlayers(board,b.id).some(p=>p.profile_id===board.userId)) - Number(matchPlayers(board,a.id).some(p=>p.profile_id===board.userId))).map((match) => {
           const players = matchPlayers(board, match.id);
           const bye = players.length === 1;
+          const matchup = bye ? `${players[0]?.name || 'Player'} has the bye` : players.map((player) => player.name).join(' vs ');
           return (
-            <article id={`match-${match.id}`} key={match.id} className="space-y-3 rounded-xl border border-border p-4">
+            <article id={`match-${match.id}`} key={match.id} className="match-card space-y-3 rounded-xl border border-border p-4">
               <div className="flex items-baseline justify-between gap-3">
-                <h3 className="font-heading text-xl">{match.table_label || `Table ${match.table_number}`}</h3>
+                <h3 className="font-heading text-xl">{matchup}</h3>
                 {match.is_rematch && <span className="text-xs uppercase tracking-widest text-primary">Rematch</span>}
               </div>
-              <p>{bye ? `${players[0]?.name || 'Player'} has the bye` : players.map((player) => player.name).join(' vs ')}</p>
               {players.some((player) => player.result) && (
                 <p className="text-sm text-muted-foreground">
                   {players.map((player) => {
@@ -227,28 +246,38 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   }).join(' · ')}
                 </p>
               )}
-              {board.joined && <TableName matchId={match.id} label={match.table_label || `Table ${match.table_number || 1}`} />}
-              {board.joined && <MatchDay matchId={match.id} day={match.played_on || ''} locked={Boolean(match.completed_at)} />}
-              {board.joined && match.started_at && !bye && (
-                <details className="disclosure"><summary>Report or correct result</summary><div><MatchReporter
-                  matchId={match.id}
-                  showGamesWon
-                  players={players.filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name }))}
-                /></div></details>
+              {board.canManage && match.started_at && !bye && (
+                players.every((player) => player.result) ? (
+                  <details className="disclosure">
+                    <summary>Correct result</summary>
+                    <div>
+                      <MatchReporter
+                        matchId={match.id}
+                        showGamesWon
+                        tournament
+                        players={players.filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name, result: player.result, gamesWon: player.games_won }))}
+                      />
+                    </div>
+                  </details>
+                ) : (
+                  <MatchReporter
+                    matchId={match.id}
+                    showGamesWon
+                    tournament
+                    players={players.filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name, result: player.result, gamesWon: player.games_won }))}
+                  />
+                )
               )}
             </article>
           );
         })}
-        {board.joined && row.status !== 'completed' && (
+        </div>
+        {board.canManage && row.status !== 'completed' && !posted && (round.round === 0 || round.matches.every((match) => matchPlayers(board, match.id).every((seat) => seat.result))) && round.round < (row.max_rounds || 1) && (
           <div className="flex flex-wrap gap-2">
-            {!posted && (round.round === 0 || round.matches.every((match) => matchPlayers(board, match.id).every((seat) => seat.result))) && round.round < (row.max_rounds || 1) && (
-              <ActButton label={round.round ? 'Post next round' : 'Post pairings'} action={postPairings.bind(null, id)} />
-            )}
-            {posted && <ActButton label="Clear pairings" variant="outline" action={clearPairings.bind(null, id)} />}
-            {posted && <ActButton label="Start round" action={startRound.bind(null, id)} />}
+            <ActButton label={round.round ? 'Post next round' : 'Post pairings'} action={postPairings.bind(null, id)} />
           </div>
         )}
-        {posted && round.round === 1 && !needsSeats(row.format) && (
+        {posted && round.round === 1 && !needsSeats(row.format) && board.canManage && (
           <SealedSwap
             tournamentId={id}
             players={joined.map((person) => ({ id: person.id, name: nameOf(board, person.profile_id) }))}
@@ -261,12 +290,27 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           <h2 className="font-heading text-2xl">Final</h2>
           <p>{matchPlayers(board, finalMatch.id).map((player) => player.name).join(' vs ')}</p>
           <p className="text-sm text-muted-foreground">{matchPlayers(board, finalMatch.id).every(player => player.result) ? matchPlayers(board, finalMatch.id).map(player => `${player.name}: ${player.result}`).join(' · ') : 'Awaiting final result'}</p>
-          {board.joined && (
-            <details className="disclosure"><summary>Report or correct result</summary><div><MatchReporter
-              matchId={finalMatch.id}
-              showGamesWon
-              players={matchPlayers(board, finalMatch.id).filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name }))}
-            /></div></details>
+          {board.canManage && (
+            matchPlayers(board, finalMatch.id).every((player) => player.result) ? (
+              <details className="disclosure">
+                <summary>Correct result</summary>
+                <div>
+                  <MatchReporter
+                    matchId={finalMatch.id}
+                    showGamesWon
+                    tournament
+                    players={matchPlayers(board, finalMatch.id).filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name, result: player.result, gamesWon: player.games_won }))}
+                  />
+                </div>
+              </details>
+            ) : (
+              <MatchReporter
+                matchId={finalMatch.id}
+                showGamesWon
+                tournament
+                players={matchPlayers(board, finalMatch.id).filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name, result: player.result, gamesWon: player.games_won }))}
+              />
+            )
           )}
         </section>
       )}
@@ -278,7 +322,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-widest text-muted-foreground">
               <tr>
-                <th className="py-2">Place</th>
+                <th className="py-2">{row.status === 'completed' ? 'Place' : 'Position'}</th>
                 <th>Player</th>
                 <th>Points</th>
                 <th>Record</th>
@@ -302,16 +346,21 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </div>
       </section>
 
-      {board.joined && row.status !== 'completed' && row.field_locked && (
-        <section className="space-y-4 rounded-xl border border-border p-4">
-          <h2 className="font-heading text-xl">Finish</h2>
-          {!finalMatch && <ActButton label="Add top-two final" variant="outline" action={addFinal.bind(null, id)} />}
-          <FinishForm
-            tournamentId={id}
-            ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
-            tieGroups={ties}
-          />
-        </section>
+      {board.canManage && row.status !== 'completed' && row.field_locked && (
+        <details className="disclosure">
+          <summary>{round.round < (row.max_rounds || 1) ? 'End tournament early' : 'Review final places'}</summary>
+          <div className="space-y-4">
+            {!finalMatch && <ActButton label="Add top-two final" variant="outline" action={addFinal.bind(null, id)} />}
+            <FinishForm
+              tournamentId={id}
+              ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
+              tieGroups={ties}
+              prizes={[row.prize_1st, row.prize_2nd, row.prize_3rd]}
+              finalResult={finalMatch ? matchPlayers(board, finalMatch.id).map(player => ({ id: player.participant_id || '', result: player.result })) : []}
+              early={round.round < (row.max_rounds || 1)}
+            />
+          </div>
+        </details>
       )}
 
       {row.status === 'completed' && (
@@ -330,22 +379,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         </section>
       )}
 
-      {board.joined && (
-        <section className="space-y-2">
-          <h2 className="font-heading text-xl">Players</h2>
-          {joined.map((person) => (
-            <div key={person.id} className="flex items-center justify-between gap-3 text-sm">
-              <span>{nameOf(board, person.profile_id)}{person.dropped ? ' · dropped' : ''}</span>
-              {!person.dropped && row.status !== 'completed' && (
-                <ActButton label="Drop" variant="ghost" action={dropPlayer.bind(null, id, person.id)} />
-              )}
-            </div>
-          ))}
-          {round.round === 0 && row.status !== 'completed' && (
-            <ActButton label="Delete tournament" variant="ghost" action={deleteTournament.bind(null, id)} />
-          )}
-        </section>
+      {board.canManage && round.round === 0 && row.status !== 'completed' && (
+        <ActButton label="Delete tournament" variant="ghost" action={deleteTournament.bind(null, id)} />
       )}
-    </main>
+
+      {(posted || started) && settings}
+    </main></>
   );
 }

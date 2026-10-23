@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Plus, ArrowUpRight, CalendarDays } from 'lucide-react';
 import { eventDates } from '@/lib/display';
-import { LiveRefresh } from '@/components/events/live-refresh';
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentUser } from '@/lib/get-current-user';
 import { joinEventById } from '@/app/weekend/actions';
@@ -9,13 +8,14 @@ import { ActButton } from '@/components/weekend/act-button';
 import { LiveSlip } from '@/components/weekend/live-slip';
 import { Button } from '@/components/ui/button';
 import { NamePicker } from '@/components/who/name-picker';
-import { LogoutButton } from '@/components/auth/logout-button';
+import { PageIntro, FeaturePanel } from '@/components/layout/page-intro';
+import { GameStatus } from '@/components/events/arena-ui';
 
 export default async function HomePage() {
   const current = await getCurrentUser();
   const supabase = await createClient();
   if (!current?.user) {
-    return <main className="page form-page"><h1 className="text-3xl">The phone session did not start.</h1><p className="subtle mt-4">Supabase is blocking phone sign-in. Open Authentication, then Providers, and turn on Anonymous. Reload this page after that.</p><Button asChild className="mt-6"><a href="https://supabase.com/dashboard/project/apnwvugvwlfopxtryjwk/auth/providers" target="_blank" rel="noreferrer">Open Anonymous sign-in settings</a></Button><Button asChild variant="outline" className="mt-3"><Link href="/login">Sign in with an account</Link></Button></main>;
+    return <main className="page form-page"><h1 className="text-3xl">Could not open the playgroup.</h1><p className="subtle mt-4">Try again in a moment, or sign in with your existing account.</p><Button asChild className="mt-6"><Link href="/">Try again</Link></Button><Button asChild variant="outline"><Link href="/login">Sign in with an account</Link></Button></main>;
   }
   if (!current.profile && current.mode !== 'house') {
     const { data: roster } = await supabase.from('profiles').select('id, display_name, color').eq('selectable', true).not('display_name', 'is', null).order('display_name');
@@ -36,7 +36,7 @@ export default async function HomePage() {
   const { data: memberships } = await supabase
     .from('event_members')
     .select('event_id')
-    .eq('profile_id', playerId);
+    .eq('profile_id', playerId || '00000000-0000-0000-0000-000000000000');
   const joined = new Set((memberships || []).map((row) => row.event_id));
 
   const { data: openSeats } = await supabase
@@ -72,10 +72,10 @@ export default async function HomePage() {
         id: match.id,
         tournament: Boolean(match.tournament_id),
         href: match.tournament_id
-          ? `/tournament/${match.tournament_id}`
+          ? `/tournament/${match.tournament_id}/match/${match.id}`
           : `/events/${match.event_id}/match/${match.id}`,
         kicker: match.table_label || (match.table_number ? `Table ${match.table_number}` : match.format_label || 'Game'),
-        title: people.length ? people.join(', ') : 'Waiting on a seat',
+        title: people.length ? people.join(', ') : 'You have the bye',
         detail: match.tournament_id
           ? match.started_at ? `Round ${match.round_number} is live` : `Round ${match.round_number} pairings are posted`
           : 'Quick match',
@@ -84,17 +84,18 @@ export default async function HomePage() {
     .sort((a, b) => Number(b.tournament) - Number(a.tournament));
 
   return (
-    <main className="page"><LiveRefresh />
-      <header className="page-heading"><div><p className="eyebrow">Your playgroup</p><h1>Events</h1><p className="subtle">{profile ? `Welcome back, ${profile.display_name}. Find your next table.` : 'House screen. Open a game and record it on the player who played.'}</p></div><div className="flex flex-wrap gap-2"><LogoutButton isGuest={current.user.is_anonymous} variant="outline" /><Button asChild><Link href="/events/new"><Plus size={16} className="mr-2" />Create event</Link></Button></div></header>
+    <main className="page collection-page events-collection">
+      <PageIntro eyebrow="PROXYCON / THE PLAYGROUP" title={<>Good games.<br /><em>Great company.</em></>} description={profile ? `Welcome back, ${profile.display_name}. Your next table is waiting.` : 'A night of Commander. A weekend of drafts. Bring everyone to the same table.'} actions={current.mode !== 'house' && <Button asChild><Link href="/events/new"><Plus size={16} />Create event</Link></Button>} />
       {slips.length > 0 && <section className="stack" aria-label="Your live matches">{slips.map(slip => <LiveSlip key={slip.id} href={slip.href} kicker={slip.kicker} title={slip.title} detail={slip.detail} />)}</section>}
-      <section><div className="section-heading"><h2>Your events</h2><span className="subtle">{(events || []).length} events</span></div>
+      <section><div className="arena-section-title"><h2><CalendarDays size={18} />Your events</h2><span className="arena-caption">{(events || []).length} events · one playgroup</span></div>
        <div className="event-grid">{(events || []).map(event => {
-         const mine = joined.has(event.id);
-         return <article className="event-card" key={event.id}><div className="event-card-top"><span className={`status ${event.is_active !== false ? 'live' : ''}`}>{event.is_active === false ? 'Closed' : 'Open to join'}</span><h2><Link href={`/events/${event.id}`}>{event.name}</Link></h2></div><div className="event-card-body"><div><p className="subtle">{eventDates(event.start_date,event.end_date)}</p><span className="subtle">{mine ? 'You’re in the playgroup' : 'Join the playgroup to play'}</span></div>{mine ? <Button asChild variant="outline"><Link href={`/events/${event.id}`}>Open <ArrowUpRight size={15} className="ml-2" /></Link></Button> : <ActButton label="Join event" action={joinEventById.bind(null,event.id)} />}</div></article>;
+         const mine = joined.has(event.id); const house = current.mode === 'house';
+         const date = event.start_date ? new Date(`${event.start_date}T12:00:00Z`) : null;
+         return <article className={`event-card event-pass${event.is_active === false ? ' is-past' : ''}`} key={event.id}><div className="event-card-top"><div className="event-pass-top"><GameStatus state={event.is_active === false ? 'complete' : 'setup'}>{event.is_active === false ? 'Closed' : 'Open to join'}</GameStatus>{date && <span className="event-date-stamp"><small>{date.toLocaleDateString('en-US', { month:'short', timeZone:'UTC' })}</small><strong>{date.getUTCDate()}</strong></span>}</div><h2><Link href={`/events/${event.id}`}>{event.name}</Link></h2><p className="arena-caption">{eventDates(event.start_date,event.end_date)}</p></div><div className="event-card-body"><span className="event-membership">{house ? 'The house screen is ready' : mine ? 'You’re on the guest list' : 'Room for another player'}</span>{mine || house ? <Button asChild variant="outline"><Link href={house ? `/events/${event.id}/room` : `/events/${event.id}`}>{house ? 'Open room' : 'Open event'} <ArrowUpRight size={15} /></Link></Button> : <ActButton label="Join event" action={joinEventById.bind(null,event.id)} />}</div></article>;
        })}</div>
        {!(events || []).length && <div className="empty-state"><CalendarDays size={28} className="text-primary" /><h3>Your next game night starts here.</h3><p>Create an event, share it with your friends, then add a draft or a quick Commander game.</p><Button asChild><Link href="/events/new">Create your first event</Link></Button></div>}
       </section>
-      <div className="panel flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-xl">Bring your favorite decks.</h2><p className="subtle mt-2">Save commanders once. Pick them again at your next table.</p></div><Button asChild variant="outline"><Link href="/decks">My decks <ArrowUpRight size={15} className="ml-2" /></Link></Button></div>
+      {current.mode !== 'house' && <div className="feature-grid"><FeaturePanel icon="decks" eyebrow="YOUR DECKBOX" title={<>Old favorites.<br />New rivals.</>} description="Keep your commanders ready. Pick a saved deck when you sit down to play." href="/decks" action="Open my decks" /><FeaturePanel icon="players" tone="blue" eyebrow="THE PEOPLE AT THE TABLE" title={<>Know the player.<br />Meet the commander.</>} description="Browse the playgroup and see what everyone is bringing to the next game." href="/players" action="Meet the playgroup" /></div>}
     </main>
   );
 }

@@ -80,7 +80,7 @@ export function SeatChart({
                   if (result.success) setOpenSeat(null);
                   return result;
                 })}
-                className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-40"
+                className="min-h-11 rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-40"
               >
                 {person.name}
               </button>

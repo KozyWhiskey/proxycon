@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { getColorClass, COLOR_DISPLAY_NAMES } from '@/lib/player-colors';
 import DeckCard from '@/components/decks/deck-card';
 import { type Deck } from '@/lib/types';
+import { FeaturePanel } from '@/components/layout/page-intro';
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const current = await requirePlaygroup();
@@ -22,12 +23,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   if (error || deckError) throw new Error('Could not load this player. Try again.');
   if (!player) notFound();
   const name = player.display_name?.trim() || player.username || 'Player';
-  return <main className="page"><Link href="/players" className="subtle">← All players</Link>
-    <header className="page-heading"><div className="flex items-center gap-5"><Avatar className="h-20 w-20"><AvatarImage src={player.avatar_url || undefined} alt="" /><AvatarFallback>{name.slice(0,2).toUpperCase()}</AvatarFallback></Avatar><div><p className="eyebrow">Player profile</p><h1>{name}</h1>{player.username && <p className="subtle">@{player.username.replace(/^@/, '').trim()}</p>}</div></div>{id === meId && <Button asChild variant="outline"><Link href="/profile">Edit my profile</Link></Button>}</header>
+  return <main className="page collection-page player-profile"><Link href="/players" className="subtle">← All players</Link>
+    <header className="page-heading player-profile-banner"><span className={`profile-banner-color ${getColorClass(player.color) || ''}`} aria-hidden="true" /><div className="flex items-center gap-5"><Avatar className="h-20 w-20"><AvatarImage src={player.avatar_url || undefined} alt="" /><AvatarFallback>{name.slice(0,2).toUpperCase()}</AvatarFallback></Avatar><div><p className="eyebrow">THE PERSON ACROSS THE TABLE</p><h1>{name}</h1>{player.username && <p className="subtle">@{player.username.replace(/^@/, '').trim()}</p>}</div></div>{id === meId && <Button asChild variant="outline"><Link href="/profile">Edit my profile</Link></Button>}</header>
     {(player.bio || player.color) && <section className="panel space-y-4">{player.bio && <p className="text-sm whitespace-pre-wrap leading-relaxed">{player.bio}</p>}{player.color && <p className="subtle flex items-center gap-2"><span className={`h-3 w-3 rounded-full ${getColorClass(player.color) || 'bg-muted'}`} />{COLOR_DISPLAY_NAMES[player.color] || player.color}</p>}</section>}
     <section><div className="section-heading"><h2>Decks</h2><span className="subtle">{decks?.length || 0}</span></div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{(decks || []).map(deck => <DeckCard key={deck.id} deck={deck as Deck} isOwner={id === meId} />)}</div>
+      <div className="deck-library-grid">{(decks || []).map(deck => <DeckCard key={deck.id} deck={deck as Deck} isOwner={id === meId} />)}</div>
       {!decks?.length && <div className="empty-state"><h3>No decks yet</h3><p>{id === meId ? 'Add a deck to keep your commanders ready for the next game.' : 'This player hasn’t added any decks yet.'}</p>{id === meId && <Button asChild variant="outline"><Link href="/decks">Add a deck</Link></Button>}</div>}
-    </section><p className="subtle">Game records and statistics are shown within each event.</p>
+    </section><FeaturePanel icon="calendar" tone="blue" eyebrow="THE NEXT GAME NIGHT" title="The story continues at the table." description="Open an event for this weekend’s games, results, and player statistics." href="/" action="Find an event" />
   </main>;
 }

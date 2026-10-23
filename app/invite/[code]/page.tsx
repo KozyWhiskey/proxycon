@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { eventDates } from '@/lib/display';
 
 interface PageProps {
   params: Promise<{ code: string }>;
@@ -28,21 +29,23 @@ export default async function InvitePage({ params }: PageProps) {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="glass-panel w-full max-w-md border-white/10">
+      <div className="invitation-stage">
+        <Card className="invitation-card">
           <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center mb-4 text-primary">
+            <div className="invite-mark">
               <Calendar className="w-8 h-8" />
             </div>
+            <p className="eyebrow">THERE’S A SEAT FOR YOU</p>
             <CardTitle className="font-heading text-2xl">{event.name}</CardTitle>
+            <p className="subtle">{eventDates(event.start_date,event.end_date)}</p>
             <CardDescription>
-              Sign in to join this weekend.
+              Bring your decks. Find your people. Sign in with your existing account to join this event.
             </CardDescription>
           </CardHeader>
           <CardFooter>
             <Button asChild className="w-full h-12 font-heading" variant="default">
               <Link href={`/login?next=/invite/${code}`}>
-                Login / Sign Up
+                Sign in to join
               </Link>
             </Button>
           </CardFooter>
@@ -55,8 +58,8 @@ export default async function InvitePage({ params }: PageProps) {
 
   if (!result.success || !result.eventId) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="glass-panel w-full max-w-md border-white/10">
+      <div className="invitation-stage">
+        <Card className="invitation-card">
           <CardHeader>
             <CardTitle>Could not join</CardTitle>
             <CardDescription>{result.message || 'Try the code again from the house group.'}</CardDescription>

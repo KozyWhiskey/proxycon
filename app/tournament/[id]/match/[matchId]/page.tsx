@@ -1,154 +1,146 @@
-import { createClient } from '@/utils/supabase/server';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import MatchReportingForm from '@/components/tournament/match-reporting-form';
-import PageHeader from '@/components/ui/page-header';
-import { requireProfile } from '@/lib/get-current-user'; // Import requireProfile
-import { getUsersDecks } from '@/app/decks/actions'; // Import getUsersDecks
-import { Card, CardContent } from '@/components/ui/card';
+import { z } from 'zod';
+import { createClient } from '@/utils/supabase/server';
+import { loadEventBoard, matchPlayers, standingsFor } from '@/lib/event-board';
+import { EventNav } from '@/components/events/event-nav';
+import { MatchReporter } from '@/components/weekend/match-reporter';
+import { ActButton } from '@/components/weekend/act-button';
+import { startRound } from '@/app/weekend/actions';
+import { Button } from '@/components/ui/button';
+import { PlayerAvatar, GameStatus } from '@/components/events/arena-ui';
 
-interface PageProps {
-  params: Promise<{ id: string; matchId: string }>;
-}
+/** Modern event-scoped match page, including matches from previous rounds. */
+export default async function TournamentMatchPage({ params }: { params: Promise<{ id: string; matchId: string }> }) {
+  const { id, matchId } = await params;
+  if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(matchId).success) notFound();
+  const db = await createClient();
+  const { data: tournament } = await db.from('tournaments').select('event_id').eq('id', id).maybeSingle();
+  if (!tournament?.event_id) notFound();
+  const board = await loadEventBoard(tournament.event_id);
+  if (!board) notFound();
+  const game = board.tournaments.find((row) => row.id === id);
+  const match = board.matches.find((row) => row.id === matchId && row.tournament_id === id);
+  if (!game || !match) notFound();
 
-export default async function MatchReportingPage({ params }: PageProps) {
-  const { id: tournamentId, matchId } = await params;
-  const supabase = await createClient();
-
-  // Get current user and their decks
-  const { profile } = await requireProfile();
-  const { decks, error: decksError } = await getUsersDecks(); // Fetch decks for the current user
-
-  if (decksError) {
-    console.error('Error fetching user decks:', decksError);
-    // Optionally display an error message or handle gracefully
-  }
-
-  // Fetch match details
-  const { data: match, error: matchError } = await supabase
-    .from('matches')
-    .select('id, round_number, game_type, tournament_id')
-    .eq('id', matchId)
-    .single();
-
-  if (matchError || !match || match.tournament_id !== tournamentId) {
-    notFound();
-  }
-
-  // Fetch participants
-  const { data: participants } = await supabase
-    .from('match_participants')
-    .select('id, profile_id, result')
-    .eq('match_id', matchId);
-
-  if (!participants || participants.length === 0) {
-    notFound();
-  }
-
-  const isCompleted = participants.every((p) => p.result !== null);
-
-  const { data: tournamentRow } = await supabase
-    .from('tournaments')
-    .select('event_id')
-    .eq('id', tournamentId)
-    .single();
-
-  let canCorrect = false;
-  if (tournamentRow?.event_id) {
-    const { data: membership } = await supabase
-      .from('event_members')
-      .select('role')
-      .eq('event_id', tournamentRow.event_id)
-      .eq('profile_id', profile.id)
-      .maybeSingle();
-    canCorrect = membership?.role === 'owner' || membership?.role === 'admin';
-  }
-
-  if ((isCompleted && !canCorrect) || participants.length < 2) {
-    // Match already has a result, redirect back to tournament
-    return (
-      <main className="min-h-screen bg-background pb-24">
-        <PageHeader
-          title="Match Already Reported"
-          subtitle="This match result has already been submitted"
-          backHref={`/tournament/${tournamentId}`}
-          backLabel="Tournament"
-        />
-        <div className="max-w-2xl mx-auto p-4">
-          <Card className="glass-panel">
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground">This match has already been reported.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    );
-  }
-
-  // Fetch profile details
-  const profileIds = participants.map((p) => p.profile_id);
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, username, display_name')
-    .in('id', profileIds);
-
-  const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-  const matchParticipants = participants.map((p) => ({
-    id: p.id,
-    profile_id: p.profile_id,
-    result: p.result,
-    profile: profilesMap.get(p.profile_id),
-  }));
-
-  // Handle bye (single participant)
-  if (matchParticipants.length === 1) {
-    return (
-      <main className="min-h-screen bg-background pb-24">
-        <PageHeader
-          title="Bye Match"
-          subtitle="This match is a bye and has already been recorded"
-          backHref={`/tournament/${tournamentId}`}
-          backLabel="Tournament"
-        />
-        <div className="max-w-2xl mx-auto p-4">
-          <Card className="glass-panel">
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground">This is a bye match and has already been recorded.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    );
-  }
-
-  // Get player names for subtitle
-  const player1Name = matchParticipants[0]?.profile?.display_name || matchParticipants[0]?.profile?.username || 'Player 1';
-  const player2Name = matchParticipants[1]?.profile?.display_name || matchParticipants[1]?.profile?.username || 'Player 2';
-
-  // Determine which participant is the current user (if any)
-  const player1IsCurrentUser = matchParticipants[0]?.profile_id === profile.id;
-  const player2IsCurrentUser = matchParticipants[1]?.profile_id === profile.id;
+  const players = matchPlayers(board, match.id);
+  const bye = players.length === 1;
+  const recorded = players.length > 0 && players.every((player) => player.result);
+  const standings = standingsFor(board, id);
+  const canOperate = board.canManage || board.joined;
+  const waiting = !match.started_at && !recorded;
+  const playing = Boolean(match.started_at) && !recorded;
+  const matchup = bye
+    ? `${players[0]?.name || 'Player'} has the bye`
+    : players.map((player) => player.name).join(' vs ');
+  const table = match.table_label || `Table ${match.table_number}`;
+  const state = recorded
+    ? 'Result recorded'
+    : playing
+      ? 'Playing'
+      : 'Pairings posted · Not started';
+  const reporter = canOperate && match.started_at && !bye ? (
+    <MatchReporter
+      key={match.id}
+      matchId={match.id}
+      showGamesWon
+      tournament
+      returnTo={`/tournament/${id}`}
+      players={players.filter((player) => player.profile_id).map((player) => ({
+        id: player.profile_id!,
+        name: player.name,
+        result: player.result,
+        gamesWon: player.games_won,
+      }))}
+    />
+  ) : null;
 
   return (
-    <main className="min-h-screen bg-background pb-24">
-      <PageHeader
-        title="Who Won?"
-        subtitle={`${player1Name} vs ${player2Name}`}
-        backHref={`/tournament/${tournamentId}`}
-        backLabel="Tournament"
-      />
-      <div className="max-w-3xl mx-auto p-4 space-y-6">
-        <MatchReportingForm
-          tournamentId={tournamentId}
-          matchId={matchId}
-          participants={matchParticipants}
-          userDecks={decks || []}
-          player1ProfileId={player1IsCurrentUser ? profile.id : undefined}
-          player2ProfileId={player2IsCurrentUser ? profile.id : undefined}
-          format={match.game_type}
-          correcting={isCompleted && canCorrect}
-        />
-      </div>
-    </main>
+    <>
+      <EventNav id={board.event.id} house={board.house} name={board.event.name} />
+      <main className={`page form-page match-page arena-match-detail${recorded ? ' is-complete' : ' is-playing'}`}>
+        <Link href={`/tournament/${id}`} className="subtle">← {game.name}</Link>
+        <header className="match-page-head">
+          <p className="eyebrow">
+            {match.is_final ? 'Final' : `Round ${match.round_number} of ${game.max_rounds}`}
+            {!bye ? ` · ${table}` : ''}
+          </p>
+          <h1>{matchup}</h1>
+          <div className="match-state"><GameStatus state={recorded ? 'complete' : playing ? 'live' : 'setup'}>{state}</GameStatus></div>
+        </header>
+
+        <section className="match-detail panel">
+          <div className="match-detail-players">
+            {players.map((player) => {
+              const standing = standings.find((row) => row.profileId === player.profile_id);
+              return (
+                <div key={player.id} className={`match-contender${player.result === 'win' ? ' is-winner' : ''}`}>
+                  <PlayerAvatar name={player.name} color={board.members.find(m => m.id === player.profile_id)?.color} />
+                  <span className="subtle">{player.profile_id === board.userId ? 'You' : 'Player'}</span>
+                  <h2>{player.name}</h2>
+                  {standing && (
+                    <p className="subtle">
+                      {standing.points} points · {standing.wins}–{standing.losses}–{standing.draws} match record
+                    </p>
+                  )}
+                  {recorded && (
+                    <p className="recorded-outcome">
+                      {bye
+                        ? 'Bye · 3 match points'
+                        : `${player.result === 'win' ? 'Won' : player.result === 'loss' ? 'Lost' : 'Draw'}${
+                            players.some((seat) => (seat.games_won || 0) > 0) ? ` · ${player.games_won || 0} games won` : ''
+                          }`}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {match.is_rematch && <p className="subtle">Rematch · no alternative legal pairing was available.</p>}
+          {bye && !recorded && <p className="subtle">Your bye counts as a win when the round starts.</p>}
+
+          {waiting && canOperate && (
+            <div className="round-start-panel match-start-panel">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">Ready to play</p>
+              <p className="text-sm text-muted-foreground">
+                Starts Round {match.round_number} for every table, then you can enter the score here.
+              </p>
+              <ActButton label="Start round" action={startRound.bind(null, id)} />
+            </div>
+          )}
+
+          {waiting && !canOperate && (
+            <p className="subtle">Waiting for the round to start. Scores open after that.</p>
+          )}
+
+          {recorded ? (
+            reporter && (
+              <details className="disclosure">
+                <summary>Correct this result</summary>
+                <div>{reporter}</div>
+              </details>
+            )
+          ) : (
+            reporter
+          )}
+
+          {!canOperate && playing && (
+            <p className="subtle">Join the event to report or correct a result.</p>
+          )}
+        </section>
+
+        <div className="action-row">
+          <Button asChild variant="outline">
+            <Link href={`/tournament/${id}`}>Pairings & standings</Link>
+          </Button>
+          {board.house && (
+            <Button asChild variant="outline">
+              <Link href={`/events/${board.event.id}/room?tournament=${id}`}>Back to room</Link>
+            </Button>
+          )}
+        </div>
+      </main>
+    </>
   );
 }

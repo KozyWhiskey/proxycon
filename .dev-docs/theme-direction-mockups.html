@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" data-dir="a" data-mode="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProxyCon · Theme direction mockups</title>
+  <style>
+    :root {
+      --sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      --display: "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+      --r: 10px;
+      --phone-w: 320px;
+      --phone-h: 640px;
+    }
+
+    /* A — Ink & Signal */
+    html[data-dir="a"][data-mode="light"] {
+      --bg: #F4F5F7; --surface: #FFFFFF; --surface-2: #EBEDF1; --ink: #12141A;
+      --muted: #5C6370; --line: #D5D8DE; --action: #E85D04; --action-ink: #FFFFFF;
+      --nav: #12141A; --nav-ink: #F4F5F7; --nav-muted: #9AA1AD; --selected: #FFE8D6;
+      --live: #E85D04; --ok: #0F7A45; --danger: #C23030; --shadow: rgba(18,20,26,.08);
+      --radius: 10px; --heading: var(--display); --slip-accent: #E85D04;
+    }
+    html[data-dir="a"][data-mode="dark"] {
+      --bg: #0E1014; --surface: #171A21; --surface-2: #1F2430; --ink: #ECEEF2;
+      --muted: #9AA1AD; --line: #2A2F3A; --action: #FF7A2F; --action-ink: #12141A;
+      --nav: #0A0C10; --nav-ink: #ECEEF2; --nav-muted: #8B93A3; --selected: #3A2416;
+      --live: #FF7A2F; --ok: #3DCF84; --danger: #FF8A8A; --shadow: rgba(0,0,0,.35);
+      --radius: 10px; --heading: var(--display); --slip-accent: #FF7A2F;
+    }
+
+    /* B — Cardstock Studio */
+    html[data-dir="b"][data-mode="light"] {
+      --bg: #F7F6F3; --surface: #FFFFFF; --surface-2: #EFEDE7; --ink: #14131A;
+      --muted: #6A6573; --line: #DDD8CE; --action: #6B4EFF; --action-ink: #FFFFFF;
+      --nav: #1A1630; --nav-ink: #F4F2FF; --nav-muted: #A79BCF; --selected: #EAE4FF;
+      --live: #6B4EFF; --ok: #1F7A4D; --danger: #B8334A; --shadow: rgba(26,22,48,.08);
+      --radius: 14px; --heading: Georgia, "Times New Roman", serif; --slip-accent: #6B4EFF;
+    }
+    html[data-dir="b"][data-mode="dark"] {
+      --bg: #0B0D14; --surface: #141824; --surface-2: #1C2233; --ink: #EEEAF8;
+      --muted: #9B96AE; --line: #2A3148; --action: #22D3EE; --action-ink: #04151A;
+      --nav: #080A12; --nav-ink: #EEEAF8; --nav-muted: #8E88A8; --selected: #1A2E38;
+      --live: #22D3EE; --ok: #5EEAD4; --danger: #FB7185; --shadow: rgba(0,0,0,.4);
+      --radius: 14px; --heading: Georgia, "Times New Roman", serif; --slip-accent: #22D3EE;
+    }
+
+    /* C — Esports Desk */
+    html[data-dir="c"][data-mode="light"] {
+      --bg: #EEF0F3; --surface: #FFFFFF; --surface-2: #E4E7EC; --ink: #0A0B0D;
+      --muted: #5A616C; --line: #C8CED6; --action: #111318; --action-ink: #FFFFFF;
+      --nav: #090A0C; --nav-ink: #F5F6F8; --nav-muted: #8A9099; --selected: #E8ECF0;
+      --live: #65A30D; --ok: #15803D; --danger: #DC2626; --shadow: rgba(0,0,0,.06);
+      --radius: 4px; --heading: var(--mono); --slip-accent: #65A30D;
+    }
+    html[data-dir="c"][data-mode="dark"] {
+      --bg: #090A0C; --surface: #12141A; --surface-2: #1A1D24; --ink: #F2F3F5;
+      --muted: #9CA3AF; --line: #2A2E36; --action: #F2F3F5; --action-ink: #090A0C;
+      --nav: #050506; --nav-ink: #F2F3F5; --nav-muted: #8B919A; --selected: #1F242C;
+      --live: #A3E635; --ok: #86EFAC; --danger: #F87171; --shadow: rgba(0,0,0,.5);
+      --radius: 4px; --heading: var(--mono); --slip-accent: #A3E635;
+    }
+
+    /* D — Quiet Utility */
+    html[data-dir="d"][data-mode="light"] {
+      --bg: #FAFAFA; --surface: #FFFFFF; --surface-2: #F0F0F0; --ink: #111111;
+      --muted: #666666; --line: #E0E0E0; --action: #1A56DB; --action-ink: #FFFFFF;
+      --nav: #111111; --nav-ink: #FAFAFA; --nav-muted: #A0A0A0; --selected: #E8F0FE;
+      --live: #1A56DB; --ok: #0D7A3F; --danger: #B42318; --shadow: rgba(0,0,0,.04);
+      --radius: 6px; --heading: var(--sans); --slip-accent: #111111;
+    }
+    html[data-dir="d"][data-mode="dark"] {
+      --bg: #111111; --surface: #1A1A1A; --surface-2: #242424; --ink: #F5F5F5;
+      --muted: #A3A3A3; --line: #333333; --action: #5B8DEF; --action-ink: #0A0A0A;
+      --nav: #0A0A0A; --nav-ink: #F5F5F5; --nav-muted: #8A8A8A; --selected: #1E2A40;
+      --live: #5B8DEF; --ok: #4ADE80; --danger: #F87171; --shadow: rgba(0,0,0,.4);
+      --radius: 6px; --heading: var(--sans); --slip-accent: #F5F5F5;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--sans); background: #1a1b1f; color: #e8e8ea;
+      min-height: 100vh;
+    }
+
+    .chrome {
+      position: sticky; top: 0; z-index: 40; background: #121316; border-bottom: 1px solid #2c2e34;
+      padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+    }
+    .chrome h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .chrome p { margin: 0; color: #9a9da6; font-size: 13px; max-width: 42ch; }
+    .dir-tabs, .mode-tabs, .flow-tabs {
+      display: flex; gap: 4px; flex-wrap: wrap;
+    }
+    .dir-tabs button, .mode-tabs button, .flow-tabs button {
+      border: 1px solid #3a3d46; background: #1c1e24; color: #c8cad0;
+      padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; min-height: 40px;
+    }
+    .dir-tabs button[aria-pressed="true"],
+    .mode-tabs button[aria-pressed="true"],
+    .flow-tabs button[aria-pressed="true"] {
+      background: #eceef2; color: #12141a; border-color: #eceef2; font-weight: 600;
+    }
+    .meta { margin-left: auto; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+    .stage {
+      padding: 28px 20px 60px; max-width: 1280px; margin: 0 auto;
+    }
+    .blurb {
+      margin: 0 0 22px; max-width: 62ch; color: #b4b7c0; font-size: 14px; line-height: 1.5;
+    }
+    .blurb strong { color: #f0f1f4; font-weight: 600; }
+    .board {
+      display: flex; gap: 24px; align-items: flex-start;
+      overflow-x: auto; padding-bottom: 12px;
+    }
+    .board > section {
+      flex: 0 0 auto; width: var(--phone-w);
+    }
+    .board.flow-house {
+      display: block; overflow: visible;
+    }
+    .board.flow-house > section { width: auto; }
+
+    .device-label {
+      font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+      color: #8b8f9a; margin: 0 0 10px;
+    }
+
+    /* Phone frame */
+    .phone {
+      width: var(--phone-w); max-width: 100%;
+      border: 1px solid #3a3d46; border-radius: 28px; background: #0a0a0c;
+      padding: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+    .phone-screen {
+      height: var(--phone-h); overflow: auto; border-radius: 18px;
+      background: var(--bg); color: var(--ink); font-size: 14px;
+      scrollbar-width: thin;
+    }
+
+    /* Laptop frame */
+    .laptop {
+      border: 1px solid #3a3d46; border-radius: 14px; background: #0a0a0c; padding: 10px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+    .laptop-screen {
+      min-height: 520px; border-radius: 8px; overflow: hidden;
+      background: var(--bg); color: var(--ink); font-size: 13px;
+    }
+
+    /* Shared UI pieces inside themed screens */
+    .app-bar {
+      display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+      border-bottom: 1px solid var(--line); background: var(--surface);
+      position: sticky; top: 0; z-index: 2;
+    }
+    .brand {
+      font-family: var(--heading); font-size: 17px; letter-spacing: -.03em; font-weight: 650;
+    }
+    .who { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+    }
+    .dot.red { background: #C23B2A; }
+    .dot.blue { background: #2A66C2; }
+    .dot.green { background: #2A8A4A; }
+    .dot.black { background: #2A2A2A; border: 1px solid #666; }
+    .dot.white { background: #F2F0E8; border: 1px solid #BBB; }
+
+    .pad { padding: 16px; }
+    .eyebrow {
+      margin: 0 0 6px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .title {
+      margin: 0; font-family: var(--heading); font-size: 26px; line-height: 1.15;
+      letter-spacing: -.03em; font-weight: 650;
+    }
+    html[data-dir="c"] .title { font-size: 22px; letter-spacing: -.04em; }
+    .subtle { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    .panel {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 12px;
+    }
+    .house-banner {
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 12px; margin: 14px 0;
+    }
+    .house-banner h3 { margin: 0; font-size: 14px; }
+    .house-banner p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 40px; padding: 0 14px; border-radius: calc(var(--radius) - 2px);
+      border: 1px solid transparent; font-size: 13px; font-weight: 600; cursor: default;
+    }
+    .btn-primary { background: var(--action); color: var(--action-ink); }
+    .btn-ghost {
+      background: transparent; color: var(--ink); border-color: var(--line);
+    }
+    .btn-block { width: 100%; }
+
+    .name-list { display: grid; gap: 8px; margin-top: 10px; }
+    .name-row {
+      display: flex; align-items: center; gap: 10px; min-height: 48px;
+      padding: 0 12px; border: 1px solid var(--line); border-radius: calc(var(--radius) - 2px);
+      background: var(--bg);
+    }
+    .name-row span:last-child { font-weight: 550; }
+
+    .search {
+      width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: calc(var(--radius) - 2px);
+      background: var(--bg); color: var(--muted); padding: 0 12px; font-size: 13px;
+    }
+
+    .records {
+      display: flex; gap: 18px; padding: 12px 0; border-block: 1px solid var(--line); margin: 14px 0;
+    }
+    .records div { display: flex; flex-direction: column; gap: 2px; }
+    .records small { color: var(--muted); font-size: 11px; }
+    .records strong { font-family: var(--mono); font-size: 20px; letter-spacing: -.05em; }
+
+    .slip {
+      display: grid; grid-template-columns: 88px 1fr; border: 1px solid var(--line);
+      border-top: 3px solid var(--slip-accent); border-radius: var(--radius);
+      overflow: hidden; background: var(--surface); margin: 12px 0;
+    }
+    .slip-side {
+      background: var(--nav); color: var(--nav-ink); padding: 14px 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .slip-side small {
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--nav-muted);
+    }
+    .slip-side strong { font-size: 18px; line-height: 1.1; font-weight: 700; }
+    .slip-main { padding: 14px; min-width: 0; }
+    .slip-main .live {
+      color: var(--live); font-size: 11px; font-weight: 650; letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    html[data-dir="d"] .slip-main .live { color: var(--muted); font-weight: 550; }
+    .slip-main h2 {
+      margin: 6px 0; font-size: 22px; line-height: 1.15; letter-spacing: -.02em;
+      font-family: var(--heading);
+    }
+    .slip-main p { margin: 0; color: var(--muted); font-size: 12px; }
+    .slip-main .cta {
+      display: inline-block; margin-top: 10px; color: var(--action); font-weight: 650; font-size: 13px;
+    }
+
+    .section-h {
+      margin: 18px 0 8px; font-size: 12px; color: var(--muted); letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .now-row {
+      display: flex; justify-content: space-between; gap: 8px; padding: 10px 0;
+      border-bottom: 1px solid var(--line); font-size: 13px;
+    }
+    .now-row span:last-child { color: var(--muted); white-space: nowrap; }
+
+    .bottom-nav {
+      position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line); background: var(--surface); padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+    }
+    .bottom-nav span {
+      text-align: center; font-size: 11px; color: var(--muted); padding: 6px 0;
+    }
+    .bottom-nav span.on { color: var(--action); font-weight: 650; }
+
+    .outcome {
+      display: grid; gap: 8px; margin-top: 12px;
+    }
+    .outcome .choice {
+      min-height: 52px; border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--surface); display: flex; align-items: center; padding: 0 14px;
+      font-weight: 550;
+    }
+    .outcome .choice.picked {
+      border-color: var(--action); background: var(--selected); color: var(--ink);
+      box-shadow: inset 3px 0 0 var(--action);
+    }
+    .summary {
+      margin-top: 14px; padding: 12px; border-radius: var(--radius);
+      background: var(--surface-2); border: 1px solid var(--line); font-size: 13px;
+    }
+
+    /* House / room */
+    .house-top {
+      display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+      background: var(--nav); color: var(--nav-ink); border-bottom: 1px solid var(--line);
+    }
+    .house-top .brand { color: var(--nav-ink); }
+    .house-top .meta-line { color: var(--nav-muted); font-size: 12px; }
+    .house-top .clock {
+      margin-left: auto; text-align: right;
+    }
+    .house-top .clock strong {
+      display: block; font-family: var(--mono); font-size: 28px; letter-spacing: -.06em;
+      color: var(--live);
+    }
+    .house-top .clock span { font-size: 11px; color: var(--nav-muted); }
+
+    .house-body {
+      display: grid; grid-template-columns: 1.4fr .9fr; gap: 0; min-height: 460px;
+    }
+    .tables { padding: 14px 16px; border-right: 1px solid var(--line); }
+    .standings { padding: 14px 16px; background: var(--surface); }
+    .table-card {
+      border: 1px solid var(--line); border-radius: var(--radius); padding: 12px;
+      background: var(--bg); margin-bottom: 10px;
+    }
+    .table-card header {
+      display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;
+    }
+    .table-card h3 { margin: 0; font-size: 14px; font-family: var(--heading); }
+    .pill {
+      font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--live); background: var(--selected); padding: 3px 8px; border-radius: 999px;
+    }
+    html[data-dir="c"] .pill { border-radius: 2px; }
+    html[data-dir="d"] .pill { border-radius: 3px; background: transparent; border: 1px solid var(--line); color: var(--muted); }
+    .vs {
+      display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 600;
+    }
+    .vs em { font-style: normal; color: var(--muted); font-weight: 500; font-size: 12px; }
+
+    .standings table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .standings th {
+      text-align: left; color: var(--muted); font-weight: 550; padding: 6px 4px;
+      border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    }
+    .standings td { padding: 8px 4px; border-bottom: 1px solid var(--line); }
+    .standings td:nth-child(3), .standings th:nth-child(3),
+    .standings td:nth-child(4), .standings th:nth-child(4) {
+      text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono);
+    }
+
+    .house-actions {
+      display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px;
+      border-top: 1px solid var(--line); background: var(--surface);
+    }
+
+    .flow { display: none; }
+    .flow.on { display: block; }
+
+    .step-cap {
+      margin: 0 0 8px; font-size: 12px; color: #9aa0ab;
+    }
+    .step-cap b { color: #dde0e8; font-weight: 600; }
+
+    @media (max-width: 720px) {
+      .meta { margin-left: 0; width: 100%; }
+      .house-body { grid-template-columns: 1fr; }
+      .tables { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <header class="chrome">
+    <div>
+      <h1>ProxyCon theme mockups</h1>
+      <p>Four directions · same workflows · pick one before we restyle the app</p>
+    </div>
+    <div class="dir-tabs" role="tablist" aria-label="Theme direction">
+      <button type="button" data-dir="a" aria-pressed="true">A · Ink &amp; Signal</button>
+      <button type="button" data-dir="b" aria-pressed="false">B · Cardstock</button>
+      <button type="button" data-dir="c" aria-pressed="false">C · Esports Desk</button>
+      <button type="button" data-dir="d" aria-pressed="false">D · Quiet Utility</button>
+    </div>
+    <div class="meta">
+      <div class="mode-tabs" role="tablist" aria-label="Color mode">
+        <button type="button" data-mode="light" aria-pressed="true">Light</button>
+        <button type="button" data-mode="dark" aria-pressed="false">Dark</button>
+      </div>
+      <div class="flow-tabs" role="tablist" aria-label="Workflow">
+        <button type="button" data-flow="phone" aria-pressed="true">Phone weekend</button>
+        <button type="button" data-flow="house" aria-pressed="false">House room</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <p class="blurb" id="blurb"></p>
+
+    <!-- Phone weekend workflow -->
+    <div class="board" id="board-phone">
+      <section class="flow on" data-flow-panel="phone">
+        <p class="step-cap"><b>1 · Arrive</b> — Who are you?</p>
+        <p class="device-label">Phone · 390×844</p>
+        <div class="phone"><div class="phone-screen">
+          <div class="app-bar"><span class="brand">ProxyCon</span><span class="who">Theme · System</span></div>
+          <div class="pad">
+            <p class="eyebrow">Your playgroup</p>
+            <h1 class="title">Who are you?</h1>
+            <p class="subtle">Pick your name. Decks and results stay on that player.</p>
+            <div class="house-banner">
+              <div>
+                <h3>Shared laptop?</h3>
+                <p>Run the room without picking a player.</p>
+              </div>
+              <span class="btn btn-ghost">House screen</span>
+            </div>
+            <div class="panel">
+              <div class="search">Find your name</div>
+              <div class="name-list">
+                <div class="name-row"><i class="dot blue"></i><span>Chris</span></div>
+                <div class="name-row"><i class="dot red"></i><span>Scott</span></div>
+                <div class="name-row"><i class="dot green"></i><span>Miko</span></div>
+                <div class="name-row"><i class="dot black"></i><span>Sid</span></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </section>
+
+      <section class="flow on" data-flow-panel="phone">
+        <p class="step-cap"><b>2 · Event</b> — Your match first</p>
+        <p class="device-label">Phone · Event › Play</p>
+        <div class="phone"><div class="phone-screen">
+          <div class="app-bar">
+            <span class="brand">ProxyCon 2026</span>
+            <span class="who"><i class="dot blue" style="margin-right:6px;vertical-align:middle"></i>Chris</span>
+          </div>
+          <div class="pad">
+            <p class="eyebrow">Friday · Weekend total</p>
+            <h1 class="title" style="font-size:22px">Your games</h1>
+            <div class="records">
+              <div><small>Commander</small><strong>3–2</strong></div>
+              <div><small>Tournament</small><strong>2–0</strong></div>
+            </div>
+            <div class="slip">
+              <div class="slip-side"><small>Your game</small><strong>Table 3</strong></div>
+              <div class="slip-main">
+                <div class="live">Round 2 · Pairings posted</div>
+                <h2>Chris vs Scott</h2>
+                <p>Cube · 6 pts · Match record 2–0</p>
+                <span class="cta">View match →</span>
+              </div>
+            </div>
+            <div class="slip">
+              <div class="slip-side"><small>Commander</small><strong>Kitchen</strong></div>
+              <div class="slip-main">
+                <div class="live" style="color:var(--muted)">Open table</div>
+                <h2>Craig, Miko, Sid</h2>
+                <p>Waiting to start</p>
+                <span class="cta">View game →</span>
+              </div>
+            </div>
+            <p class="section-h">Happening now</p>
+            <div class="now-row"><span>Cube · Round 2</span><span>2 tables live</span></div>
+            <div class="now-row"><span>Commander · Dining</span><span>4 players</span></div>
+            <div style="margin-top:14px"><span class="btn btn-primary btn-block">Start a game</span></div>
+          </div>
+          <div class="bottom-nav">
+            <span class="on">Play</span><span>Standings</span><span>Players</span><span>More</span>
+          </div>
+        </div></div>
+      </section>
+
+      <section class="flow on" data-flow-panel="phone">
+        <p class="step-cap"><b>3 · Report</b> — Confirm, then save</p>
+        <p class="device-label">Phone · Match</p>
+        <div class="phone"><div class="phone-screen">
+          <div class="app-bar"><span class="brand">Table 3</span><span class="who">Round 2 of 3</span></div>
+          <div class="pad">
+            <p class="eyebrow">Cube · Live</p>
+            <h1 class="title" style="font-size:24px">Chris vs Scott</h1>
+            <p class="subtle">Draft seat 6 · Play table 3 · Not started → Report when done</p>
+            <div class="panel" style="margin-top:14px">
+              <p class="eyebrow" style="margin:0">Result</p>
+              <div class="outcome">
+                <div class="choice picked">Chris wins</div>
+                <div class="choice">Scott wins</div>
+                <div class="choice">Draw</div>
+              </div>
+              <div class="summary">
+                Saves as <strong>Chris 2–0</strong>, Scott 1–1. Round 3 posts when Table 2 finishes.
+              </div>
+              <div style="margin-top:12px"><span class="btn btn-primary btn-block">Save result</span></div>
+            </div>
+          </div>
+        </div></div>
+      </section>
+    </div>
+
+    <!-- House room workflow -->
+    <div class="board flow-house" id="board-house" hidden>
+      <section class="flow on" data-flow-panel="house">
+        <p class="step-cap"><b>House laptop</b> — Room as working tournament desk (no personal identity)</p>
+        <p class="device-label">Laptop · Event › Room</p>
+        <div class="laptop"><div class="laptop-screen">
+          <div class="house-top">
+            <span class="brand">ProxyCon</span>
+            <span class="meta-line">ProxyCon 2026 · Cube · Round 2 of 3</span>
+            <div class="clock"><strong>34:12</strong><span>Round clock · Pause</span></div>
+          </div>
+          <div class="house-body">
+            <div class="tables">
+              <p class="eyebrow">Open tables</p>
+              <div class="table-card">
+                <header><h3>Table 1</h3><span class="pill">Live</span></header>
+                <div class="vs"><span>Miko</span><em>vs</em><span>Sid</span></div>
+              </div>
+              <div class="table-card">
+                <header><h3>Table 2</h3><span class="pill">Live</span></header>
+                <div class="vs"><span>Craig</span><em>vs</em><span>Alex</span></div>
+              </div>
+              <div class="table-card">
+                <header><h3>Table 3</h3><span class="pill" style="color:var(--muted);background:var(--surface-2)">Reported</span></header>
+                <div class="vs"><span>Chris 2–1</span><em></em><span>Scott</span></div>
+              </div>
+              <div class="table-card">
+                <header><h3>Table 4</h3><span class="pill" style="color:var(--muted);background:var(--surface-2)">Bye</span></header>
+                <div class="vs"><span>Jordan</span><em>· 3 match points</em><span></span></div>
+              </div>
+            </div>
+            <div class="standings">
+              <p class="eyebrow">Standings</p>
+              <table>
+                <thead><tr><th>#</th><th>Player</th><th>Pts</th><th>OMW%</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>Chris</td><td>6</td><td>55%</td></tr>
+                  <tr><td>2</td><td>Miko</td><td>6</td><td>50%</td></tr>
+                  <tr><td>3</td><td>Craig</td><td>3</td><td>62%</td></tr>
+                  <tr><td>4</td><td>Scott</td><td>3</td><td>48%</td></tr>
+                  <tr><td>5</td><td>Sid</td><td>3</td><td>41%</td></tr>
+                  <tr><td>6</td><td>Alex</td><td>0</td><td>58%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="house-actions">
+            <span class="btn btn-primary">Enter result</span>
+            <span class="btn btn-ghost">Pause clock</span>
+            <span class="btn btn-ghost">Switch tournament</span>
+            <span class="btn btn-ghost">Finish…</span>
+          </div>
+        </div></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const blurbs = {
+      a: "<strong>A · Ink &amp; Signal</strong> — Cool gray shell, ember orange only on actions and live state. Sports-scoreboard clarity; WUBRG dots carry personality.",
+      b: "<strong>B · Cardstock Studio</strong> — Warm paper in light, deep indigo in dark. Violet (light) / cyan (dark) action. Serif headings evoke card stock without foil chrome.",
+      c: "<strong>C · Esports Desk</strong> — Near-black/white graphite UI, sharp corners, mono titles. Lime is reserved for Live / clock — never the whole brand.",
+      d: "<strong>D · Quiet Utility</strong> — Scryfall energy. Almost no decoration; blue links; player colors do the talking. Fastest to scan at the table."
+    };
+
+    const html = document.documentElement;
+    const blurb = document.getElementById("blurb");
+    const boardPhone = document.getElementById("board-phone");
+    const boardHouse = document.getElementById("board-house");
+
+    function setDir(dir) {
+      html.dataset.dir = dir;
+      blurb.innerHTML = blurbs[dir];
+      document.querySelectorAll(".dir-tabs button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(b.dataset.dir === dir));
+      });
+    }
+    function setMode(mode) {
+      html.dataset.mode = mode;
+      document.querySelectorAll(".mode-tabs button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+      });
+    }
+    function setFlow(flow) {
+      boardPhone.hidden = flow !== "phone";
+      boardHouse.hidden = flow !== "house";
+      document.querySelectorAll(".flow-tabs button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(b.dataset.flow === flow));
+      });
+    }
+
+    document.querySelectorAll(".dir-tabs button").forEach((b) => {
+      b.addEventListener("click", () => setDir(b.dataset.dir));
+    });
+    document.querySelectorAll(".mode-tabs button").forEach((b) => {
+      b.addEventListener("click", () => setMode(b.dataset.mode));
+    });
+    document.querySelectorAll(".flow-tabs button").forEach((b) => {
+      b.addEventListener("click", () => setFlow(b.dataset.flow));
+    });
+
+    setDir("a");
+    setMode("light");
+    setFlow("phone");
+  </script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 'use client';
 
 import { Deck } from '@/lib/types';
-import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Edit2, X } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import Image from 'next/image';
 import { ManaCost } from '@/components/ui/mana-symbol';
 import { RichTextDisplay } from './rich-text-display';
@@ -17,7 +17,8 @@ interface DeckInspectorProps {
 
 export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorProps) {
   return (
-    <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border p-0 gap-0">
+    <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border p-0 gap-0 deck-inspector-dialog">
+      <DialogDescription className="sr-only">{deck.name}. Commander, card artwork, and deck details.</DialogDescription>
       <div className="md:grid md:grid-cols-5 h-full">
         
         {/* Left Column: Art (Hero Image) */}
@@ -25,14 +26,14 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
           {deck.image_uris?.art_crop || deck.image_uris?.large || deck.image_url ? (
             <>
               <Image
-                src={deck.image_uris?.large || deck.image_uris?.normal || deck.image_url || ''}
+                src={deck.image_uris?.large || deck.image_uris?.normal || deck.image_uris?.art_crop || deck.image_url || ''}
                 alt={deck.commander_name || deck.name}
                 fill
                 unoptimized
                 className="object-cover object-top md:object-center"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-zinc-950/80" />
+              <div className="deck-inspector-shade" />
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground bg-card">
@@ -54,6 +55,7 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
               {isOwner && (
                 <Button 
                   variant="outline" 
+                  aria-label={`Edit ${deck.name}`}
                   size="icon" 
                   onClick={onEdit} 
                   className="hidden md:flex shrink-0 border-border hover:bg-muted"
@@ -70,13 +72,6 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
               
               {deck.set_name && (
                 <div className="flex items-center gap-1.5" title={deck.set_name}>
-                  {deck.set_code && (
-                    <img 
-                      src={`https://svgs.scryfall.io/sets/${deck.set_code.toLowerCase()}.svg`} 
-                      alt={deck.set_code}
-                      className="w-4 h-4 invert opacity-70" 
-                    />
-                  )}
                   <span className="truncate max-w-[150px]">{deck.set_name}</span>
                 </div>
               )}

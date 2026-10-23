@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/server';
 import type { Profile } from '@/lib/types';
 import { houseOrigin } from '@/lib/house-url';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageIntro } from '@/components/layout/page-intro';
 
 export default async function AdminPage() {
   const current = await getCurrentUser();
@@ -21,8 +22,8 @@ export default async function AdminPage() {
     db.from('weekend_guest_spots').select('profile_id').not('profile_id', 'is', null),
   ]);
   const guestProfileIds = (guestProfiles || []).flatMap(spot => spot.profile_id ? [String(spot.profile_id)] : []);
-  return <main className="page">
-    <header className="page-heading"><div><p className="eyebrow">Administration</p><h1>Administration</h1><p className="subtle">Manage player accounts, weekend guests, events, and results.</p></div></header>
+  return <main className="page collection-page admin-collection">
+    <PageIntro eyebrow="ADMINISTRATION / BEHIND THE TABLES" title={<>Keep the<br /><em>weekend running.</em></>} description="Player accounts, guest access, events, and result corrections." />
     <Tabs defaultValue="users">
       <div className="overflow-x-auto mb-6"><TabsList><TabsTrigger value="users">Players</TabsTrigger><TabsTrigger value="guests">Weekend guests</TabsTrigger><TabsTrigger value="events">Events</TabsTrigger><TabsTrigger value="results">Results</TabsTrigger></TabsList></div>
       <TabsContent value="users"><div className="overflow-x-auto"><UserManager users={profiles || []} guestProfileIds={guestProfileIds} currentUserId={current.profile?.id || current.user.id} /></div></TabsContent>

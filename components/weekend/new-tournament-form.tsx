@@ -8,15 +8,16 @@ import { chicagoToday } from '@/lib/weekend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Layers, Shuffle, Box, PackageOpen, Check } from 'lucide-react';
 
 const FORMATS = [
-  { id: 'set_draft', label: 'Set draft' },
-  { id: 'chaos_draft', label: 'Chaos draft' },
-  { id: 'cube', label: 'Cube' },
-  { id: 'sealed', label: 'Sealed' },
+  { id: 'set_draft', label: 'Set draft', detail: 'One set. Every pick counts.', icon: Layers },
+  { id: 'chaos_draft', label: 'Chaos draft', detail: 'Mixed packs. Unexpected plays.', icon: Shuffle },
+  { id: 'cube', label: 'Cube', detail: 'A collection built for drafting.', icon: Box },
+  { id: 'sealed', label: 'Sealed', detail: 'Open packs. Build your pool.', icon: PackageOpen },
 ];
 
-export function NewTournamentForm({ eventId }: { eventId: string }) {
+export function NewTournamentForm({ eventId, house = false }: { eventId: string; house?: boolean }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [format, setFormat] = useState('set_draft');
@@ -54,22 +55,22 @@ export function NewTournamentForm({ eventId }: { eventId: string }) {
         toast.error(result.message || 'Could not create the tournament.');
         return;
       }
-      router.push(`/tournament/${result.tournamentId}`);
+      router.push(house ? `/events/${eventId}/room?tournament=${result.tournamentId}` : `/tournament/${result.tournamentId}`);
       router.refresh();
     } catch { toast.error('Could not save. Check your connection and try again.'); }
     finally { setPending(false); }
   }
 
   return (
-    <form className="space-y-5" onSubmit={(event) => { event.preventDefault(); void create(); }}>
+    <form className="space-y-5 tournament-create-form" onSubmit={(event) => { event.preventDefault(); void create(); }}>
       <div className="space-y-2">
         <Label htmlFor="t-name">Name</Label>
         <Input id="t-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Friday draft" />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="format-choice-grid" aria-label="Tournament format">
         {FORMATS.map((item) => (
-          <button key={item.id} type="button" aria-pressed={format === item.id} onClick={() => setFormat(item.id)} className={`rounded-full border px-3 py-1.5 text-sm ${format === item.id ? 'border-primary text-primary' : 'border-border text-muted-foreground'}`}>
-            {item.label}
+          <button key={item.id} type="button" aria-pressed={format === item.id} onClick={() => setFormat(item.id)} className="format-choice">
+            <item.icon size={23} /><strong>{item.label}</strong><small>{item.detail}</small>{format === item.id && <Check size={14} className="format-selected" />}
           </button>
         ))}
       </div>
@@ -103,10 +104,10 @@ export function NewTournamentForm({ eventId }: { eventId: string }) {
         Packs or cube
         <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note" />
       </label>
-      <label className="flex items-center gap-2 text-sm">
+      {!house && <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={bringing} onChange={(event) => setBringing(event.target.checked)} />
         I am bringing them
-      </label>
+      </label>}
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? 'Creating tournament…' : 'Create tournament'}
       </Button>

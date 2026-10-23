@@ -39,13 +39,13 @@ export function RoundClock({
   }, now);
 
   return (
-    <div className={`round-clock space-y-3 rounded-xl border border-border p-4${pausedAt ? ' is-paused' : ''}`}>
+    <div className={`round-clock space-y-3 rounded-xl border border-border p-4${pausedAt ? ' is-paused' : ''}${left != null && left <= 300 ? ' is-urgent' : ''}`} suppressHydrationWarning>
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">Round clock</p>
-        <p className="font-heading text-5xl tabular-nums">{left == null ? '—' : formatClock(left)}</p>
+        <p className="font-heading text-5xl tabular-nums" suppressHydrationWarning>{left == null ? '—' : formatClock(left)}</p>
       </div>
       <p className="text-xs text-muted-foreground">
-        {pausedAt ? 'Paused. The clock does not enter a result.' : 'Counting down. The clock does not enter a result.'}
+        {pausedAt ? 'Paused' : left === 0 ? 'Time elapsed · report results when ready' : 'Remaining this round'}
       </p>
       {canControl && (
         <div className="flex flex-wrap items-center gap-2">
@@ -54,7 +54,7 @@ export function RoundClock({
           ) : (
             <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => pauseRoundClock(tournamentId))}>Pause</Button>
           )}
-          <Input
+          <details><summary>Change length</summary><div className="flex flex-wrap gap-2"><p className="w-full text-xs text-muted-foreground">Changing the length resets the countdown. Time never enters a result.</p><Input
             aria-label="Round length in minutes"
             type="number"
             min={1}
@@ -69,8 +69,9 @@ export function RoundClock({
             disabled={pending}
             onClick={() => run(() => setTournamentSetup({ tournamentId, roundDuration: minutes }))}
           >
-            Set length
+            Reset clock
           </Button>
+          </div></details>
         </div>
       )}
     </div>

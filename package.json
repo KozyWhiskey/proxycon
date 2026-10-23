@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:guest-accounts": "node scripts/guest-accounts.test.mjs"
+    "test:guest-accounts": "node scripts/guest-accounts.test.mjs",
+    "test:ux": "node scripts/ux-flows.test.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.43",

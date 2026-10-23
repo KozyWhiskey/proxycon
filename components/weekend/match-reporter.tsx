@@ -1,136 +1,190 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { matchOutcome } from '@/lib/match-outcome';
 import { reportMatch } from '@/app/weekend/actions';
 import { Button } from '@/components/ui/button';
 import { useAction } from '@/components/weekend/act-button';
 
-interface Player {
-  id: string;
-  name: string;
-  team?: number | null;
-}
+interface Player { id: string; name: string; team?: number | null; result?: string | null; gamesWon?: number | null }
 
-export function MatchReporter({
-  matchId,
-  players,
-  teams = false,
-  returnTo,
-  showGamesWon = false,
-  decks,
-}: {
-  matchId: string;
-  players: Player[];
-  teams?: boolean;
-  returnTo?: string;
-  /** Tournament Swiss can store an optional 2–1 style score. Quick matches do not. */
-  showGamesWon?: boolean;
-  /** Optional deck ids keyed by profile id. Saved with the result. */
-  decks?: Record<string, string>;
+export function MatchReporter({ matchId, players, teams = false, returnTo, showGamesWon = false, decks, tournament = false }: {
+  matchId: string; players: Player[]; teams?: boolean; returnTo?: string; showGamesWon?: boolean; decks?: Record<string, string>; tournament?: boolean;
 }) {
   const router = useRouter();
   const { pending, run } = useAction();
-  const [games, setGames] = useState<Record<string, number>>({});
   const named = players.filter((player) => player.id);
+  const correcting = named.some((player) => player.result);
+  const initialWinners = named.filter((player) => player.result === 'win').map((player) => player.id);
+  const initialChoice = named.every((player) => player.result === 'draw') ? 'draw' : initialWinners.join(',') || null;
+  const source = named.map((player) => ({ profileId: player.id, result: player.result || null, gamesWon: player.gamesWon ?? null }));
+  const version = JSON.stringify(source);
+  const [sourceVersion, setSourceVersion] = useState(version);
+  const [expected, setExpected] = useState(source);
+  const [choice, setChoice] = useState<string | null>(named.every((player) => player.result === 'draw') ? 'draw' : initialWinners.join(',') || null);
+  const [games, setGames] = useState<Record<string, number>>(() => Object.fromEntries(named.map((player) => [player.id, player.gamesWon || 0])));
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
-  async function save(action: () => Promise<{ success: boolean; message?: string }>) {
-    const result = await run(action);
-    if (result.success && returnTo) router.push(returnTo);
+  if (version !== sourceVersion && !dirty) {
+    setSourceVersion(version);
+    setExpected(source);
+    setChoice(initialChoice);
+    setGames(Object.fromEntries(named.map((player) => [player.id, player.gamesWon || 0])));
+    setSaved(false);
   }
 
-  function count(id: string) {
-    return games[id] || 0;
+  const options = teams
+    ? [1, 2].map((team) => ({
+        value: named.filter((player) => player.team === team).map((player) => player.id).join(','),
+        label: named.filter((player) => player.team === team).map((player) => player.name).join(' & '),
+      })).filter((option) => option.value)
+    : named.map((player) => ({ value: player.id, label: player.name }));
+
+  const scoreRequired = showGamesWon && !teams;
+  const hasScore = named.every((player) => Number.isFinite(games[player.id])) && named.some((player) => (games[player.id] || 0) > 0);
+  const scoreReady = !scoreRequired || named.every((player) => Object.prototype.hasOwnProperty.call(games, player.id) && Number.isFinite(games[player.id]));
+  const decision = matchOutcome(
+    named.map((player) => ({ profile_id: player.id, team: player.team || null })),
+    scoreRequired || hasScore ? games : undefined,
+    choice === 'draw',
+    choice && choice !== 'draw' ? choice.split(',') : [],
+  );
+  const effective = decision.draw ? 'draw' : [...decision.winners].join(',') || null;
+  const winner = options.find((option) => option.value === effective)?.label;
+  const summary = effective === 'draw' ? 'Draw — no winner' : winner ? `${winner} ${teams ? 'win' : 'wins'}` : '';
+  const scoreLabel = named.map((player) => `${games[player.id] || 0}`).join('–');
+  const previous = named.every((player) => player.result === 'draw')
+    ? 'Draw'
+    : `${named.filter((player) => player.result === 'win').map((player) => player.name).join(' & ')} won`;
+  const canSave = Boolean(effective) && (!scoreRequired || hasScore) && scoreReady;
+
+  function select(value: string) {
+    setChoice(value);
+    setError('');
+    setSaved(false);
+    setDirty(true);
+    if (hasScore && effective !== value) {
+      setGames(Object.fromEntries(named.map((player) => [player.id, 0])));
+    }
   }
 
-  function bump(id: string, delta: number) {
-    setGames((current) => ({ ...current, [id]: Math.max(0, (current[id] || 0) + delta) }));
+  function bump(playerId: string, delta: number) {
+    setGames((current) => ({
+      ...current,
+      [playerId]: Math.max(0, (current[playerId] || 0) + delta),
+    }));
+    setChoice(null);
+    setError('');
+    setSaved(false);
+    setDirty(true);
   }
-
-  function parsedGames() {
-    const values: Record<string, number> = {};
-    for (const player of named) values[player.id] = count(player.id);
-    return values;
-  }
-
-  const anyScore = showGamesWon && named.some((player) => count(player.id) > 0);
-  const score = anyScore ? parsedGames() : undefined;
-  const deckPatch = decks
-    ? Object.fromEntries(named.map((player) => [player.id, decks[player.id] || null]))
-    : undefined;
-
-  const sides = teams
-    ? [1, 2].map((side) => ({
-        side,
-        ids: named.filter((player) => player.team === side).map((player) => player.id),
-        names: named.filter((player) => player.team === side).map((player) => player.name),
-      })).filter((side) => side.ids.length > 0)
-    : [];
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {teams ? 'Pick the winning team, or mark a draw.' : 'Pick the winner, or mark a draw.'}
-      </p>
-
-      {teams ? (
-        <div className="flex flex-wrap gap-2">
-          {sides.map((side) => (
-            <Button
-              key={side.side}
-              type="button"
-              disabled={pending}
-              className="font-heading"
-              onClick={() => save(() => reportMatch({ matchId, winnerIds: side.ids, games: score, decks: deckPatch }))}
-            >
-              {side.names.join(' & ')} win
-            </Button>
-          ))}
-          <Button type="button" variant="outline" disabled={pending} onClick={() => save(() => reportMatch({ matchId, draw: true, games: score, decks: deckPatch }))}>
-            Draw
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {named.map((player) => (
-            <Button
-              key={player.id}
-              type="button"
-              disabled={pending}
-              className="font-heading"
-              onClick={() => save(() => reportMatch({ matchId, winnerIds: [player.id], games: score, decks: deckPatch }))}
-            >
-              {player.name} wins
-            </Button>
-          ))}
-          <Button type="button" variant="outline" disabled={pending} onClick={() => save(() => reportMatch({ matchId, draw: true, games: score, decks: deckPatch }))}>
-            Draw
-          </Button>
+    <div className="match-reporter space-y-4" data-editing-result={dirty && !saved ? 'true' : undefined}>
+      {correcting && (
+        <div className="current-result">
+          <strong>Current result</strong>
+          <p>
+            {previous}
+            {named.some((player) => (player.gamesWon || 0) > 0) ? ` · ${named.map((player) => `${player.name} ${player.gamesWon || 0}`).join(' / ')}` : ''}
+          </p>
         </div>
       )}
 
-      {showGamesWon && (
-        <details className="disclosure">
-          <summary>Optional game score</summary>
-          <div className="space-y-3 pt-3">
-            <p className="text-xs text-muted-foreground">
-              For a best-of, enter games won (for example 2–1). This is only a note. Standings still use the match result above.
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {named.map((player) => (
-                <div key={player.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
-                  <span className="truncate text-sm">{player.name}</span>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" aria-label={`Remove a game won by ${player.name}`} variant="outline" className="h-11 w-11 px-0" disabled={pending || count(player.id) === 0} onClick={() => bump(player.id, -1)}>–</Button>
-                    <span className="w-6 text-center font-heading text-xl tabular-nums">{count(player.id)}</span>
-                    <Button type="button" aria-label={`Add a game won by ${player.name}`} variant="outline" className="h-11 w-11 px-0" disabled={pending} onClick={() => bump(player.id, 1)}>+</Button>
-                  </div>
+      {scoreRequired ? (
+        <fieldset disabled={pending} className="space-y-3">
+          <legend className="mb-3 text-sm">Games won</legend>
+          <div className="space-y-3">
+            {named.map((player) => (
+              <div key={player.id} className="score-stepper">
+                <span>{player.name}</span>
+                <div>
+                  <Button type="button" aria-label={`Remove a game won by ${player.name}`} variant="outline" disabled={pending || !(games[player.id] || 0)} onClick={() => bump(player.id, -1)}>−</Button>
+                  <output aria-label={`${player.name} games won`}>{games[player.id] || 0}</output>
+                  <Button type="button" aria-label={`Add a game won by ${player.name}`} variant="outline" disabled={pending} onClick={() => bump(player.id, 1)}>+</Button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        </details>
+        </fieldset>
+      ) : (
+        <>
+          <fieldset disabled={pending} className="space-y-3">
+            <legend className="mb-3 text-sm">{teams ? 'Which team won?' : 'Who won?'}</legend>
+            <div className="outcome-options">
+              {options.map((option) => (
+                <Button key={option.value} type="button" variant="outline" aria-pressed={effective === option.value} onClick={() => select(option.value)}>
+                  {option.label} {teams ? 'win' : 'wins'}
+                </Button>
+              ))}
+              <Button type="button" variant="outline" aria-pressed={effective === 'draw'} onClick={() => select('draw')}>Draw</Button>
+            </div>
+          </fieldset>
+          {showGamesWon && (
+            <details className="disclosure" open={hasScore || undefined}>
+              <summary>Game score (optional)</summary>
+              <div className="space-y-3">
+                <p className="subtle">A score such as 2–1 sets the match winner. Equal scores above zero mean a draw.</p>
+                {named.map((player) => (
+                  <div key={player.id} className="score-stepper">
+                    <span>{player.name}</span>
+                    <div>
+                      <Button type="button" aria-label={`Remove a game won by ${player.name}`} variant="outline" disabled={pending || !(games[player.id] || 0)} onClick={() => bump(player.id, -1)}>−</Button>
+                      <output aria-label={`${player.name} games won`}>{games[player.id] || 0}</output>
+                      <Button type="button" aria-label={`Add a game won by ${player.name}`} variant="outline" disabled={pending} onClick={() => bump(player.id, 1)}>+</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </>
       )}
+
+      {effective && canSave && (
+        <div className="result-review">
+          <span>{correcting ? 'Save this correction' : 'Ready to record'}</span>
+          <strong>{summary}{hasScore ? ` · ${scoreLabel}` : ''}</strong>
+          {hasScore && <p>{named.map((player) => `${player.name} ${games[player.id] || 0}`).join(' · ')}</p>}
+          {correcting && (tournament || showGamesWon) && (
+            <p className="subtle">Standings update immediately. Unstarted next-round pairings may change; started pairings stay fixed. If already finished, finish the tournament again.</p>
+          )}
+        </div>
+      )}
+      {scoreRequired && dirty && !hasScore && <p className="subtle">Enter games won for each player to save this result.</p>}
+      {error && (
+        <div>
+          <p role="alert" className="text-destructive text-sm">{error}</p>
+          <Button type="button" variant="ghost" onClick={() => { setExpected(source); setSourceVersion(version); setChoice(initialChoice); setGames(Object.fromEntries(named.map((player) => [player.id, player.gamesWon || 0]))); setDirty(false); setError(''); setSaved(false); router.refresh(); }}>Load current result</Button>
+        </div>
+      )}
+      <Button
+        type="button"
+        className="save-result"
+        disabled={pending || !canSave || saved || (correcting && !dirty)}
+        onClick={async () => {
+          setError('');
+          const result = await run(() => reportMatch({
+            matchId,
+            draw: effective === 'draw',
+            winnerIds: effective === 'draw' ? [] : effective?.split(',') || [],
+            games: scoreRequired || hasScore ? Object.fromEntries(named.map((player) => [player.id, games[player.id] || 0])) : undefined,
+            decks: decks ? Object.fromEntries(named.map((player) => [player.id, decks[player.id] || null])) : undefined,
+            expected,
+          }));
+          if (!result.success) {
+            setError(result.message || 'Result was not saved. Try again.');
+            return;
+          }
+          setSaved(true);
+          setDirty(false);
+          if (returnTo) router.push(returnTo);
+        }}
+      >
+        {pending ? 'Saving…' : saved ? 'Result saved' : correcting ? 'Save correction' : 'Save result'}
+      </Button>
     </div>
   );
 }

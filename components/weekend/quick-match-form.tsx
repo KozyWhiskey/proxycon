@@ -8,6 +8,8 @@ import { QUICK_FORMATS, chicagoToday, isCommanderFormat, quickFormat } from '@/l
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PlayerAvatar } from '@/components/events/arena-ui';
+import { Check, Crown, Swords, Users } from 'lucide-react';
 
 interface Person {
   id: string;
@@ -96,7 +98,8 @@ export function QuickMatchForm({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 quick-create-form">
+      <div className="quick-format-shortcuts" aria-label="Popular game formats">{[{id:'commander',name:'Commander',detail:'2–6 players',icon:Crown},{id:'1v1',name:'Duel',detail:'Head to head',icon:Swords},{id:'two_headed_giant',name:'Two-Headed Giant',detail:'Two teams of two',icon:Users}].map(item=><button type="button" key={item.id} aria-pressed={format===item.id} onClick={()=>{setFormat(item.id);setSelected([]);setWinnerIds([]);setDraw(false);}}><item.icon size={22}/><strong>{item.name}</strong><small>{item.detail}</small></button>)}</div>
       <label className="grid gap-2 text-sm">Game format
         <select className="h-12 rounded-md border border-input bg-card px-3" value={format} onChange={event=>{setFormat(event.target.value);setSelected([]);setWinnerIds([]);setDraw(false);}}>
           <optgroup label="Commander">{QUICK_FORMATS.filter(item=>isCommanderFormat(item.id)).map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>
@@ -127,9 +130,9 @@ export function QuickMatchForm({
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggle(person.id)}
-                className={`rounded-lg border px-3 py-3 text-left ${on ? 'border-primary bg-primary/10' : 'border-border'}`}
+                className="setup-player-choice"
               >
-                {person.name}
+                <PlayerAvatar name={person.name} small /><span>{person.name}</span>{on && <Check size={16} />}
               </button>
             );
           })}
@@ -159,7 +162,7 @@ export function QuickMatchForm({
         </div>
       )}
 
-      {chosen.length > 0 && (
+      <details className="disclosure"><summary>Decks & day (optional)</summary><div className="space-y-4">{chosen.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-heading text-lg">Decks</h2>
           <p className="text-xs text-muted-foreground">A deck can be filled in with the result, or left blank.</p>
@@ -190,6 +193,7 @@ export function QuickMatchForm({
         Day
         <Input type="date" value={day} onChange={(event) => setDay(event.target.value)} className="h-11" />
       </label>
+      </div></details>
 
       {chosen.length >= spec.min && (
         <div className="space-y-3">

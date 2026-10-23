@@ -29,14 +29,14 @@ export default async function PlayPage({
     : undefined;
 
   return (
-    <main className="page form-page">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 pb-28">
       <Link href={`/events/${id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
       <header>
         <h1 className="font-heading text-4xl">Quick match</h1>
         <p className="mt-2 text-sm text-muted-foreground">One table, one result. The same pod can play again.</p>
       </header>
       {board.joined ? (
-        <section className="panel"><QuickMatchForm
+        <QuickMatchForm
           eventId={id}
           people={board.members.map((member) => ({ id: member.id, name: member.name }))}
           decks={board.decks.map((deck) => ({
@@ -46,7 +46,7 @@ export default async function PlayPage({
             commanders: commanderKey(deck.commander_name, deck.partner_name) === 'No commander' ? '' : commanderKey(deck.commander_name, deck.partner_name),
           }))}
           replay={replay}
-        /></section>
+        />
       ) : (
         <p className="text-muted-foreground">Join the event before starting a game.</p>
       )}

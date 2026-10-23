@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import DeckForm from '@/components/decks/deck-form';
 
 export default function CreateDeckDialog() {
@@ -14,12 +14,13 @@ export default function CreateDeckDialog() {
       <DialogTrigger asChild>
         <Button variant="default">
           <Plus className="w-4 h-4 mr-2" />
-          New Deck
+          New deck
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-5xl">
+      <DialogContent className="sm:max-w-5xl deck-editor-dialog">
         <DialogHeader>
-          <DialogTitle>Create New Deck</DialogTitle>
+          <DialogTitle>A new addition to the deckbox.</DialogTitle>
+          <DialogDescription>Name your deck, find its commander, and choose the art that feels right.</DialogDescription>
         </DialogHeader>
         <DeckForm onSuccess={() => setOpen(false)} />
       </DialogContent>

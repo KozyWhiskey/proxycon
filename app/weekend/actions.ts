@@ -1,5 +1,6 @@
 'use server';
 
+import { matchOutcome, matchesResultSnapshot, type ResultSnapshot } from '@/lib/match-outcome';
 import { randomBytes } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { resolvePlayer } from '@/lib/player-session';
@@ -166,8 +167,8 @@ export async function joinTournament(tournamentId: string): Promise<ActionResult
 }
 
 export async function addTournamentPlayer(tournamentId: string, profileId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -311,8 +312,8 @@ async function writePairings(supabase: Db, tournament: { id: string; event_id: s
 }
 
 export async function postPairings(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -406,8 +407,8 @@ async function openTables(supabase: Db, matchIds: string[]) {
 }
 
 export async function clearPairings(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -425,8 +426,8 @@ export async function clearPairings(tournamentId: string): Promise<ActionResult>
 }
 
 export async function startRound(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -469,8 +470,8 @@ export async function startRound(tournamentId: string): Promise<ActionResult> {
 }
 
 export async function pauseRoundClock(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -496,8 +497,8 @@ export async function pauseRoundClock(tournamentId: string): Promise<ActionResul
 }
 
 export async function resumeRoundClock(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -530,8 +531,8 @@ export async function setTournamentSetup(input: {
   prize3rd?: string;
   roundDuration?: number;
 }): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed, user } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, input.tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -587,8 +588,8 @@ export async function setTournamentSetup(input: {
 }
 
 export async function addSeat(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -661,8 +662,8 @@ export async function claimSeat(tournamentId: string, seatNumber: number): Promi
 }
 
 export async function moveSeat(tournamentId: string, participantId: string, seatNumber: number): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -713,8 +714,8 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export async function randomizeSeats(tournamentId: string, mode: 'fill' | 'reshuffle'): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -774,8 +775,8 @@ export async function randomizeSeats(tournamentId: string, mode: 'fill' | 'reshu
 }
 
 export async function swapSealedPair(tournamentId: string, participantA: string, participantB: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   if (needsSeats(tournament.format)) return { success: false, message: 'Draft pairings are not swapped.' };
@@ -835,25 +836,6 @@ async function advanceIfReady(supabase: Db, tournamentId: string): Promise<strin
   return posted.message || 'Next round posted.';
 }
 
-function scoreDecision(
-  rows: { profile_id: string | null; team: number | null }[],
-  games: Record<string, number> | undefined,
-  draw: boolean,
-  winnerIds: string[],
-) {
-  const ids = rows.map((seat) => seat.profile_id).filter((id): id is string => Boolean(id));
-  const teamed = rows.some((seat) => seat.team);
-  const hasScores = Boolean(games) && ids.some((id) => (games?.[id] || 0) > 0);
-  const counts = hasScores && games
-    ? Object.fromEntries(ids.map((id) => [id, Math.max(0, Math.floor(Number(games[id]) || 0))]))
-    : null;
-  if (!counts || teamed) return { draw, winners: new Set(winnerIds), games: counts };
-  const highest = Math.max(...ids.map((id) => counts[id] || 0));
-  const leaders = ids.filter((id) => counts[id] === highest);
-  if (leaders.length === 1) return { draw: false, winners: new Set(leaders), games: counts };
-  return { draw: true, winners: new Set<string>(), games: counts };
-}
-
 async function clearFinish(supabase: Db, tournamentId: string, eventId: string) {
   await supabase.from('tournament_participants').update({ place: null }).eq('tournament_id', tournamentId);
   await supabase.from('tournaments').update({ status: 'active' }).eq('id', tournamentId);
@@ -867,9 +849,10 @@ export async function reportMatch(input: {
   games?: Record<string, number>;
   decks?: Record<string, string | null>;
   finishOrder?: string[];
+  expected?: ResultSnapshot[];
 }): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const { data: match } = await supabase
     .from('matches')
     .select('id, event_id, tournament_id, started_at, game_type, round_number, is_final')
@@ -882,20 +865,29 @@ export async function reportMatch(input: {
 
   const { data: seats } = await supabase
     .from('match_participants')
-    .select('id, profile_id, team')
+    .select('*')
     .eq('match_id', match.id);
   const rows = seats || [];
   if (rows.length === 0) return { success: false, message: 'Nobody is in this game.' };
+  if (input.expected && !matchesResultSnapshot(rows, input.expected)) return { success: false, message: 'This result changed while you were editing. Review the current result before saving your correction.' };
 
-  const decision = scoreDecision(rows, input.games, Boolean(input.draw), input.winnerIds || []);
+  const seatedIds = rows.map((seat) => seat.profile_id).filter((id): id is string => Boolean(id));
+  if (match.tournament_id && seatedIds.length >= 2) {
+    const scores = input.games;
+    if (!scores || seatedIds.some((id) => !Number.isFinite(scores[id]))) {
+      return { success: false, message: 'Enter games won for each player (for example 2–0 or 2–1).' };
+    }
+  }
+
+  const decision = matchOutcome(rows, input.games, Boolean(input.draw), input.winnerIds || []);
   if (!decision.draw && decision.winners.size === 0) return { success: false, message: 'Pick a winner, or mark a draw.' };
 
-  for (const seat of rows) {
-    if (!seat.profile_id) continue;
+  const patches = rows.map((seat) => {
+    if (!seat.profile_id) return seat;
     let result: Result = 'loss';
     if (decision.draw) result = 'draw';
     else if (decision.winners.has(seat.profile_id)) result = 'win';
-    const patch: Record<string, unknown> = { result };
+    const patch: Record<string, unknown> = { ...seat, result };
     patch.games_won = decision.games && seat.profile_id ? (decision.games[seat.profile_id] ?? 0) : null;
     if (input.decks && Object.prototype.hasOwnProperty.call(input.decks, seat.profile_id)) {
       patch.deck_id = input.decks[seat.profile_id] || null;
@@ -904,9 +896,13 @@ export async function reportMatch(input: {
       const place = input.finishOrder.indexOf(seat.profile_id);
       patch.finish_order = place >= 0 ? place + 1 : null;
     }
-    await supabase.from('match_participants').update(patch).eq('id', seat.id);
-  }
-  await supabase.from('matches').update({ completed_at: new Date().toISOString() }).eq('id', match.id);
+    return patch;
+  });
+  // One database statement records all sides of the match together.
+  const { data: savedSeats, error: resultError } = await supabase.from('match_participants').upsert(patches, { onConflict: 'id' }).select('id');
+  if (resultError || savedSeats?.length !== rows.length) return { success: false, message: 'Could not save this result. Your selection is still here; try again.' };
+  const { data: completed, error: completedError } = await supabase.from('matches').update({ completed_at: new Date().toISOString() }).eq('id', match.id).select('id');
+  if (completedError || completed?.length !== 1) return { success: false, message: 'The player results were recorded, but the table could not be marked complete. Reload the match and save again.' };
 
   let extra: string | null = null;
   if (match.tournament_id) {
@@ -930,8 +926,8 @@ export async function reportMatch(input: {
 }
 
 export async function dropPlayer(tournamentId: string, participantId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -985,8 +981,8 @@ export async function dropPlayer(tournamentId: string, participantId: string): P
 }
 
 export async function renameTable(matchId: string, label: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const { data: match } = await supabase.from('matches').select('id, event_id, tournament_id').eq('id', matchId).maybeSingle();
   if (!match?.event_id) return { success: false, message: 'Table not found.' };
   const gate = await requireMember(match.event_id);
@@ -999,8 +995,8 @@ export async function renameTable(matchId: string, label: string): Promise<Actio
 }
 
 export async function setMatchDay(matchId: string, day: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const { data: match } = await supabase.from('matches').select('id, event_id, tournament_id, completed_at').eq('id', matchId).maybeSingle();
   if (!match?.event_id) return { success: false, message: 'Game not found.' };
   const gate = await requireMember(match.event_id);
@@ -1013,8 +1009,8 @@ export async function setMatchDay(matchId: string, day: string): Promise<ActionR
 }
 
 export async function deleteTournament(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -1030,8 +1026,8 @@ export async function deleteTournament(tournamentId: string): Promise<ActionResu
 }
 
 export async function addFinal(tournamentId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -1086,8 +1082,8 @@ export async function finishTournament(input: {
   tournamentId: string;
   order?: string[];
 }): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const tournament = await tournamentOf(supabase, input.tournamentId);
   if (!tournament?.event_id) return { success: false, message: 'Tournament not found.' };
   const gate = await requireMember(tournament.event_id);
@@ -1158,8 +1154,8 @@ export async function finishTournament(input: {
 }
 
 export async function deleteQuickMatch(matchId: string): Promise<ActionResult> {
-  const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  const { supabase, allowed } = await session();
+  if (!allowed) return { success: false, message: 'Choose your name or open the house screen first.' };
   const { data: match } = await supabase
     .from('matches')
     .select('id, event_id, tournament_id')
@@ -1266,7 +1262,7 @@ export async function saveQuickMatch(input: {
 
 export async function setPlayName(playName: string): Promise<ActionResult> {
   const { supabase, user } = await session();
-  if (!user) return { success: false, message: 'Sign in first.' };
+  if (!user) return { success: false, message: 'Choose your name first.' };
   const name = playName.trim();
   if (name.length < 1 || name.length > 40) return { success: false, message: 'Use a play name.' };
   const { error } = await supabase.from('profiles').update({

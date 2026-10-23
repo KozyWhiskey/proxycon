@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MatchReporter } from '@/components/weekend/match-reporter';
-import { getColorClass } from '@/lib/player-colors';
+import { PlayerAvatar, DeckArt } from '@/components/events/arena-ui';
 
 interface Seat {
   id: string;
@@ -20,6 +20,7 @@ interface DeckOption {
   ownerId: string;
   name: string;
   commanders: string;
+  image?: string | null;
 }
 
 export function QuickMatchTable({
@@ -57,29 +58,30 @@ export function QuickMatchTable({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <div className="space-y-6 quick-table-detail">
+      <div className="quick-seat-grid">
         {players.map((player) => {
-          const color = getColorClass(player.color);
           const profileId = player.profileId;
           const mine = profileId ? decks.filter((deck) => deck.ownerId === profileId) : [];
           const recorded = deckLabel(finished ? player.deckId : deckIds[profileId || ''] || player.deckId);
+          const deck = decks.find(d => d.id === (finished ? player.deckId : deckIds[profileId || ''] || player.deckId));
 
           return (
-            <div key={player.id} className="space-y-2 rounded-lg border border-border px-4 py-3">
+            <div key={player.id} className={`quick-seat-card${player.result === 'win' ? ' is-winner' : ''}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  {color && <span className={`h-3 w-3 shrink-0 rounded-full ${color}`} />}
+                  <PlayerAvatar name={player.name} color={player.color} small />
                   <strong className="truncate">{player.name}</strong>
                   {player.team ? <span className="subtle">Team {player.team}</span> : null}
                 </div>
                 {finished && (
                   <span className="result-tag shrink-0">
-                    {player.result}
+                    {player.result === 'win' ? 'Winner' : player.result === 'loss' ? 'Loss' : 'Draw'}
                     {showGames ? ` (${player.gamesWon || 0})` : ''}
                   </span>
                 )}
               </div>
+              <div className="seat-commander"><DeckArt src={deck?.image} name={deck?.commanders || 'Deck'} /><div><span className="arena-caption">AT THE TABLE WITH</span><strong>{deck?.commanders || deck?.name || 'Deck not recorded'}</strong></div></div>
 
               {canReport && profileId && !finished && (
                 <label className="grid gap-1 text-sm">
@@ -119,6 +121,8 @@ export function QuickMatchTable({
               id: player.profileId!,
               name: player.name,
               team: player.team,
+              result: player.result,
+              gamesWon: player.gamesWon,
             }))}
           />
         </div>

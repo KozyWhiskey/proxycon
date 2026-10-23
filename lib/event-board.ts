@@ -1,11 +1,13 @@
 import { resolvePlayer } from '@/lib/player-session';
+import { cache } from 'react';
+import { eventCapabilities } from '@/lib/event-capabilities';
 import { chicagoToday, needsSeats, rankPlayers, type HistoryMatch, type Result } from '@/lib/weekend';
 
 export function personName(profile?: { display_name?: string | null; username?: string | null } | null) {
   return profile?.display_name || profile?.username || 'Player';
 }
 
-export async function loadEventBoard(eventId: string) {
+export const loadEventBoard = cache(async (eventId: string) => {
   const ctx = await resolvePlayer();
   const supabase = ctx.supabase;
   const { data: event } = await supabase
@@ -68,7 +70,7 @@ export async function loadEventBoard(eventId: string) {
   const { data: decks } = profileIds.length
     ? await supabase
       .from('decks')
-      .select('id, owner_id, name, commander_name, partner_name')
+      .select('id, owner_id, name, commander_name, partner_name, image_url')
       .in('owner_id', profileIds)
     : { data: [] as DeckRow[] };
 
@@ -88,9 +90,9 @@ export async function loadEventBoard(eventId: string) {
     seats: (seats || []) as SeatRow[],
     prizes: prizes || [],
     decks: (decks || []) as DeckRow[],
-    joined: Boolean(ctx.playerId && members.some((member) => member.id === ctx.playerId)),
+    ...eventCapabilities({ authenticated: Boolean(ctx.authUser), playerId: ctx.playerId, house: ctx.mode === 'house', admin: ctx.isAdmin, member: members.some((member) => member.id === ctx.playerId) }),
   };
-}
+});
 
 interface RosterRow {
   id: string;
@@ -121,6 +123,7 @@ interface DeckRow {
   name: string;
   commander_name: string | null;
   partner_name: string | null;
+  image_url?: string | null;
 }
 
 export type EventBoard = NonNullable<Awaited<ReturnType<typeof loadEventBoard>>>;

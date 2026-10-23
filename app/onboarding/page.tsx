@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import OnboardingForm from '@/components/onboarding/onboarding-form'
+import { Brand } from '@/components/layout/brand'
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
@@ -21,7 +22,9 @@ export default async function OnboardingPage() {
   const suggestion = String(meta.full_name || meta.name || '').trim()
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="onboarding-stage">
+      <Brand />
+      <div className="onboarding-intro"><p className="eyebrow">WELCOME TO THE PLAYGROUP</p><h1>A name for<br /><em>every table.</em></h1></div>
       <OnboardingForm suggestion={suggestion} />
     </div>
   )

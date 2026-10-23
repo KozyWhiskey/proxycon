@@ -1,10 +1,10 @@
+import { Button } from '@/components/ui/button';
 import { AddPlayers } from '@/components/events/add-players';
 import { addTournamentPlayer } from '@/app/weekend/actions';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { gamesWonFor, currentRound, loadEventBoard, matchPlayers, nameOf, standingsFor, type EventBoard } from '@/lib/event-board';
 import { chartSeatCount, manualTieGroups, needsSeats, placeLabel, podForSeat, tournamentLabel, type HistoryMatch } from '@/lib/weekend';
-import { getColorClass } from '@/lib/player-colors';
 import {
   addFinal,
   addSeat,
@@ -12,15 +12,17 @@ import {
   dropPlayer,
   joinTournament,
   postPairings,
-  randomizeSeats,
   startRound,
 } from '@/app/weekend/actions';
 import { ActButton } from '@/components/weekend/act-button';
 import { FinishForm } from '@/components/weekend/finish-form';
 import { MatchReporter } from '@/components/weekend/match-reporter';
 import { RoundClock } from '@/components/weekend/round-clock';
+import { SeatRandomizer } from '@/components/weekend/seat-randomizer';
 import { SeatChart } from '@/components/weekend/seat-chart';
-import { TableName } from '@/components/weekend/tournament-tools';
+import { RoundEditor, SealedSwap } from '@/components/weekend/tournament-tools';
+import { GameStatus } from '@/components/events/arena-ui';
+import { RoomDialog, MatchPages, RoomFocus, StandingsPages } from '@/components/events/arena-controls';
 
 export default async function RoomPage({
   params,
@@ -40,18 +42,18 @@ export default async function RoomPage({
   const featured = pickTournament(board, limited, query.tournament);
 
   return (
-    <main className="page room-page">
+    <main className="page room-page arena-room">
       <header className="room-top">
         <div>
-          <p className="eyebrow">Tournament desk</p>
+          <p className="eyebrow">THE HOUSE / TOURNAMENT ROOM</p>
           <h1>{board.event.name}</h1>
           <p className="subtle mt-2">
-            <Link href={`/events/${id}`}>← Event overview</Link>
+            <Link href={`/events/${id}`}>← Play</Link>
             {' · '}
-            One tournament at a time. Quick matches open from the event page.
+            <Link href={`/events/${id}/manage`}>Event tools</Link>
           </p>
         </div>
-        <Link href={`/events/${id}/stats`} className="room-top-link">Statistics</Link>
+        <div className="room-top-actions"><RoomFocus /><Button asChild variant="outline"><Link href={`/events/${id}/tournaments/new`}>Create tournament</Link></Button></div>
       </header>
 
       {limited.length > 1 && (
@@ -64,7 +66,7 @@ export default async function RoomPage({
                 href={`/events/${id}/room?tournament=${tournament.id}`}
                 aria-current={selected ? 'page' : undefined}
               >
-                {tournament.name}
+                <span>{tournament.name}</span><small>{tournament.status === 'completed' ? 'Finished' : tournament.field_locked ? 'Playing' : 'Setup'}</small>
               </Link>
             );
           })}
@@ -109,12 +111,16 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
     .slice(0, 6);
   const prizeText = [row.prize_1st && `1st ${row.prize_1st}`, row.prize_2nd && `2nd ${row.prize_2nd}`, row.prize_3rd && `3rd ${row.prize_3rd}`].filter(Boolean).join(' · ');
   const seating = needsSeats(row.format) && round.round === 0 && row.status !== 'completed';
-  const canRun = board.joined && row.status !== 'completed';
+  const canRun = board.canManage && row.status !== 'completed';
   const showPost = canRun && !posted && (round.round === 0 || round.matches.every((match) => matchPlayers(board, match.id).every((seat) => seat.result))) && round.round < (row.max_rounds || 1);
   const showClock = started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null;
   const showRoundActions = posted && canRun;
   const finalPlayers = finalMatch ? matchPlayers(board, finalMatch.id) : [];
   const finalWaiting = Boolean(finalMatch && finalPlayers.some((seat) => !seat.result));
+  const allReported = round.matches.length > 0 && round.matches.every(match => matchPlayers(board, match.id).length > 0 && matchPlayers(board, match.id).every(seat => seat.result));
+  const readyToFinish = round.round >= (row.max_rounds || 1) && allReported && !finalWaiting;
+  const unseated = joined.filter(person => !person.draft_seat);
+  const completedTables = round.matches.filter(match => matchPlayers(board, match.id).length > 0 && matchPlayers(board, match.id).every(seat => seat.result)).length;
   const startedLabel = startedAt
     ? new Date(startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })
     : null;
@@ -125,14 +131,16 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
 
   return (
     <>
-      <section className="room-stage">
-        <div className="room-main">
+      <section className={`room-stage${round.round ? ' has-round' : ' is-setup'}`}>
           <header className="room-mast">
             <div className="room-mast-copy">
+              <div className="room-round-heading">
               <p className="eyebrow">{tournamentLabel(row.format)}</p>
               <h2 className={round.round ? 'room-round' : 'room-setup-title'}>
                 {round.round ? <>Round {round.round}<span className="room-of"> of {row.max_rounds}</span></> : row.name}
               </h2>
+              </div>
+              <div className="room-round-details">
               <p className="room-status-line">
                 <Link href={`/tournament/${row.id}`}>{round.round ? row.name : 'Open on a phone'}</Link>
                 {' · '}{joined.length} {joined.length === 1 ? 'player' : 'players'}
@@ -140,9 +148,10 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                 {startedLabel ? ` · started ${startedLabel}` : ''}
               </p>
               {prizeText && <p className="room-prizes">{prizeText}</p>}
-              {openNames.length > 0 && <p className="room-open-note">Still open: {openNames.join(', ')}</p>}
+              </div>
+              {round.round > 0 && <div className="room-result-progress"><div className="arena-meter" role="progressbar" aria-label="Round results" aria-valuemin={0} aria-valuemax={Math.max(1, round.matches.length)} aria-valuenow={completedTables}><span style={{ width: `${completedTables / Math.max(1, round.matches.length) * 100}%` }} /></div><p className="room-note">{completedTables} / {round.matches.length} results in{openNames.length > 0 ? ` · Waiting on ${openNames.join(', ')}` : ''}</p></div>}
               {posted && <p className="room-note">Pairings are posted. The round has not started.</p>}
-              {canRun && !mine && !row.field_locked && (
+              {board.joined && canRun && !mine && !row.field_locked && (
                 <div className="room-join"><ActButton label="Join tournament" action={joinTournament.bind(null, row.id)} /></div>
               )}
             </div>
@@ -154,28 +163,29 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                   anchor={row.clock_anchor}
                   pausedAt={row.clock_paused_at}
                   remainingSeconds={row.clock_remaining_seconds}
-                  canControl={board.joined}
+                  canControl={board.canManage}
                 />
               </div>
             )}
             {showRoundActions && (
               <div className="room-mast-actions">
-                <ActButton label="Start round" action={startRound.bind(null, row.id)} />
+                <ActButton label={`Start round ${round.round}`} action={startRound.bind(null, row.id)} />
                 <ActButton label="Clear pairings" variant="outline" action={clearPairings.bind(null, row.id)} />
               </div>
             )}
           </header>
-
+        <div className="room-main">
+          {round.round === 0 && <div className="room-readiness"><span><strong>{joined.length}</strong> players</span>{needsSeats(row.format) && <span><strong>{unseated.length}</strong> unseated</span>}<span><strong>{row.max_rounds}</strong> rounds · {row.round_duration_minutes || 50} min</span><span>{row.pod_count === 2 ? 'Two pods · one leaderboard' : 'One field'}</span></div>}
+          {canRun && !row.field_locked && <AddPlayers kind="tournament" players={board.members.filter(member => !joined.some(player => player.profile_id === member.id)).map(member => ({ id: member.id, name: member.name }))} action={addTournamentPlayer.bind(null, row.id)} />}
           {seating && (
             <div className="room-seat-board">
               <div className="room-seat-head">
                 <p className="eyebrow">Seats</p>
-                {board.joined && (
+                {board.canManage && (
                   <div className="room-toolbar" aria-label="Seat tools">
                     {postButton}
                     <ActButton label="Add seat" variant="outline" action={addSeat.bind(null, row.id)} />
-                    <ActButton label="Fill empty" variant="outline" action={randomizeSeats.bind(null, row.id, 'fill')} />
-                    <ActButton label="Reshuffle" variant="outline" action={randomizeSeats.bind(null, row.id, 'reshuffle')} />
+                    <SeatRandomizer tournamentId={row.id} />
                   </div>
                 )}
               </div>
@@ -191,7 +201,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                       {row.pod_count === 2 && <h3>Pod {pod}</h3>}
                       <div className="room-seats">
                         <SeatChart
-                          canControl={board.joined}
+                          canControl={board.canManage}
                           tournamentId={row.id}
                           seats={podSeats.map((number) => {
                             const holder = roster.find((person) => person.draft_seat === number);
@@ -216,19 +226,22 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
           {!seating && showPost && <div className="room-toolbar">{postButton}</div>}
 
           {(round.matches.length > 0 || finalMatch) && (
-            <div className="room-tables" aria-label="Tables">
+            <MatchPages key={`${row.id}-${round.round}`}>
               {finalWaiting && finalMatch && <TableCard board={board} match={finalMatch} posted={false} final />}
-              {round.matches.map((match) => <TableCard key={match.id} board={board} match={match} posted={posted} />)}
+              {[...round.matches].sort((a, b) => Number(Boolean(a.completed_at)) - Number(Boolean(b.completed_at)) || (a.table_number || 0) - (b.table_number || 0)).map((match) => <TableCard key={match.id} board={board} match={match} posted={posted} />)}
               {finalMatch && !finalWaiting && <TableCard board={board} match={finalMatch} posted={false} final />}
-            </div>
+            </MatchPages>
           )}
 
           {!seating && round.matches.length === 0 && !finalMatch && (
             <p className="room-note">No pairings posted.</p>
           )}
 
+          {posted && round.round === 1 && !needsSeats(row.format) && canRun && <SealedSwap tournamentId={row.id} players={joined.map(person => ({ id: person.id, name: nameOf(board, person.profile_id) }))} />}
+          {canRun && row.field_locked && readyToFinish && <section className="room-finish"><h3>Ready to finish</h3><FinishForm tournamentId={row.id} ranked={standings.map(player => ({ id: player.id, name: player.name }))} tieGroups={ties} prizes={[row.prize_1st, row.prize_2nd, row.prize_3rd]} finalResult={finalPlayers.map(player => ({ id: player.participant_id || '', result: player.result }))} />{!finalMatch && <div className="mt-4"><ActButton label="Add top-two final instead" variant="outline" action={addFinal.bind(null, row.id)} /></div>}</section>}
+          {canRun && !row.field_locked && <details className="disclosure"><summary>Tournament settings</summary><div><RoundEditor tournamentId={row.id} rounds={row.max_rounds || 3} locked={false} pods={row.pod_count || 1} note={row.product_note || ''} bringing={Boolean(row.brought_by)} showPods={needsSeats(row.format) && round.matches.length === 0} prize1st={row.prize_1st || ''} prize2nd={row.prize_2nd || ''} prize3rd={row.prize_3rd || ''} duration={row.round_duration_minutes || 50} /></div></details>}
           {recent.length > 0 && (
-            <div className="room-recent">
+            <details className="room-recent"><summary>Previous round results</summary>
               <h3>Recent results</h3>
               {recent.map((match) => {
                 const players = matchPlayers(board, match.id);
@@ -239,35 +252,30 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                   </p>
                 );
               })}
-            </div>
+            </details>
           )}
         </div>
 
         <aside className="room-rail">
           <div className="room-standings">
             <h3>Standings</h3>
-            <p>Match points, then opponent match-win percentage. Game scores do not change the order.</p>
-            <div className="room-standings-scroll">
-              <table>
-                <thead>
+            <p>{row.status === 'completed' ? 'Final places' : 'Live standings'} · points / match record</p>
+            <StandingsPages key={row.id} headings={<thead>
                   <tr>
-                    <th scope="col">Place</th>
-                    <th scope="col">Name</th>
+                    <th scope="col" aria-label={row.status === 'completed' ? 'Place' : 'Position'}>#</th>
+                    <th scope="col">Player</th>
                     <th scope="col">Pts</th>
-                    <th scope="col">Record</th>
-                    <th scope="col" className="minor">Games</th>
-                    <th scope="col" className="minor">Opp %</th>
+                    <th scope="col" aria-label="Match record: wins, losses, draws">W–L–D</th>
+                    <th scope="col" className="minor">Game wins</th>
+                    <th scope="col" className="minor" aria-label="Opponent match-win percentage">Opp. win %</th>
                   </tr>
-                </thead>
-                <tbody>
+                </thead>}>
                   {standings.map((player, index) => {
-                    const swatch = getColorClass(board.members.find((member) => member.id === player.profileId)?.color);
                     return (
                       <tr key={player.id} className={player.dropped ? 'is-dropped' : undefined}>
                         <td className="place">{player.place ? placeLabel(player.place) : index + 1}</td>
                         <td>
                           <span className="room-who">
-                            {swatch && <span className={`room-swatch ${swatch}`} />}
                             {player.name}{player.dropped ? ' · dropped' : ''}
                           </span>
                         </td>
@@ -278,15 +286,13 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                       </tr>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+            </StandingsPages>
             {standings.length === 0 && <p>Nobody has joined.</p>}
           </div>
 
           {row.status === 'completed' && (
-            <div className="room-places">
-              <h3>Places</h3>
+            <RoomDialog title="Final places & prizes" label="Final places & prizes"><div className="room-places">
+              <p className="eyebrow">Tournament winner</p><h3>{standings.find(player => player.place === 1)?.name || 'Final places'}</h3>
               {standings.filter((player) => player.place).map((player) => {
                 const prize = player.place === 1 ? row.prize_1st : player.place === 2 ? row.prize_2nd : player.place === 3 ? row.prize_3rd : null;
                 return (
@@ -296,29 +302,26 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                   </p>
                 );
               })}
-            </div>
+            </div></RoomDialog>
           )}
         </aside>
       </section>
 
-      {(board.joined) && (
-        <div className="room-quiet">
-          {canRun && !row.field_locked && (
-            <AddPlayers
-              kind="tournament"
-              players={board.members.filter((member) => !joined.some((player) => player.profile_id === member.id)).map((member) => ({ id: member.id, name: member.name }))}
-              action={addTournamentPlayer.bind(null, row.id)}
-            />
-          )}
-          {canRun && row.field_locked && (
+      {(board.canManage) && (
+        <RoomDialog title="Tournament tools" label="Tournament tools"><div className="room-quiet">
+
+          {canRun && row.field_locked && !readyToFinish && !finalWaiting && (
             <details className="disclosure">
-              <summary>{ties.length ? 'Finish — choose the tied order' : 'Finish'}</summary>
+              <summary>End tournament early</summary>
               <div className="room-quiet-body">
                 {!finalMatch && <ActButton label="Add top-two final" variant="outline" action={addFinal.bind(null, row.id)} />}
                 <FinishForm
                   tournamentId={row.id}
                   ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
                   tieGroups={ties}
+                  prizes={[row.prize_1st, row.prize_2nd, row.prize_3rd]}
+                  finalResult={finalPlayers.map(player => ({ id: player.participant_id || '', result: player.result }))}
+                  early
                 />
               </div>
             </details>
@@ -341,7 +344,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
               </p>
             </div>
           </details>
-        </div>
+        </div></RoomDialog>
       )}
     </>
   );
@@ -360,10 +363,9 @@ function TableCard({
 }) {
   const players = matchPlayers(board, match.id);
   const bye = players.length === 1;
-  const reported = players.some((player) => player.result);
+  const reported = players.length > 0 && players.every((player) => player.result);
   const open = Boolean(match.started_at) && !bye && players.some((player) => !player.result);
-  const canReport = board.joined && !bye && (final || Boolean(match.started_at));
-  const canRename = board.joined;
+  const canReport = board.canManage && players.length >= 2 && (final || Boolean(match.started_at));
   const label = match.table_label || (final ? 'Final' : `Table ${match.table_number}`);
   const showGames = !bye && players.some((seat) => (seat.games_won || 0) > 0);
 
@@ -374,46 +376,40 @@ function TableCard({
         <div className="room-table-flags">
           {final && <span className="room-rematch">Final</span>}
           {match.is_rematch && <span className="room-rematch">Rematch</span>}
-          {open && <span className="status live">Open</span>}
-          {!open && !reported && posted && <span className="room-wait">Not started</span>}
+          {open && <GameStatus state="live">Playing</GameStatus>}
+          {reported && <GameStatus state="complete">Final</GameStatus>}
+          {!open && !reported && posted && <GameStatus state="setup">Not started</GameStatus>}
         </div>
       </div>
       {bye ? (
         <p className="room-bye"><span>{players[0]?.name || 'Player'}</span> has the bye</p>
       ) : (
-        <PlayerLine board={board} players={players} teams={false} scale="board" />
+        <PlayerLine players={players} teams={false} scale="board" />
       )}
       {reported && !bye && (
         <p className="room-score">
-          {players.map((player) => `${player.name} ${player.result}${showGames ? ` (${player.games_won || 0})` : ''}`).join(' · ')}
+          {players.every(p => p.result === 'draw') ? 'Draw' : `${players.filter(p => p.result === 'win').map(p => p.name).join(' & ')} won`}{showGames ? ` · ${players.map(p => p.games_won || 0).join('–')}` : ''}
         </p>
       )}
-      {(canRename || canReport) && (
-        <details className="disclosure room-fold">
-          <summary>{canReport ? 'Report or correct result' : 'Table name'}</summary>
-          <div>
-            {canReport && (
-              <MatchReporter
-                matchId={match.id}
-                showGamesWon
-                players={players.filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name }))}
-              />
-            )}
-            {canRename && <TableName matchId={match.id} label={match.table_label || `Table ${match.table_number || 1}`} />}
-          </div>
-        </details>
+      {canReport && (
+        <RoomDialog title={`${label} · ${players.map(p => p.name).join(' vs ')}`} label={reported ? 'Correct result' : 'Report result'} kind={reported ? 'correct' : 'report'}>
+          <MatchReporter
+            matchId={match.id}
+            showGamesWon
+            tournament
+            players={players.filter((player) => player.profile_id).map((player) => ({ id: player.profile_id!, name: player.name, result: player.result, gamesWon: player.games_won }))}
+          />
+        </RoomDialog>
       )}
     </article>
   );
 }
 
 function PlayerLine({
-  board,
   players,
   teams,
   scale,
 }: {
-  board: EventBoard;
   players: ReturnType<typeof matchPlayers>;
   teams: boolean;
   scale: 'board' | 'side';
@@ -423,9 +419,9 @@ function PlayerLine({
   if (!teams && players.length === 2) {
     return (
       <p className={`room-matchup${scale === 'side' ? ' is-side' : ''}`}>
-        <PlayerName board={board} player={players[0]} />
-        <span className="room-vs">vs</span>
-        <PlayerName board={board} player={players[1]} away />
+        <PlayerName player={players[0]} />
+        <span className="room-vs">VS</span>
+        <PlayerName player={players[1]} away />
       </p>
     );
   }
@@ -435,7 +431,7 @@ function PlayerLine({
       {players.map((player, index) => (
         <span key={player.id} className="room-name-chip">
           {index > 0 && <span className="room-vs">{teams ? '·' : 'vs'}</span>}
-          <PlayerName board={board} player={player} />
+          <PlayerName player={player} />
         </span>
       ))}
     </p>
@@ -443,18 +439,14 @@ function PlayerLine({
 }
 
 function PlayerName({
-  board,
   player,
   away = false,
 }: {
-  board: EventBoard;
   player: ReturnType<typeof matchPlayers>[number];
   away?: boolean;
 }) {
-  const swatch = getColorClass(board.members.find((member) => member.id === player.profile_id)?.color);
   return (
     <span className={`room-side${away ? ' is-away' : ''}`}>
-      {swatch && <span className={`room-swatch ${swatch}`} />}
       {player.name}
     </span>
   );
@@ -493,3 +485,4 @@ function historyFor(board: EventBoard, tournamentId: string): HistoryMatch[] {
   }
   return history;
 }
+

@@ -1,0 +1,86 @@
+/* Ink & Signal — cool gray shell, ember only on actions and live state. */
+:root {
+  --background: 220 14% 96%;
+  --foreground: 225 18% 9%;
+  --card: 0 0% 100%;
+  --primary: 24 97% 46%;
+  --surface: hsl(var(--card));
+  --surface-soft: #EBEDF1;
+  --ink: hsl(var(--foreground));
+  --muted-ink: #5C6370;
+  --action: hsl(var(--primary));
+  --action-ink: #FFFFFF;
+  --line: #D5D8DE;
+  --selected: #FFE8D6;
+  --danger: #C23030;
+  --success: #0F7A45;
+  --success-bg: #E0F0E8;
+  --brass: #E85D04;
+  --shadow: #12141A14;
+  --nav: #12141A;
+  --nav-ink: #F4F5F7;
+  --nav-muted: #9AA1AD;
+  --nav-hover: #242833;
+  --nav-line: #2A2F3A;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --background: 220 18% 7%;
+  --foreground: 220 21% 94%;
+  --card: 222 18% 11%;
+  --primary: 22 100% 59%;
+  --surface: hsl(var(--card));
+  --surface-soft: #1F2430;
+  --ink: hsl(var(--foreground));
+  --muted-ink: #9AA1AD;
+  --action: hsl(var(--primary));
+  --action-ink: #12141A;
+  --line: #2A2F3A;
+  --selected: #3A2416;
+  --danger: #FF8A8A;
+  --success: #3DCF84;
+  --success-bg: #1A2E24;
+  --brass: #FF7A2F;
+  --shadow: #00000040;
+  --nav: #0A0C10;
+  --nav-ink: #ECEEF2;
+  --nav-muted: #8B93A3;
+  --nav-hover: #1A1E28;
+  --nav-line: #2A2F3A;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --background: 220 18% 7%;
+    --foreground: 220 21% 94%;
+    --card: 222 18% 11%;
+    --primary: 22 100% 59%;
+    --surface: hsl(var(--card));
+    --surface-soft: #1F2430;
+    --ink: hsl(var(--foreground));
+    --muted-ink: #9AA1AD;
+    --action: hsl(var(--primary));
+    --action-ink: #12141A;
+    --line: #2A2F3A;
+    --selected: #3A2416;
+    --danger: #FF8A8A;
+    --success: #3DCF84;
+    --success-bg: #1A2E24;
+    --brass: #FF7A2F;
+    --shadow: #00000040;
+    --nav: #0A0C10;
+    --nav-ink: #ECEEF2;
+    --nav-muted: #8B93A3;
+    --nav-hover: #1A1E28;
+    --nav-line: #2A2F3A;
+    color-scheme: dark;
+  }
+}
+
+:root { --danger-ink: #fff; }
+:root[data-theme="dark"] { --danger-ink: #301019; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) { --danger-ink: #301019; }
+}

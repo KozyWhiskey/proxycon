@@ -6,7 +6,7 @@ import { Deck } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Swords, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { Trash2, Edit2, Loader2, ArrowUpRight, Layers } from 'lucide-react';
 import DeckForm from './deck-form';
 import { deleteDeck } from '@/app/decks/actions';
 import { toast } from 'sonner';
@@ -42,11 +42,11 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
   return (
     <>
       <Card 
-        className="glass-panel relative overflow-hidden group min-h-[160px] border-border hover:border-primary/50 transition-colors cursor-pointer"
-        onClick={() => setIsInspectorOpen(true)}
+        className="deck-gallery-card group"
       >
-        {deck.image_url && (
-          <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
+        <button type="button" className="deck-open" aria-label={`View ${deck.name}`} onClick={() => setIsInspectorOpen(true)} />
+        {deck.image_url ? (
+          <div className="deck-gallery-art">
             <Image
               src={deck.image_url}
               alt={deck.name}
@@ -54,29 +54,23 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
               unoptimized
               className="object-cover object-top"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-transparent" />
+            <span className="deck-art-shade" />
           </div>
-        )}
-        <div className="relative z-10 flex flex-col h-full justify-between">
-          <CardHeader>
-            <CardTitle className="text-xl text-foreground flex items-center gap-2 drop-shadow-md font-heading tracking-wide">
-              <Swords className="w-5 h-5 text-primary" />
+        ) : <div className="deck-gallery-art no-art"><Layers size={54} aria-hidden="true" /><span>THE NEXT GREAT BREW</span></div>}
+        <span className="deck-inspect-cue"><ArrowUpRight size={17} /></span>
+        <div className="deck-gallery-content">
+          <CardHeader className="deck-gallery-heading">
+            <span className="eyebrow">{deck.format || 'Commander'}</span>
+            <CardTitle className="deck-gallery-title">
               {deck.name}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex justify-between items-end">
+          <CardContent className="deck-gallery-footer">
             <div>
               <div className="text-muted-foreground font-medium text-sm drop-shadow-md flex flex-wrap gap-2 items-center">
                 <span>{deck.format}</span>
                  {deck.mana_cost && <ManaCost manaCost={deck.mana_cost} size={14} className="opacity-80" />}
-                 {deck.set_code && (
-                   <img 
-                    src={`https://svgs.scryfall.io/sets/${deck.set_code.toLowerCase()}.svg`} 
-                    alt={deck.set_name || deck.set_code}
-                    className="w-4 h-4 invert opacity-70"
-                    title={deck.set_name || deck.set_code}
-                   />
-                 )}
+                 {deck.set_code && <span className="deck-set-code" title={deck.set_name || deck.set_code}>{deck.set_code.toUpperCase()}</span>}
               </div>
               {deck.commander_name && (
                   <span className="block text-xs text-muted-foreground/80 font-normal mt-0.5">
@@ -102,9 +96,10 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
               )}
             </div>
             {isOwner && (
-              <div className="flex gap-2">
+              <div className="deck-gallery-tools">
                 <Button 
                   variant="outline" 
+                  aria-label={`Edit ${deck.name}`}
                   size="icon" 
                   className="h-8 w-8 text-muted-foreground hover:text-foreground border-border bg-card backdrop-blur-sm hover:bg-card"
                   onClick={(e) => {
@@ -116,6 +111,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
                 </Button>
                 <Button 
                   variant="destructive" 
+                  aria-label={`Delete ${deck.name}`}
                   size="icon" 
                   className="h-8 w-8 bg-destructive/50 hover:bg-destructive backdrop-blur-sm shadow-none"
                   onClick={(e) => {
@@ -145,9 +141,10 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-5xl">
+        <DialogContent className="sm:max-w-5xl deck-editor-dialog">
           <DialogHeader>
             <DialogTitle>Edit Deck</DialogTitle>
+            <DialogDescription>Make the deck yours. Update the commander, artwork, and details.</DialogDescription>
           </DialogHeader>
           <DeckForm 
             initialData={deck} 

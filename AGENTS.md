@@ -1,4 +1,4 @@
-# ProxyCon
+﻿# ProxyCon
 
 Weekend companion for one Magic playgroup. The product spec is `.dev-docs/PROJECT_SUMMARY.md`. Follow it before changing what the app does.
 
