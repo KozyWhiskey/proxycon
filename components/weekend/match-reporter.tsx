@@ -95,7 +95,6 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
       {tournament ? (
         <fieldset disabled={pending} className="tournament-score space-y-3">
           <legend className="text-sm font-semibold">Games won</legend>
-          <p className="subtle">Use + and − to enter each player’s game wins, such as 2–0 or 2–1. The score determines the winner. Equal scores above zero record a draw.</p>
           {named.map((player) => (
             <div key={player.id} className="score-stepper">
               <span>{player.name}</span>
@@ -106,7 +105,6 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
               </div>
             </div>
           ))}
-          {!hasScore && <p className="subtle">Enter a game score before saving. 0–0 is not a result.</p>}
         </fieldset>
       ) : (
         <>
@@ -147,7 +145,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
         <div className="result-review">
           <span>{correcting ? 'Save this correction' : 'Ready to record'}</span>
           <strong>{summary}{hasScore ? ` · ${scoreLabel}` : ''}</strong>
-          {hasScore && <p>{named.map((player) => `${player.name} ${games[player.id] || 0}`).join(' · ')}</p>}
+          {hasScore && !tournament && <p>{named.map((player) => `${player.name} ${games[player.id] || 0}`).join(' · ')}</p>}
           {correcting && (tournament || showGamesWon) && (
             <p className="subtle">Standings update immediately. Unstarted next-round pairings may change; started pairings stay fixed. If already finished, finish the tournament again.</p>
           )}

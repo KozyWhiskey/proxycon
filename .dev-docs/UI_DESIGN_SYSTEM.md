@@ -1,6 +1,6 @@
 # ProxyCon UI design system
 
-**Version 1.0 · approved direction · 23 October 2026**
+**Version 1.1 · approved direction with owner-requested depth refinement · 23 October 2026**
 
 This is the source of truth for ProxyCon's visual design. The owner selected **Ember Folio**, **Quiet Frame**, the **five-mana divider**, and **simple neutral navigation** through visual review. These decisions supersede the earlier palette, typography, decorative-frame and navigation proposals in UX_DESIGN_REVIEW.md, old mockups, and the current application where it differs.
 
@@ -11,6 +11,7 @@ This document specifies the approved target. The shared system has been implemen
 - [Visual reference](design/visual-reference.html): open in a browser; inspect the style sheet, player phone, room, statistics and setup in both themes. Sample names, dates and results are illustrative. Controls simulate local feedback and never write application data.
 - [Reference stylesheet](design/reference-tokens.css): exact semantic colors, type, spacing and component-state values. This is documentation, deliberately not imported by the application.
 - [Screen guidance and audit notes](UI_SCREEN_GUIDELINES.md): what to preserve, improve and verify on each destination.
+- [Page audit prompt and tracker](UI_PAGE_AUDIT.md): repeatable one-page reviews with evidence and completion criteria.
 
 When examples and prose disagree, this document and the reference tokens govern. Fix the example; do not silently create another design direction. The mockup is a visual guide, not a pixel-perfect specification for every workflow or state.
 
@@ -79,8 +80,18 @@ Keep essential labels at least 14px; 12px is for supporting metadata. Form field
 - Phone gutters: 16–20px. Tablet/laptop gutters: 24–32px. Typical panel padding: 16–24px. Section gaps: 24–32px.
 - Panel/card radius: **12px**. Buttons, fields, selected navigation: **8px**. Status badges: **5px**. Small filter chips may be pills; ordinary buttons are rounded rectangles.
 - Use a 1px neutral border for surface separation. Prefer spacing and dividers before adding another card. Do not nest cards solely for decoration.
-- Surfaces behind text and controls are opaque. Artwork may be vivid; names and actions sit on solid surfaces. Use shadows sparingly for overlays, not every row.
+- Surfaces behind text and controls are opaque. Artwork may be vivid; names and actions sit on solid surfaces. Use shared, restrained elevation for controls and overlays; ordinary content rows remain flat.
 - A restrained orange top rule can identify the current personal match or round clock area. Do not stack orange frame, colored side rail, glow and multiple badges on the same component.
+
+### Controlled depth (owner refinement, 23 October 2026)
+
+The owner requested the earlier room shading and more tactile actions back. This refines Quiet Frame without changing the palette, typography or navigation geometry:
+
+- **Round stage:** a 12% action-orange wash at the lower left over opaque surface/soft-surface shading. Preserve clock size, warning colors, round state and the existing orange top rule.
+- **Room destination / ember feature:** a 30% orange wash toward the upper right over an opaque surface; Fraunces destination copy, a quiet warm boundary and a framed action label. No text over artwork or ornamental card silhouette.
+- **Primary button:** shallow vertical shading using the existing hover/action/pressed orange values with dark action text throughout. Secondary buttons use surface-to-soft-surface shading, a fine inset edge and a small shared shadow. Pressed state becomes inset; disabled state stays flat. Keep 8px rounded rectangles and 44–48px targets. Navigation remains neutral and flat.
+- **Popout:** opaque surface with a very light 4% warm tint near its top, a fine inset edge, 12px corners and one shared elevation shadow. Apply the same recipe to dialogs, popovers, select menus, identity menus and the clock-length popout. Maintain visible focus, Escape/close behavior and readable content. No blur/glass or animated glow.
+- These are semantic recipes in the existing theme, not page-specific hex values or a second CSS system. Ordinary forms, tables and statistics remain quiet.
 
 The rejected half-arch treatment must not appear on navigation or buttons. Default table-number blocks are simple rounded rectangles too; do not extend the rejected arch into new controls.
 
@@ -118,7 +129,7 @@ Use links for destinations and expose the current page programmatically. Use tab
 | Secondary action | Surface fill, neutral border, normal text; soft neutral hover. Use for alternate tasks and substantial room result controls. |
 | Text action | Theme link color, clear label; adequate target spacing. Use for subordinate navigation/options. Inline prose links are underlined. |
 | Selection | Neutral soft fill plus theme link-colored outline and an explicit checked/selected indication. Same-size peers. Selecting is distinct from saving. |
-| Disabled | Soft fill and secondary text; no hover or press feedback. Explain the unmet prerequisite nearby. Do not disable through color alone. |
+| Disabled | Soft fill and secondary text; no hover or press feedback. Explain non-obvious prerequisites nearby. For the familiar game-win counters, the owner requested a compact label and disabled save at 0–0 without a permanent instructional paragraph. Do not disable through color alone. |
 | Pending | Keep width stable, show “Saving…”/“Starting…”, prevent duplicate submission and retain context. Announce completion or failure. |
 | Destructive | Clear verb and object. Low emphasis until relevant; explicit confirmation for irreversible deletion or consequential state changes. Do not make losses red destructive actions. |
 | Input | Persistent label, 16px text, 44–48px minimum height, surface fill and neutral boundary. Focus ring outside the control. Placeholder is an example, never its only label. |
@@ -128,7 +139,7 @@ Use sentence case and specific verbs: **Report result**, **Save result**, **Save
 
 Focus: 2px ring in the theme link color with a 2px surface-colored separation. Do not remove keyboard focus. A one-pixel press movement is optional; layout must remain stable. Do not lower essential disabled helper text with blanket container opacity.
 
-Tournament result flow: always-visible +/− game-win counters for each player → required score (for example 2–0 or 2–1) → derived winner/draw and concise score review → save → confirmed outcome. Do not show winner-choice buttons or hide the score in an optional disclosure. 0–0 cannot be saved; equal positive scores mean a draw. Quick pod/team games retain their winner/side selection and optional decks. Corrections preload the current result/score and show what changes. Errors keep the draft and offer retry. Exact game/round consequences follow PROJECT_SUMMARY.md.
+Tournament result flow: always-visible +/− game-win counters for each player → required score (for example 2–0 or 2–1) → derived winner/draw and concise score review → save → confirmed outcome. Do not show winner-choice buttons or hide the score in an optional disclosure. 0–0 cannot be saved; equal positive scores mean a draw. Quick pod/team games retain their winner/side selection and optional decks. Use the compact “Games won” legend, named counters and one derived result preview. Omit permanent counter instructions, the 0–0 tutorial and a second repetition of the same names/scores. Corrections preload the current result/score and show what changes. Errors keep the draft and offer retry. Exact game/round consequences follow PROJECT_SUMMARY.md.
 
 ## 8. Responsive hierarchy
 
@@ -184,7 +195,7 @@ Use approximately 120–180ms for hover/focus feedback and 180–240ms for a mea
 | Decision | Approved outcome |
 | --- | --- |
 | Overall direction | Ember Folio |
-| Character level | Quiet Frame |
+| Character level | Quiet Frame with controlled warm shading, tactile actions and raised popouts (owner refinement) |
 | Magic signature | Small W–U–B–R–G symbols with short flanking rules |
 | Navigation | Simple neutral rounded rectangle; icon and visible label |
 | Rejected navigation | Half arch / Commander Arch, underline, decorative diamond; room rail is not the default |

@@ -73,3 +73,9 @@ For future UI changes, read UI_DESIGN_SYSTEM.md and UI_SCREEN_GUIDELINES.md firs
 Corrected Events screenshots: [light](ux-screenshots/ember-events-light-corrected.jpg), [dark](ux-screenshots/ember-events-dark-corrected.jpg), [dark phone](ux-screenshots/ember-events-phone-dark-corrected.jpg).
 
 The local development app initially served stale compiled CSS after restart. Its resolved `.next` generated directory was verified inside the repository, cleared and rebuilt. Final localhost:3000 checks confirmed Fraunces for both the Events destination and featured event names, and #21170F text on the result action.
+
+## Controlled-depth and copy refinement
+
+The owner requested warmth and tactile controls back after the earlier flattening. UI_DESIGN_SYSTEM.md v1.1 records the approved refinement: warm shading on the round stage and room destination, shallow shared action bevels, and opaque raised popouts. Removed the tournament counter tutorials and repeated score paragraphs while preserving score requirements, errors and correction consequences. Removed obsolete deck-popup overrides and ensured the room clock controls meet the 44px target.
+
+See [the page audit prompt, tracker and targeted evidence](UI_PAGE_AUDIT.md) for checks and remaining page-by-page work. This refinement does not mark every route/state as audited.

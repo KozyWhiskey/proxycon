@@ -39,6 +39,15 @@
   --arena-surface: var(--surface);
   --arena-shadow: none;
   color-scheme: light;
+  --control-face: linear-gradient(180deg, var(--surface), var(--surface-soft));
+  --control-hover: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--action)), var(--surface-soft));
+  --control-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 88%, var(--ink)), 0 2px 3px var(--shadow);
+  --action-face: linear-gradient(180deg, var(--action-hover), var(--action) 60%, var(--action-pressed));
+  --warm-stage: radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--action) 12%, transparent), transparent 65%), linear-gradient(135deg, var(--surface), var(--surface-soft));
+  --warm-feature: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--action) 30%, transparent), transparent 78%), var(--surface);
+  --feature-line: color-mix(in srgb, var(--line) 72%, var(--action));
+  --popup-face: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--action)), var(--surface) 96px);
+  --popup-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 86%, var(--ink)), 0 20px 60px var(--shadow), 0 3px 12px var(--shadow);
 }
 
 :root[data-theme="dark"] {

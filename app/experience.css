@@ -6,7 +6,7 @@
 .session-menu { position:relative; }
 .session-menu summary { display:flex; align-items:center; gap:6px; min-height:44px; list-style:none; cursor:pointer; }
 .session-menu summary::-webkit-details-marker { display:none; }
-.session-menu > div { position:absolute; top:44px; z-index:70; min-width:170px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:0 8px 24px var(--shadow); left:auto; right:0; width:220px; }
+.session-menu > div { position:absolute; top:44px; z-index:70; min-width:170px; padding:8px; border:1px solid var(--line); border-radius:12px; background:var(--popup-face); box-shadow:var(--popup-shadow); left:auto; right:0; width:220px; }
 .session-tools { display:flex; align-items:center; font-size:13px; margin-left:auto; gap:16px; flex-wrap:wrap; }
 .session-tools > a { min-height:44px; display:flex; align-items:center; }
 .theme-control { display:flex; align-items:center; gap:7px; color:var(--muted-ink); }
@@ -123,7 +123,7 @@
 .score-stepper > span,.tie-row > span { min-width:0; overflow-wrap:anywhere; font-weight:600; }
 .score-stepper > div,.tie-row > div { display:flex; align-items:center; gap:8px; flex:none; }
 .score-stepper button,.tie-row button { min-height:44px; width:44px; padding:0; font-size:18px; }
-.score-stepper output { width:28px; text-align:center; font-variant-numeric:tabular-nums; font-size:20px; font-weight:650; }
+.score-stepper output { width:28px; text-align:center; font-variant-numeric:tabular-nums; font-size:20px; font-weight:650; font-family:var(--font-data),monospace; }
 .tie-order { border:1px solid var(--line); padding:12px; display:grid; gap:12px; }
 .tie-order legend { padding:0 6px; font-size:14px; font-weight:600; }
 .finish-places li { display:grid; grid-template-columns:26px minmax(0,1fr); gap:6px 12px; padding:12px 0; border-bottom:1px solid var(--line); }
