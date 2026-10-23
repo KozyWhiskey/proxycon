@@ -1,18 +1,31 @@
 'use client';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { CalendarDays, Layers, Users, UserRound, ChevronDown } from 'lucide-react';
 import { Brand } from './brand';
 import { ThemeControl } from './theme-control';
 import { LogoutButton } from '@/components/auth/logout-button';
 
-/** Slim top bar for house mode and for phones (no side nav). Hidden on desktop player layout. */
-export function SessionHeader({ name, house, isGuest }: { name: string; house: boolean; isGuest: boolean }) {
-  return (
-    <header className={`session-header${house ? ' is-house' : ''}`}>
-      <Brand />
-      <details className="session-identity session-menu">
-        <summary>{house ? 'House screen' : `Playing as ${name}`} <span aria-hidden>⌄</span></summary>
-        <div><LogoutButton isGuest={isGuest} variant="ghost" /></div>
+export function SessionHeader({ name, house, isGuest, isAdmin = false }: { name: string; house: boolean; isGuest: boolean; isAdmin?: boolean }) {
+  const path = usePathname();
+  const inEvent = (path.startsWith('/events/') && !path.startsWith('/events/new')) || path.startsWith('/tournament/');
+  const items = [
+    { href: '/', label: 'Events', icon: CalendarDays, active: path === '/' || path.startsWith('/events') },
+    ...(!house ? [
+      { href: '/decks', label: 'My decks', icon: Layers, active: path.startsWith('/decks') },
+      { href: '/players', label: 'Players', icon: Users, active: path.startsWith('/players') },
+      { href: '/profile', label: 'Profile', icon: UserRound, active: path.startsWith('/profile') },
+    ] : []),
+  ];
+  return <header className={house ? 'session-header is-house' : 'session-header'}>
+    <Brand />
+    {!inEvent && <nav className="global-nav" aria-label="Main navigation">{items.map(item => <Link key={item.href} href={item.href} aria-current={item.active ? 'page' : undefined}><item.icon size={17} aria-hidden="true" />{item.label}</Link>)}</nav>}
+    <div className="session-tools">
+      <details className="session-identity session-menu" key={path}>
+        <summary><span>{house ? 'House screen' : 'Playing as ' + name}</span><ChevronDown size={15} aria-hidden="true" /></summary>
+        <div>{items.map(item => <Link key={item.href} href={item.href}>{item.label}</Link>)}{isAdmin && <Link href="/admin">Administration</Link>}<LogoutButton isGuest={isGuest} variant="ghost" /></div>
       </details>
-      <div className="session-tools"><ThemeControl /></div>
-    </header>
-  );
+      <ThemeControl />
+    </div>
+  </header>;
 }

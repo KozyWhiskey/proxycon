@@ -1,5 +1,7 @@
 # ProxyCon UX review and redesign plan
 
+> Historical assessment. The approved visual direction is now [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md) (23 October 2026). Its Ember Folio palette, typography, mana signature and simple navigation supersede the visual proposals below, including the green/brass palette. Product behavior follows PROJECT_SUMMARY.md. Findings here are historical observations; verify current behavior before treating them as open issues.
+
 Reviewed 22 October 2026 against PROJECT_SUMMARY.md.
 
 ## Assessment and evidence

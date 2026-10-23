@@ -19,7 +19,7 @@ export default function CreateDeckDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-5xl deck-editor-dialog">
         <DialogHeader>
-          <DialogTitle>A new addition to the deckbox.</DialogTitle>
+          <DialogTitle>New deck</DialogTitle>
           <DialogDescription>Name your deck, find its commander, and choose the art that feels right.</DialogDescription>
         </DialogHeader>
         <DeckForm onSuccess={() => setOpen(false)} />

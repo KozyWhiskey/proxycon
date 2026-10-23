@@ -4,12 +4,12 @@
 }
 .arena-room .room-top .subtle { font-size: 13px; }
 .arena-room .room-switch a { font-size: 12px; min-height: 38px; }
-.arena-room .room-switch small { font-size: 11px; }
+.arena-room .room-switch small { font-size: 12px; }
 .arena-room .room-status-line,
 .arena-room .room-note,
 .arena-room .room-prizes { font-size: 13px; line-height: 1.45; }
 .arena-room .room-clock .round-clock > p { font-size: 12px; }
-.arena-room .room-clock .round-clock .text-primary { font-size: 11px; }
+.arena-room .room-clock .round-clock .clock-label { font-size: 12px; }
 .arena-room .room-clock button { min-height: 38px; height: 38px; font-size: 13px; padding: 8px 14px; }
 .arena-room .round-clock details summary { min-height: 38px; font-size: 12px; }
 .arena-room .room-result-progress { gap: 12px; margin-top: 10px; }
@@ -39,7 +39,7 @@
   border-radius: 6px;
   background: var(--surface-soft);
   color: var(--muted-ink);
-  font: 600 14px/1 var(--font-geist-sans), sans-serif;
+  font: 600 14px/1 var(--font-body), sans-serif;
   letter-spacing: .04em;
 }
 .arena-room .room-score { font-size: 13px; line-height: 1.4; margin: 0 0 12px; color: var(--ink); }
@@ -51,17 +51,17 @@
   padding: 10px 14px;
   justify-content: center;
   gap: 9px;
-  border: 1px solid color-mix(in srgb, var(--action) 55%, var(--line));
-  border-radius: 7px;
-  background: var(--selected);
-  color: var(--action);
   font-size: 15px;
   font-weight: 650;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent), 0 3px 10px var(--shadow);
+  box-shadow: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 8px;
 }
-.arena-room .room-table .room-result-trigger:hover { background: var(--action); color: var(--action-ink); }
-.arena-room .room-table.is-settled .room-result-trigger { background: var(--surface-soft); color: var(--ink); border-color: var(--line); box-shadow: none; }
-.arena-room .room-table.is-settled .room-result-trigger:hover { border-color: var(--action); color: var(--action); }
+.arena-room .room-table .room-result-trigger:hover { border: 1px solid var(--line); background: var(--surface-soft); color: var(--ink); border-radius: 8px; }
+.arena-room .room-table.is-settled .room-result-trigger { border-color: var(--line); box-shadow: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; }
+.arena-room .room-table.is-settled .room-result-trigger:hover { border-color: var(--action); border: 1px solid var(--line); background: var(--surface-soft); color: var(--ink); border-radius: 8px; }
 .arena-room .room-standings { padding: 18px; }
 .arena-room .room-standings h3 { font-size: 20px; line-height: 1.2; }
 .arena-room .room-standings > p { font-size: 12px; line-height: 1.5; margin-top: 6px; }
@@ -97,7 +97,7 @@
 }
 @media (min-width: 1600px) and (min-height: 851px) {
   .arena-room .room-table { min-height: 200px; padding: 18px; }
-  .arena-room .room-table .room-result-trigger { min-height: 48px; height: 48px; font-size: 15px; }
+  .arena-room .room-table .room-result-trigger { min-height: 48px; height: 48px; font-size: 15px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; }
   .arena-room .room-standings td { padding: 11px 8px; }
   .arena-room .room-standings .room-who { font-size: 18px; }
   .arena-room .room-standings .rec { font-size: 17px; }

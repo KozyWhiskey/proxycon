@@ -11,7 +11,7 @@ import DeckForm from './deck-form';
 import { deleteDeck } from '@/app/decks/actions';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { ManaCost } from '@/components/ui/mana-symbol';
+import { ManaCost, ManaSymbol } from '@/components/ui/mana-symbol';
 import { DeckInspector } from './deck-inspector';
 
 interface DeckCardProps {
@@ -54,9 +54,8 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
               unoptimized
               className="object-cover object-top"
             />
-            <span className="deck-art-shade" />
           </div>
-        ) : <div className="deck-gallery-art no-art"><Layers size={54} aria-hidden="true" /><span>THE NEXT GREAT BREW</span></div>}
+        ) : <div className="deck-gallery-art no-art"><Layers size={54} aria-hidden="true" /><span>No artwork yet</span></div>}
         <span className="deck-inspect-cue"><ArrowUpRight size={17} /></span>
         <div className="deck-gallery-content">
           <CardHeader className="deck-gallery-heading">
@@ -67,30 +66,20 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
           </CardHeader>
           <CardContent className="deck-gallery-footer">
             <div>
-              <div className="text-muted-foreground font-medium text-sm drop-shadow-md flex flex-wrap gap-2 items-center">
+              <div className="text-muted-foreground font-medium text-sm flex flex-wrap gap-2 items-center">
                 <span>{deck.format}</span>
                  {deck.mana_cost && <ManaCost manaCost={deck.mana_cost} size={14} className="opacity-80" />}
                  {deck.set_code && <span className="deck-set-code" title={deck.set_name || deck.set_code}>{deck.set_code.toUpperCase()}</span>}
               </div>
               {deck.commander_name && (
-                  <span className="block text-xs text-muted-foreground/80 font-normal mt-0.5">
+                  <span className="block text-xs text-muted-foreground font-normal mt-0.5">
                     {deck.commander_name}
                   </span>
                 )}
               {deck.colors && deck.colors.length > 0 && (
                 <div className="flex gap-1 mt-2">
-                  {deck.colors.map((color: string) => (
-                    <span
-                      key={color}
-                      className={`w-4 h-4 rounded-full ${
-                        color === 'W' ? 'bg-[#f8e7b9]' : 
-                        color === 'U' ? 'bg-[#0e68ab]' : 
-                        color === 'B' ? 'bg-[#150b00]' : 
-                        color === 'R' ? 'bg-[#d3202a]' : 
-                        'bg-[#00733e]'
-                      } border border-border shadow-sm`}
-                      title={color}
-                    />
+                  {['W', 'U', 'B', 'R', 'G'].filter((color) => deck.colors?.includes(color)).map((color) => (
+                    <ManaSymbol key={color} symbol={color} size={16} />
                   ))}
                 </div>
               )}
@@ -101,7 +90,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
                   variant="outline" 
                   aria-label={`Edit ${deck.name}`}
                   size="icon" 
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground border-border bg-card backdrop-blur-sm hover:bg-card"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground border-border bg-card hover:bg-card"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsEditOpen(true);
@@ -113,7 +102,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
                   variant="destructive" 
                   aria-label={`Delete ${deck.name}`}
                   size="icon" 
-                  className="h-8 w-8 bg-destructive/50 hover:bg-destructive backdrop-blur-sm shadow-none"
+                  className="h-8 w-8 bg-destructive/50 hover:bg-destructive shadow-none"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsDeleteOpen(true);
@@ -143,7 +132,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-5xl deck-editor-dialog">
           <DialogHeader>
-            <DialogTitle>Edit Deck</DialogTitle>
+            <DialogTitle>Edit deck</DialogTitle>
             <DialogDescription>Make the deck yours. Update the commander, artwork, and details.</DialogDescription>
           </DialogHeader>
           <DeckForm 
@@ -160,7 +149,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Deck</DialogTitle>
+            <DialogTitle>Delete deck</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete <strong>{deck.name}</strong>? This action cannot be undone.
             </DialogDescription>
@@ -178,7 +167,7 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete deck'}
             </Button>
           </DialogFooter>
         </DialogContent>

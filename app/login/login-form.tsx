@@ -53,7 +53,7 @@ export default function LoginForm({ nextPath }: { nextPath?: string }) {
   return (
     <Card className="w-full max-w-md mx-auto glass-panel border-border">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-left font-heading">Existing account</CardTitle>
+        <CardTitle className="text-2xl text-left font-sans">Existing account</CardTitle>
         <CardDescription className="text-muted-foreground">
           Players pick a name on the home screen. Use this for an account you already have.
         </CardDescription>
@@ -126,7 +126,7 @@ export default function LoginForm({ nextPath }: { nextPath?: string }) {
                 className="bg-card border-border focus-visible:ring-primary/20 focus-visible:border-primary/50"
               />
             </div>
-            <SubmitButton text="Sign In" />
+            <SubmitButton text="Sign in" />
           </form>
         </div>
       </CardContent>

@@ -1,5 +1,7 @@
 # UX implementation plan
 
+> Historical implementation record. For new UI work, follow [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md) and [UI_SCREEN_GUIDELINES.md](UI_SCREEN_GUIDELINES.md). The 23 October 2026 approved design supersedes earlier visual proposals. Saving the new specification does not mean it has been applied to the running app.
+
 Based on UX_DESIGN_REVIEW.md and PROJECT_SUMMARY.md. Started 22 October 2026.
 
 ## Delivery sequence

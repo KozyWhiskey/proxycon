@@ -36,17 +36,17 @@ export default function EventPlayerList({ members }: EventPlayerListProps) {
                 <p className="text-sm font-medium text-foreground">
                   {member.display_name}
                   {member.role === 'owner' && (
-                    <span className="ml-2 text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
+                    <span className="ml-2 text-xs bg-primary/10 text-link border border-primary/20 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
                       Owner
                     </span>
                   )}
                   {member.role === 'admin' && (
-                    <span className="ml-2 text-[10px] bg-zinc-800 text-muted-foreground border border-white/5 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
+                    <span className="ml-2 text-xs bg-zinc-800 text-muted-foreground border border-white/5 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">
                       Admin
                     </span>
                   )}
                 </p>
-                <p className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-wider">
+                <p className="text-xs text-muted-foreground/60 font-mono uppercase tracking-wider">
                   @{member.username}
                 </p>
               </div>

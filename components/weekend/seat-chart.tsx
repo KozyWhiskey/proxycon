@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { moveSeat } from '@/app/weekend/actions';
 import { clockwiseOrder } from '@/lib/weekend';
-import { getColorClass } from '@/lib/player-colors';
+import { ManaIdentity } from '@/components/ui/mana-identity';
 import { useAction } from '@/components/weekend/act-button';
 
 interface Seat {
@@ -36,7 +36,6 @@ export function SeatChart({
 
   function renderSeat(number: number) {
     const seat = byNumber.get(number);
-    const color = getColorClass(seat?.color);
     const open = openSeat === number;
     return (
       <button
@@ -48,9 +47,9 @@ export function SeatChart({
         onClick={() => setOpenSeat(open ? null : number)}
         className={`flex min-h-16 flex-1 flex-col items-center justify-center rounded-xl border px-2 py-2 text-center ${open ? 'border-primary' : 'border-border'}`}
       >
-        <span className="font-mono text-[10px] uppercase tracking-widest text-primary">Seat {number}</span>
+        <span className="font-mono text-xs uppercase tracking-widest text-link">Seat {number}</span>
         <span className={`seat-name flex items-center gap-1 text-sm${seat?.name ? '' : ' is-empty'}`}>
-          {color && <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />}
+          <ManaIdentity color={seat?.color} size={12} />
           {seat?.name || 'Empty'}
         </span>
       </button>

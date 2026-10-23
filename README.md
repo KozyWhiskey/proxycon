@@ -31,4 +31,7 @@ Guilds, a public player directory, badges, and a career record are not the produ
 ## Docs
 
 - [Product spec](.dev-docs/PROJECT_SUMMARY.md)
+- [Approved UI design system](.dev-docs/UI_DESIGN_SYSTEM.md)
+- [Visual style reference](.dev-docs/design/visual-reference.html)
+- [Screen guidelines](.dev-docs/UI_SCREEN_GUIDELINES.md)
 - Schema SQL is in `scripts/sql/`

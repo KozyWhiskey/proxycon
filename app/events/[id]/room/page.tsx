@@ -22,6 +22,7 @@ import { SeatRandomizer } from '@/components/weekend/seat-randomizer';
 import { SeatChart } from '@/components/weekend/seat-chart';
 import { RoundEditor, SealedSwap } from '@/components/weekend/tournament-tools';
 import { GameStatus } from '@/components/events/arena-ui';
+import { ManaIdentity } from '@/components/ui/mana-identity';
 import { RoomDialog, MatchPages, RoomFocus, StandingsPages } from '@/components/events/arena-controls';
 
 export default async function RoomPage({
@@ -77,7 +78,7 @@ export default async function RoomPage({
         <section className="empty-state">
           <h3>The next tournament starts here.</h3>
           <p>Create a draft, cube, or sealed. Quick matches live on their own pages from the event.</p>
-          <Link className="text-primary text-sm" href={`/events/${id}/tournaments/new`}>Create tournament →</Link>
+          <Link className="text-link text-sm" href={`/events/${id}/tournaments/new`}>Create tournament →</Link>
         </section>
       )}
 
@@ -276,7 +277,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
                         <td className="place">{player.place ? placeLabel(player.place) : index + 1}</td>
                         <td>
                           <span className="room-who">
-                            {player.name}{player.dropped ? ' · dropped' : ''}
+                            <ManaIdentity color={board.members.find(member => member.id === player.profileId)?.color} size={14} />{player.name}{player.dropped ? ' · dropped' : ''}
                           </span>
                         </td>
                         <td className="pts">{player.points}</td>
@@ -384,7 +385,7 @@ function TableCard({
       {bye ? (
         <p className="room-bye"><span>{players[0]?.name || 'Player'}</span> has the bye</p>
       ) : (
-        <PlayerLine players={players} teams={false} scale="board" />
+        <PlayerLine players={players} teams={false} scale="board" colors={Object.fromEntries(board.members.map(member => [member.id, member.color]))} />
       )}
       {reported && !bye && (
         <p className="room-score">
@@ -409,19 +410,21 @@ function PlayerLine({
   players,
   teams,
   scale,
+  colors,
 }: {
   players: ReturnType<typeof matchPlayers>;
   teams: boolean;
   scale: 'board' | 'side';
+  colors: Record<string, string | null>;
 }) {
   if (players.length === 0) return <p className="room-bye">Open</p>;
 
   if (!teams && players.length === 2) {
     return (
       <p className={`room-matchup${scale === 'side' ? ' is-side' : ''}`}>
-        <PlayerName player={players[0]} />
+        <PlayerName player={players[0]} color={colors[players[0].profile_id || '']} />
         <span className="room-vs">VS</span>
-        <PlayerName player={players[1]} away />
+        <PlayerName player={players[1]} color={colors[players[1].profile_id || '']} away />
       </p>
     );
   }
@@ -431,7 +434,7 @@ function PlayerLine({
       {players.map((player, index) => (
         <span key={player.id} className="room-name-chip">
           {index > 0 && <span className="room-vs">{teams ? '·' : 'vs'}</span>}
-          <PlayerName player={player} />
+          <PlayerName player={player} color={colors[player.profile_id || '']} />
         </span>
       ))}
     </p>
@@ -441,13 +444,15 @@ function PlayerLine({
 function PlayerName({
   player,
   away = false,
+  color,
 }: {
   player: ReturnType<typeof matchPlayers>[number];
   away?: boolean;
+  color?: string | null;
 }) {
   return (
     <span className={`room-side${away ? ' is-away' : ''}`}>
-      {player.name}
+      <ManaIdentity color={color} size={14} />{player.name}
     </span>
   );
 }

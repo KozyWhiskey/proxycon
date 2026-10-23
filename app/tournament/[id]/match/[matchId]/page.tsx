@@ -102,7 +102,7 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
 
           {waiting && canOperate && (
             <div className="round-start-panel match-start-panel">
-              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">Ready to play</p>
+              <p className="font-mono text-xs uppercase tracking-[0.28em] text-link">Ready to play</p>
               <p className="text-sm text-muted-foreground">
                 Starts Round {match.round_number} for every table, then you can enter the score here.
               </p>

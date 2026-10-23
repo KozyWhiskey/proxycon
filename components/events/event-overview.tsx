@@ -8,6 +8,7 @@ import { ActButton } from '@/components/weekend/act-button';
 import { LiveSlip } from '@/components/weekend/live-slip';
 import { Button } from '@/components/ui/button';
 import { PlayerAvatar, GameStatus, DeckArt } from './arena-ui';
+import { ManaDivider } from '@/components/ui/mana-identity';
 
 export function EventOverview({ board }: { board: EventBoard }) {
   const id = board.event.id;
@@ -37,7 +38,7 @@ export function EventOverview({ board }: { board: EventBoard }) {
     </Link>;
   }
   return <main className={`page event-overview arena-hub${open.length ? ' has-personal-games' : ''}`}>
-    <header className="arena-event-header"><div><p className="eyebrow">THE PLAYGROUP / {eventDates(board.event.start_date, board.event.end_date)}</p><h1>{board.event.name}<span className="arena-title-dot">.</span></h1><div className="arena-event-meta"><span><Users size={14} />{board.members.length} players</span><span><Swords size={14} />{live.length + quick.length} live games</span><span><Check size={14} />{completed.length} results</span></div></div></header>
+    <header className="arena-event-header"><div><ManaDivider /><p className="eyebrow">THE PLAYGROUP / {eventDates(board.event.start_date, board.event.end_date)}</p><h1>{board.event.name}</h1><div className="arena-event-meta"><span><Users size={14} />{board.members.length} players</span><span><Swords size={14} />{live.length + quick.length} live games</span><span><Check size={14} />{completed.length} results</span></div></div></header>
     {open.length > 0 && <section className="personal-games" aria-label="Your games">{open.map(match => {
       const opponents = matchPlayers(board, match.id).filter(p => p.profile_id !== board.userId);
       const mine = match.tournament_id ? standingsFor(board, match.tournament_id).find(p => p.profileId === board.userId) : null;

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { loadEventBoard } from '@/lib/event-board';
-import { getColorClass } from '@/lib/player-colors';
+import { ManaIdentity } from '@/components/ui/mana-identity';
 
 export default async function EventPlayersPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,14 +26,14 @@ export default async function EventPlayersPage({ params }: { params: Promise<{ i
         <div className="member-list">
           {board.members.map((member) => (
             <Link href={`/players/${member.id}`} className="member-chip" key={member.id}>
-              <span className={`player-color ${getColorClass(member.color) || ''}`} aria-hidden />
+              <ManaIdentity color={member.color} />
               {member.name}{member.id === board.userId ? ' (you)' : ''}
             </Link>
           ))}
         </div>
         {!board.members.length && <p className="subtle">Add players to get the event started.</p>}
         {board.canManage && (
-          <Link href={`/events/${id}/manage`} className="text-primary inline-block mt-5">
+          <Link href={`/events/${id}/manage`} className="text-link inline-block mt-5">
             Add players & invite friends →
           </Link>
         )}

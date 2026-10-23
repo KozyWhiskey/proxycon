@@ -1,86 +1,94 @@
-/* Ink & Signal — cool gray shell, ember only on actions and live state. */
+/* Ember Folio / Quiet Frame. Approved values: .dev-docs/UI_DESIGN_SYSTEM.md. */
 :root {
-  --background: 220 14% 96%;
-  --foreground: 225 18% 9%;
-  --card: 0 0% 100%;
-  --primary: 24 97% 46%;
+  --background: 200.00000 13.04348% 95.49020%;
+  --foreground: 212.00000 21.73913% 13.52941%;
+  --card: 0.00000 0.00000% 100.00000%;
+  --primary: 22.69430 100.00000% 62.15686%;
+  --surface-soft: #E8EDF0;
+  --muted-ink: #53616F;
+  --line: #CCD3DA;
+  --link: #A84209;
+  --nav-selected: #E9EDF0;
+  --nav-hover: #F2F4F5;
+  --info: #24559B;
+  --info-bg: #E8F0FF;
+  --success: #176341;
+  --success-bg: #E5F3EB;
+  --warning: #815100;
+  --warning-bg: #FFF1D2;
+  --danger: #A92338;
+  --danger-bg: #FBE9ED;
+  --danger-ink: #FBE9ED;
+  --shadow: #12161B14;
+  --overlay: #12161B73;
   --surface: hsl(var(--card));
-  --surface-soft: #EBEDF1;
   --ink: hsl(var(--foreground));
-  --muted-ink: #5C6370;
   --action: hsl(var(--primary));
-  --action-ink: #FFFFFF;
-  --line: #D5D8DE;
-  --selected: #FFE8D6;
-  --danger: #C23030;
-  --success: #0F7A45;
-  --success-bg: #E0F0E8;
-  --brass: #E85D04;
-  --shadow: #12141A14;
-  --nav: #12141A;
-  --nav-ink: #F4F5F7;
-  --nav-muted: #9AA1AD;
-  --nav-hover: #242833;
-  --nav-line: #2A2F3A;
+  --action-ink: #21170F;
+  --action-hover: #FF9D61;
+  --action-pressed: #F47A30;
+  --selected: var(--surface-soft);
+  --brass: var(--link);
+  --nav: var(--surface);
+  --nav-ink: var(--ink);
+  --nav-muted: var(--muted-ink);
+  --nav-line: var(--line);
+  --arena-blue: var(--info);
+  --arena-blue-bg: var(--info-bg);
+  --arena-gold: var(--ink);
+  --arena-surface: var(--surface);
+  --arena-shadow: none;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --background: 220 18% 7%;
-  --foreground: 220 21% 94%;
-  --card: 222 18% 11%;
-  --primary: 22 100% 59%;
-  --surface: hsl(var(--card));
-  --surface-soft: #1F2430;
-  --ink: hsl(var(--foreground));
-  --muted-ink: #9AA1AD;
-  --action: hsl(var(--primary));
-  --action-ink: #12141A;
-  --line: #2A2F3A;
-  --selected: #3A2416;
-  --danger: #FF8A8A;
-  --success: #3DCF84;
-  --success-bg: #1A2E24;
-  --brass: #FF7A2F;
+  --background: 213.33333 20.00000% 8.82353%;
+  --foreground: 210.00000 16.66667% 95.29412%;
+  --card: 212.00000 21.12676% 13.92157%;
+  --primary: 22.69430 100.00000% 62.15686%;
+  --surface-soft: #28323D;
+  --muted-ink: #AEBAC6;
+  --line: #45515D;
+  --link: #FFA469;
+  --nav-selected: #303B46;
+  --nav-hover: #26303A;
+  --info: #A3C9FF;
+  --info-bg: #20334E;
+  --success: #83D7AA;
+  --success-bg: #203C2E;
+  --warning: #F1C879;
+  --warning-bg: #3D321F;
+  --danger: #FFABBA;
+  --danger-bg: #44242D;
+  --danger-ink: #44242D;
   --shadow: #00000040;
-  --nav: #0A0C10;
-  --nav-ink: #ECEEF2;
-  --nav-muted: #8B93A3;
-  --nav-hover: #1A1E28;
-  --nav-line: #2A2F3A;
+  --overlay: #00000099;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    --background: 220 18% 7%;
-    --foreground: 220 21% 94%;
-    --card: 222 18% 11%;
-    --primary: 22 100% 59%;
-    --surface: hsl(var(--card));
-    --surface-soft: #1F2430;
-    --ink: hsl(var(--foreground));
-    --muted-ink: #9AA1AD;
-    --action: hsl(var(--primary));
-    --action-ink: #12141A;
-    --line: #2A2F3A;
-    --selected: #3A2416;
-    --danger: #FF8A8A;
-    --success: #3DCF84;
-    --success-bg: #1A2E24;
-    --brass: #FF7A2F;
-    --shadow: #00000040;
-    --nav: #0A0C10;
-    --nav-ink: #ECEEF2;
-    --nav-muted: #8B93A3;
-    --nav-hover: #1A1E28;
-    --nav-line: #2A2F3A;
+  --background: 213.33333 20.00000% 8.82353%;
+  --foreground: 210.00000 16.66667% 95.29412%;
+  --card: 212.00000 21.12676% 13.92157%;
+  --primary: 22.69430 100.00000% 62.15686%;
+  --surface-soft: #28323D;
+  --muted-ink: #AEBAC6;
+  --line: #45515D;
+  --link: #FFA469;
+  --nav-selected: #303B46;
+  --nav-hover: #26303A;
+  --info: #A3C9FF;
+  --info-bg: #20334E;
+  --success: #83D7AA;
+  --success-bg: #203C2E;
+  --warning: #F1C879;
+  --warning-bg: #3D321F;
+  --danger: #FFABBA;
+  --danger-bg: #44242D;
+  --danger-ink: #44242D;
+  --shadow: #00000040;
+  --overlay: #00000099;
     color-scheme: dark;
   }
-}
-
-:root { --danger-ink: #fff; }
-:root[data-theme="dark"] { --danger-ink: #301019; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="dark"]) { --danger-ink: #301019; }
 }

@@ -14,12 +14,13 @@
  --color-primary:hsl(var(--primary)); --color-primary-foreground:var(--action-ink);
  --color-secondary:var(--surface-soft); --color-secondary-foreground:var(--ink);
  --color-muted:var(--surface-soft); --color-muted-foreground:var(--muted-ink);
- --color-accent:var(--selected); --color-accent-foreground:var(--action);
+ --color-accent:var(--selected); --color-accent-foreground:var(--ink);
  --color-destructive:var(--danger); --color-destructive-foreground:var(--danger-ink);
- --color-border:var(--line); --color-input:var(--line); --color-ring:var(--action);
- --radius-lg:16px; --radius-md:10px; --radius-sm:7px;
- --font-sans:var(--font-geist-sans); --font-mono:var(--font-geist-mono);
- --font-heading:Georgia,"Times New Roman",serif;
+ --color-border:var(--line); --color-input:var(--line); --color-ring:var(--link);
+ --color-link:var(--link); --color-info:var(--info); --color-success:var(--success); --color-warning:var(--warning);
+ --radius-lg:12px; --radius-md:8px; --radius-sm:5px;
+ --font-sans:var(--font-body); --font-mono:var(--font-data);
+ --font-heading:var(--font-display),Georgia,serif;
 }
 
 

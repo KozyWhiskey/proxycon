@@ -105,7 +105,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       <header className="tournament-live-head">
         <div className="tournament-live-copy">
           <Link href={`/events/${tournament.event_id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">{tournamentLabel(row.format)}{round.round ? ` · Round ${round.round}` : ''}</p>
+          <p className="font-mono text-xs uppercase tracking-[0.28em] text-link">{tournamentLabel(row.format)}{round.round ? ` · Round ${round.round}` : ''}</p>
           <h1 className="font-heading text-4xl">{row.name}</h1>
           <GameStatus state={row.status === 'completed' ? 'complete' : started ? 'live' : 'setup'}>{row.status === 'completed' ? 'Completed' : started ? `Round ${round.round} in progress` : posted ? 'Pairings posted' : 'Joining & seating'}</GameStatus>
           <p className="text-sm text-muted-foreground">
@@ -135,7 +135,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         )}
         {posted && board.canManage && row.status !== 'completed' && (
           <div className="round-start-panel">
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">Round {round.round}</p>
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-link">Round {round.round}</p>
             <p className="text-sm text-muted-foreground">Pairings are posted. Start when tables are ready.</p>
             <div className="flex flex-wrap gap-2">
               <ActButton label="Start round" action={startRound.bind(null, id)} />
@@ -236,7 +236,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             <article id={`match-${match.id}`} key={match.id} className="match-card space-y-3 rounded-xl border border-border p-4">
               <div className="flex items-baseline justify-between gap-3">
                 <h3 className="font-heading text-xl">{matchup}</h3>
-                {match.is_rematch && <span className="text-xs uppercase tracking-widest text-primary">Rematch</span>}
+                {match.is_rematch && <span className="text-xs uppercase tracking-widest text-link">Rematch</span>}
               </div>
               {players.some((player) => player.result) && (
                 <p className="text-sm text-muted-foreground">
@@ -370,7 +370,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             const prize = player.place === 1 ? row.prize_1st : player.place === 2 ? row.prize_2nd : player.place === 3 ? row.prize_3rd : null;
             return (
               <p key={player.id}>
-                <span className="font-heading text-primary">{placeLabel(player.place || 0)}</span> {player.name}
+                <span className="font-heading text-link">{placeLabel(player.place || 0)}</span> {player.name}
                 {prize ? ` · ${prize}` : ''}
               </p>
             );

@@ -8,7 +8,7 @@ async function moduleAt(path) {
   return import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 }
 const { eventCapabilities } = await moduleAt('../lib/event-capabilities.ts');
-const { matchOutcome, matchesResultSnapshot } = await moduleAt('../lib/match-outcome.ts');
+const { matchOutcome, matchesResultSnapshot, validTournamentScore } = await moduleAt('../lib/match-outcome.ts');
 const unbound = { authenticated: true, playerId: null, house: false, admin: false, member: false };
 assert.deepEqual(eventCapabilities(unbound), { joined: false, canManage: false, house: false });
 assert.deepEqual(eventCapabilities({ ...unbound, house: true }), { joined: false, canManage: true, house: true });
@@ -35,3 +35,17 @@ assert.equal(matchesResultSnapshot(recorded, [{ ...snapshot[0], result: 'loss' }
 assert.equal(matchesResultSnapshot(recorded, [{ ...snapshot[0], gamesWon: 1 }, snapshot[1]]), false);
 assert.equal(matchesResultSnapshot(recorded, [snapshot[0], snapshot[0]]), false);
 console.log('UX flow tests passed: house/member boundaries, score previews, team results and stale corrections.');
+
+// Tournament scores are required; quick-game winner-only reports remain supported above.
+const scoreIds = ['chris', 'scott'];
+for (const score of [{ chris: 2, scott: 0 }, { chris: 2, scott: 1 }, { chris: 0, scott: 2 }, { chris: 1, scott: 1 }]) {
+  assert.equal(validTournamentScore(scoreIds, score), true);
+}
+for (const score of [undefined, {}, { chris: 0, scott: 0 }, { chris: 2 }, { chris: 2, scott: -1 }, { chris: 2.5, scott: 1 }, { chris: Infinity, scott: 1 }, { chris: NaN, scott: 0 }]) {
+  assert.equal(validTournamentScore(scoreIds, score), false);
+}
+assert.equal(validTournamentScore(['chris'], { chris: 2 }), false);
+assert.deepEqual([...matchOutcome(players, { chris: 2, scott: 0 }, false, []).winners], ['chris']);
+assert.deepEqual([...matchOutcome(players, { chris: 2, scott: 1 }, false, []).winners], ['chris']);
+assert.deepEqual([...matchOutcome(players, { chris: 1, scott: 2 }, false, []).winners], ['scott']);
+console.log('Required tournament score validation passed: 2–0, 2–1, draws, empty/invalid scores and byes.');

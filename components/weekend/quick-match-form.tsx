@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlayerAvatar } from '@/components/events/arena-ui';
-import { Check, Crown, Swords, Users } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface Person {
   id: string;
@@ -99,7 +99,6 @@ export function QuickMatchForm({
 
   return (
     <div className="space-y-8 quick-create-form">
-      <div className="quick-format-shortcuts" aria-label="Popular game formats">{[{id:'commander',name:'Commander',detail:'2–6 players',icon:Crown},{id:'1v1',name:'Duel',detail:'Head to head',icon:Swords},{id:'two_headed_giant',name:'Two-Headed Giant',detail:'Two teams of two',icon:Users}].map(item=><button type="button" key={item.id} aria-pressed={format===item.id} onClick={()=>{setFormat(item.id);setSelected([]);setWinnerIds([]);setDraw(false);}}><item.icon size={22}/><strong>{item.name}</strong><small>{item.detail}</small></button>)}</div>
       <label className="grid gap-2 text-sm">Game format
         <select className="h-12 rounded-md border border-input bg-card px-3" value={format} onChange={event=>{setFormat(event.target.value);setSelected([]);setWinnerIds([]);setDraw(false);}}>
           <optgroup label="Commander">{QUICK_FORMATS.filter(item=>isCommanderFormat(item.id)).map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>
@@ -151,7 +150,7 @@ export function QuickMatchForm({
                     key={side}
                     type="button"
                     onClick={() => setTeams((current) => ({ ...current, [person.id]: side }))}
-                    className={`rounded-md border px-3 py-1 text-sm ${teams[person.id] === side ? 'border-primary text-primary' : 'border-border'}`}
+                    className={`rounded-md border px-3 py-1 text-sm ${teams[person.id] === side ? 'border-primary text-link' : 'border-border'}`}
                   >
                     Team {side}
                   </button>
@@ -206,7 +205,7 @@ export function QuickMatchForm({
                   if (ids.length === 0) return null;
                   const on = !draw && ids.every((id) => winnerIds.includes(id)) && winnerIds.length === ids.length;
                   return (
-                    <button key={side} type="button" onClick={() => { setDraw(false); setWinnerIds(ids); }} className={`rounded-lg border px-3 py-2 ${on ? 'border-primary text-primary' : 'border-border'}`}>
+                    <button key={side} type="button" onClick={() => { setDraw(false); setWinnerIds(ids); }} className={`rounded-lg border px-3 py-2 ${on ? 'border-primary text-link' : 'border-border'}`}>
                       {names.join(' & ')} win
                     </button>
                   );
@@ -216,12 +215,12 @@ export function QuickMatchForm({
                     key={person.id}
                     type="button"
                     onClick={() => { setDraw(false); setWinnerIds([person.id]); }}
-                    className={`rounded-lg border px-3 py-2 ${!draw && winnerIds.length === 1 && winnerIds[0] === person.id ? 'border-primary text-primary' : 'border-border'}`}
+                    className={`rounded-lg border px-3 py-2 ${!draw && winnerIds.length === 1 && winnerIds[0] === person.id ? 'border-primary text-link' : 'border-border'}`}
                   >
                     {person.name} wins
                   </button>
                 ))}
-            <button type="button" onClick={() => { setDraw(true); setWinnerIds([]); }} className={`rounded-lg border px-3 py-2 ${draw ? 'border-primary text-primary' : 'border-border'}`}>
+            <button type="button" onClick={() => { setDraw(true); setWinnerIds([]); }} className={`rounded-lg border px-3 py-2 ${draw ? 'border-primary text-link' : 'border-border'}`}>
               Draw
             </button>
           </div>

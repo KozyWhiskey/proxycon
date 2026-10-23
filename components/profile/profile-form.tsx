@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/select';
 import { updateMyProfile } from '@/app/user/actions';
 import { toast } from 'sonner';
-import { AVAILABLE_COLORS, COLOR_DISPLAY_NAMES, getColorClass, isGuild } from '@/lib/player-colors';
+import { AVAILABLE_COLORS, COLOR_DISPLAY_NAMES, isGuild } from '@/lib/player-colors';
 import { Loader2 } from 'lucide-react';
+import { ManaIdentity } from '@/components/ui/mana-identity';
 
 interface ProfileFormProps {
   userName: string | null;
@@ -57,8 +58,9 @@ export default function ProfileForm({
   return (
     <form onSubmit={handleSaveProfile} className="space-y-6">
       <div className="space-y-2">
-        <Label className="text-foreground">Full Name</Label>
+        <Label className="text-foreground" htmlFor="account-name">Account name</Label>
         <Input
+          id="account-name"
           value={userName || ''}
           disabled
           className="h-12 bg-muted border-border text-muted-foreground"
@@ -67,8 +69,9 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-foreground">Play name</Label>
+        <Label className="text-foreground" htmlFor="play-name">Play name</Label>
         <Input
+          id="play-name"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           placeholder="Name on the table"
@@ -82,14 +85,14 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-foreground">Color Theme</Label>
+        <Label className="text-foreground" htmlFor="player-colors">Player colors</Label>
         <Select
           value={color ?? 'auto'}
           onValueChange={(value) => {
             setColor(value === 'auto' ? undefined : value);
           }}
         >
-          <SelectTrigger className="h-12 bg-muted border-border text-foreground">
+          <SelectTrigger id="player-colors" className="h-12 bg-muted border-border text-foreground">
             <SelectValue placeholder="Auto (based on name)" />
           </SelectTrigger>
           <SelectContent>
@@ -107,9 +110,7 @@ export default function ProfileForm({
                   value={c}
                 >
                   <span className="flex items-center gap-2">
-                    <span
-                      className={`w-5 h-5 rounded-full ${getColorClass(c) || ''} shrink-0`}
-                    />
+                    <ManaIdentity color={c} decorative />
                     <span>{COLOR_DISPLAY_NAMES[c]}</span>
                   </span>
                 </SelectItem>
@@ -126,9 +127,7 @@ export default function ProfileForm({
                   value={c}
                 >
                   <span className="flex items-center gap-2">
-                    <span
-                      className={`w-5 h-5 rounded-full ${getColorClass(c) || ''} shrink-0`}
-                    />
+                    <ManaIdentity color={c} decorative />
                     <span>{COLOR_DISPLAY_NAMES[c]}</span>
                   </span>
                 </SelectItem>
@@ -139,8 +138,9 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-foreground">Avatar URL</Label>
+        <Label className="text-foreground" htmlFor="avatar-url">Avatar URL</Label>
         <Input
+          id="avatar-url"
           value={avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
           placeholder="https://example.com/avatar.jpg"
@@ -155,7 +155,7 @@ export default function ProfileForm({
         variant="default"
       >
         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-        Save Changes
+        Save changes
       </Button>
     </form>
   );

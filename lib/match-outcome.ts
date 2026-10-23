@@ -27,3 +27,9 @@ export function matchesResultSnapshot(rows: { profile_id: string | null; result:
     return old && old.result === row.result && old.gamesWon === row.games_won;
   });
 }
+
+/** Tournament reports require an explicit whole-number score for both sides. */
+export function validTournamentScore(ids: string[], games: Record<string, number> | undefined): boolean {
+  if (ids.length < 2 || !games) return false;
+  return ids.every(id => Number.isInteger(games[id]) && games[id] >= 0) && ids.some(id => games[id] > 0);
+}

@@ -1,0 +1,174 @@
+/* ProxyCon Ember Folio / Quiet Frame — design reference v1.0, 2026-10-23.
+ * DOCUMENTATION ONLY. Do not import into the application without an implementation task.
+ * Map these values into the existing semantic theme/component system; do not add
+ * a competing theme selector or duplicate token layer. UI_DESIGN_SYSTEM.md governs.
+ */
+
+:root {
+  --pc-font-display: 'Fraunces', Georgia, serif;
+  --pc-font-body: 'Manrope', system-ui, sans-serif;
+  --pc-font-data: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --pc-space-1: 4px;
+  --pc-space-2: 8px;
+  --pc-space-3: 12px;
+  --pc-space-4: 16px;
+  --pc-space-5: 20px;
+  --pc-space-6: 24px;
+  --pc-space-8: 32px;
+  --pc-space-12: 48px;
+  --pc-space-16: 64px;
+  --pc-radius-control: 8px;
+  --pc-radius-panel: 12px;
+  --pc-radius-badge: 5px;
+  --pc-control-min-height: 44px;
+  --pc-control-comfortable-height: 48px;
+  --pc-font-body-size: 16px;
+  --pc-font-control-size: 14px;
+  --pc-font-helper-size: 14px;
+  --pc-font-metadata-size: 12px;
+  --pc-line-body: 1.5;
+  --pc-line-heading: 1.15;
+  --pc-focus-width: 2px;
+  --pc-focus-offset: 2px;
+  --pc-duration-feedback: 150ms;
+  --pc-duration-state: 200ms;
+
+  --pc-action: #FF873E;
+  --pc-action-hover: #FF9D61;
+  --pc-action-pressed: #F47A30;
+  --pc-on-action: #21170F;
+}
+
+/* Explicit theme examples, not runtime selectors prescribed for the app. */
+[data-pc-theme='light'] {
+  color-scheme: light;
+  --pc-canvas: #F2F4F5;
+  --pc-surface: #FFFFFF;
+  --pc-soft: #E8EDF0;
+  --pc-text: #1B222A;
+  --pc-text-secondary: #53616F;
+  --pc-border: #CCD3DA;
+  --pc-link: #A84209;
+  --pc-focus: #A84209;
+  --pc-nav-selected: #E9EDF0;
+  --pc-nav-hover: #F2F4F5;
+  --pc-info-text: #24559B;
+  --pc-info-fill: #E8F0FF;
+  --pc-success-text: #176341;
+  --pc-success-fill: #E5F3EB;
+  --pc-warning-text: #815100;
+  --pc-warning-fill: #FFF1D2;
+  --pc-error-text: #A92338;
+  --pc-error-fill: #FBE9ED;
+  --pc-overlay: rgb(18 22 27 / 45%);
+  --pc-shadow-overlay: 0 12px 36px rgb(18 22 27 / 16%);
+}
+
+[data-pc-theme='dark'] {
+  color-scheme: dark;
+  --pc-canvas: #12161B;
+  --pc-surface: #1C232B;
+  --pc-soft: #28323D;
+  --pc-text: #F1F3F5;
+  --pc-text-secondary: #AEBAC6;
+  --pc-border: #45515D;
+  --pc-link: #FFA469;
+  --pc-focus: #FFA469;
+  --pc-nav-selected: #303B46;
+  --pc-nav-hover: #26303A;
+  --pc-info-text: #A3C9FF;
+  --pc-info-fill: #20334E;
+  --pc-success-text: #83D7AA;
+  --pc-success-fill: #203C2E;
+  --pc-warning-text: #F1C879;
+  --pc-warning-fill: #3D321F;
+  --pc-error-text: #FFABBA;
+  --pc-error-fill: #44242D;
+  --pc-overlay: rgb(0 0 0 / 60%);
+  --pc-shadow-overlay: 0 12px 36px rgb(0 0 0 / 40%);
+}
+
+/* Semantic state aliases: keep foreground and background as a tested pair. */
+[data-pc-theme] {
+  --pc-selected-fill: var(--pc-soft);
+  --pc-selected-outline: var(--pc-link);
+  --pc-disabled-fill: var(--pc-soft);
+  --pc-disabled-text: var(--pc-text-secondary);
+  --pc-input-fill: var(--pc-surface);
+  --pc-input-text: var(--pc-text);
+  --pc-input-border: var(--pc-border);
+  --pc-loss-text: var(--pc-text-secondary);
+  --pc-loss-fill: var(--pc-soft);
+}
+
+/* Component recipes are scoped to a reference wrapper to prevent accidental
+ * global styling. They document states, not a new production component library.
+ */
+.pc-reference .pc-primary {
+  min-height: var(--pc-control-min-height);
+  padding: 12px 16px;
+  border: 1px solid var(--pc-action);
+  border-radius: var(--pc-radius-control);
+  background: var(--pc-action);
+  color: var(--pc-on-action);
+  font: 600 var(--pc-font-control-size) / 1.3 var(--pc-font-body);
+}
+.pc-reference .pc-primary:hover:not(:disabled) {
+  background: var(--pc-action-hover);
+  border-color: var(--pc-action-hover);
+}
+.pc-reference .pc-primary:active:not(:disabled) {
+  background: var(--pc-action-pressed);
+  border-color: var(--pc-action-pressed);
+}
+.pc-reference .pc-secondary {
+  min-height: var(--pc-control-min-height);
+  padding: 12px 16px;
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius-control);
+  background: var(--pc-surface);
+  color: var(--pc-text);
+  font: 600 var(--pc-font-control-size) / 1.3 var(--pc-font-body);
+}
+.pc-reference .pc-secondary:hover:not(:disabled) {
+  background: var(--pc-soft);
+}
+.pc-reference button:disabled {
+  background: var(--pc-disabled-fill);
+  border-color: var(--pc-border);
+  color: var(--pc-disabled-text);
+}
+.pc-reference .pc-choice[aria-pressed='true'] {
+  background: var(--pc-selected-fill);
+  color: var(--pc-text);
+  box-shadow: inset 0 0 0 2px var(--pc-selected-outline);
+}
+.pc-reference .pc-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--pc-control-min-height);
+  padding: 10px 16px;
+  border-radius: var(--pc-radius-control);
+  color: var(--pc-text-secondary);
+  text-decoration: none;
+  font: 600 var(--pc-font-control-size) / 1.3 var(--pc-font-body);
+}
+.pc-reference .pc-nav-link:hover {
+  background: var(--pc-nav-hover);
+  color: var(--pc-text);
+}
+.pc-reference .pc-nav-link[aria-current='page'] {
+  background: var(--pc-nav-selected);
+  color: var(--pc-text);
+}
+.pc-reference :is(button, a, input, select, textarea):focus-visible {
+  outline: var(--pc-focus-width) solid var(--pc-focus);
+  outline-offset: var(--pc-focus-offset);
+  box-shadow: 0 0 0 var(--pc-focus-offset) var(--pc-surface);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-reference { --pc-duration-feedback: 0ms; --pc-duration-state: 0ms; }
+}

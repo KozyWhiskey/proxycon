@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { matchOutcome } from '@/lib/match-outcome';
+import { matchOutcome, validTournamentScore } from '@/lib/match-outcome';
 import { reportMatch } from '@/app/weekend/actions';
 import { Button } from '@/components/ui/button';
 import { useAction } from '@/components/weekend/act-button';
+import { Check } from 'lucide-react';
 
 interface Player { id: string; name: string; team?: number | null; result?: string | null; gamesWon?: number | null }
 
@@ -56,7 +57,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   const previous = named.every((player) => player.result === 'draw')
     ? 'Draw'
     : `${named.filter((player) => player.result === 'win').map((player) => player.name).join(' & ')} won`;
-  const canSave = Boolean(effective);
+  const canSave = Boolean(effective) && (!tournament || validTournamentScore(named.map((player) => player.id), games));
 
   function select(value: string) {
     setChoice(value);
@@ -91,16 +92,34 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
         </div>
       )}
 
-      <>
+      {tournament ? (
+        <fieldset disabled={pending} className="tournament-score space-y-3">
+          <legend className="text-sm font-semibold">Games won</legend>
+          <p className="subtle">Use + and − to enter each player’s game wins, such as 2–0 or 2–1. The score determines the winner. Equal scores above zero record a draw.</p>
+          {named.map((player) => (
+            <div key={player.id} className="score-stepper">
+              <span>{player.name}</span>
+              <div>
+                <Button type="button" aria-label={`Remove a game won by ${player.name}`} variant="outline" disabled={pending || !(games[player.id] || 0)} onClick={() => bump(player.id, -1)}>−</Button>
+                <output aria-label={`${player.name} games won`}>{games[player.id] || 0}</output>
+                <Button type="button" aria-label={`Add a game won by ${player.name}`} variant="outline" disabled={pending} onClick={() => bump(player.id, 1)}>+</Button>
+              </div>
+            </div>
+          ))}
+          {!hasScore && <p className="subtle">Enter a game score before saving. 0–0 is not a result.</p>}
+        </fieldset>
+      ) : (
+        <>
           <fieldset disabled={pending} className="space-y-3">
             <legend className="mb-3 text-sm">{teams ? 'Which team won?' : 'Who won?'}</legend>
             <div className="outcome-options">
               {options.map((option) => (
                 <Button key={option.value} type="button" variant="outline" aria-pressed={effective === option.value} onClick={() => select(option.value)}>
+                  <Check size={16} aria-hidden="true" className={effective === option.value ? '' : 'invisible'} />
                   {option.label} {teams ? 'win' : 'wins'}
                 </Button>
               ))}
-              <Button type="button" variant="outline" aria-pressed={effective === 'draw'} onClick={() => select('draw')}>Draw</Button>
+              <Button type="button" variant="outline" aria-pressed={effective === 'draw'} onClick={() => select('draw')}><Check size={16} aria-hidden="true" className={effective === 'draw' ? '' : 'invisible'} />Draw</Button>
             </div>
           </fieldset>
           {showGamesWon && (
@@ -121,7 +140,8 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
               </div>
             </details>
           )}
-      </>
+        </>
+      )}
 
       {effective && canSave && (
         <div className="result-review">

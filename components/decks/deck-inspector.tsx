@@ -37,7 +37,7 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground bg-card">
-              No Art Available
+              No artwork available
             </div>
           )}
         </div>
@@ -83,7 +83,7 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
           {/* Commander Details */}
           <div className="space-y-4 flex-1">
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold text-primary">{deck.commander_name || 'Unknown Commander'}</h3>
+              <h3 className="text-lg font-semibold text-link">{deck.commander_name || 'Unknown Commander'}</h3>
               <div className="flex items-center gap-2">
                 {deck.mana_cost ? (
                   <ManaCost manaCost={deck.mana_cost} />
@@ -100,7 +100,7 @@ export function DeckInspector({ deck, onEdit, isOwner = false }: DeckInspectorPr
                 </div>
               )}
               
-              <div className="text-sm text-zinc-300">
+              <div className="text-sm text-muted-foreground">
                 {deck.oracle_text ? (
                   <RichTextDisplay text={deck.oracle_text} />
                 ) : (

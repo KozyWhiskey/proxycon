@@ -1,6 +1,6 @@
 'use server';
 
-import { matchOutcome, matchesResultSnapshot, type ResultSnapshot } from '@/lib/match-outcome';
+import { matchOutcome, matchesResultSnapshot, validTournamentScore, type ResultSnapshot } from '@/lib/match-outcome';
 import { randomBytes } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { resolvePlayer } from '@/lib/player-session';
@@ -885,6 +885,9 @@ export async function reportMatch(input: {
   if (input.expected && !matchesResultSnapshot(rows, input.expected)) return { success: false, message: 'This result changed while you were editing. Review the current result before saving your correction.' };
 
   const seatedIds = rows.map((seat) => seat.profile_id).filter((id): id is string => Boolean(id));
+  if (match.tournament_id && !validTournamentScore(seatedIds, input.games)) {
+    return { success: false, message: 'Enter games won for each player before saving. Use whole numbers; 0–0 is not a result.' };
+  }
   if (input.games && seatedIds.length >= 2) {
     const scores = input.games;
     if (seatedIds.some((id) => !Number.isFinite(scores[id]))) {

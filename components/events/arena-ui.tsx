@@ -1,9 +1,10 @@
 import { Check, Diamond, Layers } from 'lucide-react';
-import { getColorClass } from '@/lib/player-colors';
+import { ManaIdentity } from '@/components/ui/mana-identity';
+import { COLOR_DISPLAY_NAMES } from '@/lib/player-colors';
 import Image from 'next/image';
 
 export function PlayerAvatar({ name, color, small = false }: { name: string; color?: string | null; small?: boolean }) {
-  return <span className={`arena-avatar${small ? ' is-small' : ''}`} aria-hidden="true"><span className={`avatar-color ${getColorClass(color) || ''}`} />{name.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()}</span>;
+  return <span className={`arena-avatar${small ? ' is-small' : ''}`} aria-hidden="true">{color && COLOR_DISPLAY_NAMES[color] ? <ManaIdentity color={color} size={small ? 12 : 16} /> : name.split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase()}</span>;
 }
 
 export function GameStatus({ state, children }: { state: 'live' | 'setup' | 'complete'; children: React.ReactNode }) {

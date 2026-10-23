@@ -72,7 +72,7 @@ export function GuestManager({ events, invitations, ready, houseOrigin, profileN
       <Button type="submit" disabled={!ready || !invitationId || pending || !name.trim()}><Plus size={16} />Add guest spot</Button>
     </form>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <div>{(existing?.spots || []).map(spot => <div className="game-row" key={spot.id}><strong>{spot.display_name}</strong>{spot.profile_id ? <Link className="text-primary text-sm" href={`/players/${spot.profile_id}`}>Claimed · view profile →</Link> : <span className="subtle">Ready to claim</span>}</div>)}</div>
+    <div>{(existing?.spots || []).map(spot => <div className="game-row" key={spot.id}><strong>{spot.display_name}</strong>{spot.profile_id ? <Link className="text-link text-sm" href={`/players/${spot.profile_id}`}>Claimed · view profile →</Link> : <span className="subtle">Ready to claim</span>}</div>)}</div>
     <p className="subtle">Existing accounts and decks stay unchanged. A guest profile is created when its name is claimed. Guests should keep the same browser data during the weekend; this sign-in cannot recover an account on another phone.</p>
   </section>;
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowUpRight, CalendarDays, Layers, Monitor, Swords, Users, UserRound, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ManaDivider } from '@/components/ui/mana-identity';
 
 const icons: Record<string, LucideIcon> = { calendar: CalendarDays, decks: Layers, room: Monitor, game: Swords, players: Users, profile: UserRound };
 
@@ -8,6 +9,7 @@ export function PageIntro({ eyebrow, title, description, actions, children, comp
   return (
     <header className={`collection-heading${compact ? ' is-compact' : ''}`}>
       <div>
+        {!compact && <ManaDivider />}
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         {description && <p className="subtle">{description}</p>}

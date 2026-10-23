@@ -41,8 +41,8 @@ export function RoundClock({
   return (
     <div className={`round-clock space-y-3 rounded-xl border border-border p-4${pausedAt ? ' is-paused' : ''}${left != null && left <= 300 ? ' is-urgent' : ''}`} suppressHydrationWarning>
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">Round clock</p>
-        <p className="font-heading text-5xl tabular-nums" suppressHydrationWarning>{left == null ? '—' : formatClock(left)}</p>
+        <p className="clock-label font-mono text-xs uppercase tracking-wide text-muted-foreground">Round clock</p>
+        <p className="font-mono text-5xl tabular-nums" suppressHydrationWarning>{left == null ? '—' : formatClock(left)}</p>
       </div>
       <p className="text-xs text-muted-foreground">
         {pausedAt ? 'Paused' : left === 0 ? 'Time elapsed · report results when ready' : 'Remaining this round'}

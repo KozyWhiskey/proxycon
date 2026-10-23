@@ -70,7 +70,7 @@ export default function DeckListItem({ deck, isOwner = false }: DeckListItemProp
             {/* Top Row: Name & Mana */}
             <div className="flex justify-between items-start gap-4">
               <div className="min-w-0">
-                <h3 className="text-lg font-bold text-foreground font-heading tracking-wide truncate group-hover:text-primary transition-colors">
+                <h3 className="text-lg font-bold text-foreground font-heading tracking-wide truncate group-hover:text-link transition-colors">
                   {deck.name}
                 </h3>
                 <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
@@ -84,7 +84,7 @@ export default function DeckListItem({ deck, isOwner = false }: DeckListItemProp
                      />
                    )}
                    <span>•</span>
-                   <span className="text-primary/80">{deck.commander_name || 'No Commander'}</span>
+                   <span className="text-link/80">{deck.commander_name || 'No Commander'}</span>
                 </div>
               </div>
               

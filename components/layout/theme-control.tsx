@@ -44,10 +44,9 @@ export function ThemeControl() {
 
   return (
     <div className="theme-control">
-      <Icon size={16} aria-hidden />
       <Select value={theme} onValueChange={(value) => applyTheme(value as Theme)}>
         <SelectTrigger size="sm" aria-label="Appearance" className="theme-control-trigger h-11 min-h-11 w-auto gap-1.5 border-border bg-card px-2.5 text-foreground shadow-none">
-          <SelectValue />
+          <Icon size={16} aria-hidden /><SelectValue />
         </SelectTrigger>
         <SelectContent align="end" className="bg-card text-foreground">
           <SelectItem value="system">System</SelectItem>

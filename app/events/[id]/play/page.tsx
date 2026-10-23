@@ -50,7 +50,7 @@ export default async function PlayPage({
         <p className="text-muted-foreground">Join the event before starting a game.</p>
       )}
       <section className="recent-pods" aria-label="Play a recent game again">{board.matches.filter((match) => !match.tournament_id && matchPlayersHaveResult(board, match.id)).slice(0, 5).map((match) => (
-        <Link key={match.id} href={`/events/${id}/play?again=${match.id}`} className="text-sm text-primary">
+        <Link key={match.id} href={`/events/${id}/play?again=${match.id}`} className="text-sm text-link">
           Play again · {match.format_label || match.game_type}
         </Link>
       ))}</section>

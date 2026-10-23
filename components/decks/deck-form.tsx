@@ -198,7 +198,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   unoptimized
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                 <div className="absolute inset-0 bg-card opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                 <div className="absolute bottom-0 left-0 right-0 z-10 bg-card border-t border-border p-3 flex flex-wrap items-center justify-center gap-2">
                    <Button 
                     type="button"
                     variant="secondary"
@@ -207,7 +207,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     className="gap-2 shadow-xl"
                    >
                      {isLoadingPrints ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                     Change Art
+                     Change artwork
                    </Button>
                    <Button
                     type="button"
@@ -216,11 +216,8 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     className="gap-2 shadow-xl bg-card border-border hover:bg-card text-foreground"
                    >
                      <Search className="w-4 h-4" />
-                     View Full Art
+                     View artwork
                    </Button>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-                  <p className="text-xl font-bold text-foreground drop-shadow-md text-center font-heading tracking-wide">{commanderName}</p>
                 </div>
               </div>
             ) : (
@@ -239,12 +236,12 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
             {/* Basic Info Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="deckName">Deck Name</Label>
+                <Label htmlFor="deckName">Deck name</Label>
                 <Input
                   id="deckName"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="My Awesome Deck"
+                  placeholder="Friday Commander"
                   required
                 />
               </div>
@@ -252,7 +249,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               <div className="space-y-2">
                 <Label htmlFor="format">Format</Label>
                 <Select value={format} onValueChange={setFormat}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="format" className="w-full">
                     <SelectValue placeholder="Select a format" />
                   </SelectTrigger>
                   <SelectContent>
@@ -285,6 +282,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   />
                   <Button 
                     type="button" 
+                    aria-label="Search commanders"
                     onClick={handleSearch} 
                     disabled={isSearching || !commanderName}
                     variant="secondary"
@@ -296,7 +294,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partnerName">Partner</Label>
+              <Label htmlFor="partnerName">Partner (optional)</Label>
               <Input
                 id="partnerName"
                 value={partnerName}
@@ -316,7 +314,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     unoptimized
                     className="object-cover object-top"
                   />
-                  <div className="absolute inset-0 bg-card opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                  <div className="absolute bottom-0 left-0 right-0 z-10 bg-card border-t border-border p-3 flex flex-wrap items-center justify-center gap-2">
                     <Button 
                       type="button"
                       variant="secondary"
@@ -325,7 +323,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       className="gap-2"
                     >
                       {isLoadingPrints ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                      Change Art
+                      Change artwork
                     </Button>
                      <Button
                       type="button"
@@ -334,18 +332,15 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       className="gap-2 shadow-xl bg-card border-border hover:bg-card text-foreground"
                      >
                        <Search className="w-4 h-4" />
-                       View Full Art
+                       View artwork
                      </Button>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <p className="text-lg font-bold text-foreground drop-shadow-md text-center font-heading">{commanderName}</p>
                   </div>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label>Color Identity</Label>
+              <Label>Color identity</Label>
               <div className="flex flex-wrap gap-3 p-3 bg-muted rounded-lg border border-border">
                 {MTG_COLORS.map((color) => (
                   <div key={color} className="flex items-center space-x-2">
@@ -355,11 +350,11 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                       onCheckedChange={(checked) =>
                         handleColorChange(color, checked as boolean)
                       }
-                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:text-foreground w-5 h-5"
+                      className="border-border data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground w-5 h-5"
                     />
                     <label
                       htmlFor={`color-${color}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground cursor-pointer select-none"
+                      className="flex min-h-11 items-center text-sm font-medium text-muted-foreground cursor-pointer select-none"
                     >
                       {color}
                     </label>
@@ -370,7 +365,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
 
             <div className="space-y-4">
               <div className="flex justify-between items-start">
-                  <Label htmlFor="description" className="font-medium">Oracle Text / Stats</Label>
+                  <Label htmlFor="description" className="font-medium">Card text / stats</Label>
                   {manaCost && <ManaCost manaCost={manaCost} size={18} />}
               </div>
               
@@ -393,7 +388,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
             <div className="pt-4">
               <Button type="submit" className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/10" variant="default" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                {initialData ? 'Save Changes' : 'Create Deck'}
+                {initialData ? 'Save changes' : 'Create deck'}
               </Button>
             </div>
           </div>
@@ -404,11 +399,11 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
       <Dialog open={isResultsOpen} onOpenChange={setIsResultsOpen}>
         <DialogContent className="sm:max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select a Card</DialogTitle>
+            <DialogTitle>Choose a commander</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-2">
             {searchResults.map((card) => (
-              <div 
+              <button type="button" aria-label={`Choose ${card.name}`}
                 key={card.id} 
                 className="cursor-pointer group relative rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-lg hover:shadow-primary/20"
                 onClick={() => handleSelectCard(card)}
@@ -425,14 +420,14 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   </div>
                 ) : (
                   <div className="aspect-[2.5/3.5] bg-card flex items-center justify-center p-4 text-center text-muted-foreground text-sm">
-                    No Image Available
+                    No artwork available
                   </div>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                  <p className="text-xs font-bold text-foreground truncate">{card.name}</p>
-                  <p className="text-[10px] text-zinc-300 truncate">{card.type_line}</p>
+                <div className="relative p-3 bg-card border-t border-border">
+                  <p className="text-sm font-semibold text-foreground">{card.name}</p>
+                  <p className="text-xs text-muted-foreground">{card.type_line}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </DialogContent>
@@ -442,11 +437,11 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
       <Dialog open={isPrintsOpen} onOpenChange={setIsPrintsOpen}>
         <DialogContent className="sm:max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select Art Variation</DialogTitle>
+            <DialogTitle>Choose artwork</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-2">
             {printResults.map((card) => (
-              <div 
+              <button type="button" aria-label={`Choose ${card.set_name}, number ${card.collector_number}`}
                 key={card.id} 
                 className="cursor-pointer group relative rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-lg hover:shadow-primary/20"
                 onClick={() => handleSelectPrint(card)}
@@ -466,11 +461,11 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     No Image
                   </div>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                  <p className="text-xs font-bold text-foreground truncate">{card.set_name}</p>
-                  <p className="text-[10px] text-zinc-300 truncate">#{card.collector_number}</p>
+                <div className="relative p-3 bg-card border-t border-border">
+                  <p className="text-sm font-semibold text-foreground">{card.set_name}</p>
+                  <p className="text-xs text-muted-foreground">#{card.collector_number}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </DialogContent>
