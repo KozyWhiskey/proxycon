@@ -8,7 +8,7 @@ import { ActButton } from '@/components/weekend/act-button';
 import { QuickMatchTable } from '@/components/weekend/quick-match-table';
 import { Button } from '@/components/ui/button';
 import { GameStatus } from '@/components/events/arena-ui';
-import { Trophy, Swords } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 export default async function QuickMatchPage({
   params,
@@ -31,23 +31,37 @@ export default async function QuickMatchPage({
   const canDelete = board.canManage && !finished;
   const title = match.table_label || match.format_label || 'Quick match';
   const eventHref = `/events/${id}`;
+  const draw = finished && players.every((player) => player.result === 'draw');
+  const winners = players.filter((player) => player.result === 'win').map((player) => player.name);
+  const resultLine = draw
+    ? 'Draw'
+    : winners.length
+      ? `${winners.join(' & ')} won`
+      : 'Result recorded';
 
   return (
-    <main className={`page form-page arena-match-detail${finished ? ' is-complete' : ' is-playing'}`}>
+    <main className={`page form-page arena-match-detail task-page${finished ? ' is-complete' : ' is-playing'}`}>
       <Link href={eventHref} className="subtle">← {board.event.name}</Link>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">{finished ? 'Result' : 'Live table'}</p>
-          <h1>{title}</h1>
-          <p className="subtle mt-2">
-            {players.map((player) => player.name).join(' · ') || 'Waiting on seats'}
-          </p>
+      <header className="match-page-head">
+        <p className="eyebrow">{finished ? 'Result' : 'Live table'}</p>
+        <h1>{title}</h1>
+        <p className="subtle mt-2">
+          {players.map((player) => player.name).join(' · ') || 'Waiting on seats'}
+        </p>
+        <div className="match-state">
           <GameStatus state={finished ? 'complete' : 'live'}>{finished ? 'Result recorded' : 'In progress'}</GameStatus>
         </div>
       </header>
 
-      {finished && <section className="match-victory"><Trophy size={26} /><div><span className="eyebrow">THE RESULT</span><h2>{players.every(p => p.result === 'draw') ? 'A draw at the table.' : `${players.filter(p => p.result === 'win').map(p => p.name).join(' & ')} takes the win.`}</h2></div></section>}
-      {!finished && <div className="match-live-line"><Swords size={17} /><span>The game is on. Report a winner when the table is ready.</span></div>}
+      {finished && (
+        <section className="match-victory" aria-label="Result">
+          <Trophy size={22} aria-hidden="true" />
+          <div>
+            <h2>{resultLine}</h2>
+          </div>
+        </section>
+      )}
+
       <section className="panel space-y-6">
         <QuickMatchTable
           matchId={match.id}

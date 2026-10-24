@@ -10,6 +10,10 @@ import { startRound } from '@/app/weekend/actions';
 import { Button } from '@/components/ui/button';
 import { PlayerAvatar, GameStatus } from '@/components/events/arena-ui';
 
+function gamesWonLabel(count: number) {
+  return `${count} game${count === 1 ? '' : 's'} won`;
+}
+
 /** Modern event-scoped match page, including matches from previous rounds. */
 export default async function TournamentMatchPage({ params }: { params: Promise<{ id: string; matchId: string }> }) {
   const { id, matchId } = await params;
@@ -38,7 +42,7 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
     ? 'Result recorded'
     : playing
       ? 'Playing'
-      : 'Pairings posted · Not started';
+      : 'Pairings posted';
   const reporter = canOperate && match.started_at && !bye ? (
     <MatchReporter
       key={match.id}
@@ -55,10 +59,44 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
     />
   ) : null;
 
+  const playerCards = (
+    <div className="match-detail-players">
+      {players.map((player) => {
+        const standing = standings.find((row) => row.profileId === player.profile_id);
+        const gamesWon = player.games_won || 0;
+        const hasScore = players.some((seat) => (seat.games_won || 0) > 0);
+        return (
+          <div
+            key={player.id}
+            className={`match-contender${player.result === 'win' ? ' is-winner' : ''}${player.result === 'loss' ? ' is-loss' : ''}`}
+          >
+            <PlayerAvatar name={player.name} color={board.members.find((member) => member.id === player.profile_id)?.color} />
+            {player.profile_id === board.userId && <span className="subtle">You</span>}
+            <h2>{player.name}</h2>
+            {standing && (
+              <p className="subtle">
+                {standing.points} points · {standing.wins}–{standing.losses}–{standing.draws}
+              </p>
+            )}
+            {recorded && (
+              <p className="recorded-outcome">
+                {bye
+                  ? 'Bye · 3 match points'
+                  : `${player.result === 'win' ? 'Won' : player.result === 'loss' ? 'Lost' : 'Draw'}${
+                      hasScore ? ` · ${gamesWonLabel(gamesWon)}` : ''
+                    }`}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
       <EventNav id={board.event.id} house={board.house} name={board.event.name} />
-      <main className={`page form-page match-page arena-match-detail${recorded ? ' is-complete' : ' is-playing'}`}>
+      <main className={`page form-page match-page arena-match-detail task-page${recorded ? ' is-complete' : ' is-playing'}`}>
         <Link href={`/tournament/${id}`} className="subtle">← {game.name}</Link>
         <header className="match-page-head">
           <p className="eyebrow">
@@ -66,45 +104,20 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
             {!bye ? ` · ${table}` : ''}
           </p>
           <h1>{matchup}</h1>
-          <div className="match-state"><GameStatus state={recorded ? 'complete' : playing ? 'live' : 'setup'}>{state}</GameStatus></div>
+          <div className="match-state">
+            <GameStatus state={recorded ? 'complete' : playing ? 'live' : 'setup'}>{state}</GameStatus>
+          </div>
         </header>
 
         <section className="match-detail panel">
-          <div className="match-detail-players">
-            {players.map((player) => {
-              const standing = standings.find((row) => row.profileId === player.profile_id);
-              return (
-                <div key={player.id} className={`match-contender${player.result === 'win' ? ' is-winner' : ''}`}>
-                  <PlayerAvatar name={player.name} color={board.members.find(m => m.id === player.profile_id)?.color} />
-                  <span className="subtle">{player.profile_id === board.userId ? 'You' : 'Player'}</span>
-                  <h2>{player.name}</h2>
-                  {standing && (
-                    <p className="subtle">
-                      {standing.points} points · {standing.wins}–{standing.losses}–{standing.draws} match record
-                    </p>
-                  )}
-                  {recorded && (
-                    <p className="recorded-outcome">
-                      {bye
-                        ? 'Bye · 3 match points'
-                        : `${player.result === 'win' ? 'Won' : player.result === 'loss' ? 'Lost' : 'Draw'}${
-                            players.some((seat) => (seat.games_won || 0) > 0) ? ` · ${player.games_won || 0} games won` : ''
-                          }`}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
           {match.is_rematch && <p className="subtle">Rematch · no alternative legal pairing was available.</p>}
-          {bye && !recorded && <p className="subtle">Your bye counts as a win when the round starts.</p>}
+          {bye && !recorded && <p className="subtle">Bye counts as a win when the round starts.</p>}
 
           {waiting && canOperate && (
             <div className="round-start-panel match-start-panel">
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-link">Ready to play</p>
               <p className="text-sm text-muted-foreground">
-                Starts Round {match.round_number} for every table, then you can enter the score here.
+                Starts Round {match.round_number} for every table, then scores open here.
               </p>
               <ActButton label="Start round" action={startRound.bind(null, id)} />
             </div>
@@ -114,15 +127,16 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
             <p className="subtle">Waiting for the round to start. Scores open after that.</p>
           )}
 
-          {recorded ? (
-            reporter && (
-              <details className="disclosure">
-                <summary>Correct this result</summary>
-                <div>{reporter}</div>
-              </details>
-            )
-          ) : (
-            reporter
+          {/* Score entry first while playing — identity cards stay secondary. */}
+          {!recorded && reporter}
+
+          {playerCards}
+
+          {recorded && reporter && (
+            <details className="disclosure">
+              <summary>Correct this result</summary>
+              <div>{reporter}</div>
+            </details>
           )}
 
           {!canOperate && playing && (

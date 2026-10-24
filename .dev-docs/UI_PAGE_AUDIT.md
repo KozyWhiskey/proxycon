@@ -45,10 +45,10 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Event / `/events/[id]` | Destination | Voice/empty-copy pass applied 23 Oct 2026. Own-match phone hierarchy still needs a live-slip recheck. |
 | Room / `/events/[id]/room` | Live operations | Voice/copy pass applied 23 Oct 2026 (playing + elapsed + report popout sampled). Full state coverage still open: posted, paused, bye, completed, setup seating. |
 | Tournament / `/tournament/[id]` | Live operations / setup | Finish promotion + voice pass 23 Oct 2026 (last-round all results in). Setup/seating/posted states still open. |
-| Tournament result / `/tournament/[id]/match/[matchId]` | Task | Required counters already verified; current refinement removes repeated instructions. Recheck posted/read-only/correction states. |
-| Quick-game result / `/events/[id]/match/[matchId]` | Task | Pending: pod, team, draw, optional decks and replay. |
+| Tournament result / `/tournament/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded + correction). Playing/waiting/bye live shots and 320px/200% still open. |
+| Quick-game result / `/events/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded Commander pod). Live report-first, team, and draw states still open. |
 | Start game / `/events/[id]/play` | Task | Pending: format/player selection, optional details, validation. |
-| Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pending: formats, round count, optional pack/prize fields. |
+| Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pass recorded 23 Oct 2026 (compact task voice + Create above optionals). Validation/error and 320px/200% zoom still open. |
 | Statistics / `/events/[id]/stats` | Destination | Pending: category/day filters, no results, names/art and table overflow. |
 | Event players / `/events/[id]/players` | Utility destination | Pending: joined/unjoined profiles and invite entry. |
 | Event tools / `/events/[id]/manage` | Task | Pending: membership, QR/code, copy feedback, corrections and permissions. |
@@ -89,7 +89,7 @@ This was a shared-material/copy refinement, not a full audit of every page in th
 | Report popout | [Light phone](ux-screenshots/ember-depth-result-phone-light.jpg), [Dark phone](ux-screenshots/ember-depth-result-phone-dark.jpg). Compact named counters, no tutorials or repeated score paragraph, 0–0 disabled and derived 2–1 preview. At 320px: 288px dialog, 44px controls, no page overflow. Escape closes and returns focus to Report result. | Pending/error and conflict writes using disposable data. |
 | Event room destination | [Light laptop](ux-screenshots/ember-depth-event-light.jpg), [Dark laptop](ux-screenshots/ember-depth-event-dark.jpg). Warm opaque callout, Fraunces heading and framed action. | Full event page review, including player phone hierarchy and simultaneous games. |
 | Deckbox/new deck | Light/dark phone checked as a shared-component consumer. Removed old deck-only popup background/shadow/title overrides; now the same 12px popup, surface recipe and 24px title as other dialogs. | Full gallery/inspector/edit/artwork/state pass. |
-| Create tournament | Light/dark phone checked as the compact task anchor. Manrope task title and unchanged selection behavior. | Full setup/validation and zoom pass. |
+| Create tournament | Full pass recorded below (23 Oct 2026). | Validation/error writes and 320px / 200% zoom. |
 
 Checks: TypeScript, targeted ESLint (zero errors/warnings), UX/required-score regression tests, production webpack build, CSS parsing and diff whitespace check passed. No live results or profiles were saved. Existing data may change independently while inspected.
 
@@ -133,4 +133,34 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - Why it looked “still open”: tournaments do not auto-complete. Places require Finish (PROJECT_SUMMARY). The detail page previously hid that behind “Review final places.”
 - Evidence: [laptop dark](ux-screenshots/ember-tournament-audit-laptop-dark.png). Phone / light still pending for this route.
 - Remaining gaps: setup/seating/posted phone hierarchy; light theme; do not auto-finish without owner confirmation.
-- Next page: Create tournament (task anchor) or Tournament result task recheck.
+- Next page: Create tournament (below).
+
+## Create tournament `/events/[id]/tournaments/new` — pass record · 23 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/tournaments/new` compact task; Craig; canManage; Beta House Weekend.
+- Keep: Compact Manrope task title; back link; format `aria-pressed` grid; defaults 3 rounds / 50 minutes; two-pods only for seated formats; join gate when not a member; full-width Create.
+- Change applied: product-aligned format hints (seating/pairings, not marketing blurbs); visible **Format** label; shorter rounds hint; **Create tournament** before optionals; Day / packs / bringing / prizes under **Optional details**; consistent Label + field ids; drop competing `setup-page` max-width; format label type bumped to 14px.
+- Light phone / Dark phone / Light laptop / Dark laptop: [phone light](ux-screenshots/ember-create-tournament-audit-phone-light.png), [phone dark](ux-screenshots/ember-create-tournament-audit-phone-dark.png), [phone dark CTA](ux-screenshots/ember-create-tournament-audit-phone-dark-cta.png), [laptop light](ux-screenshots/ember-create-tournament-audit-laptop-light.png), [laptop dark](ux-screenshots/ember-create-tournament-audit-laptop-dark.png).
+- Interactions: no tournament created; Optional details left collapsed; Appearance light/dark toggled.
+- Remaining gaps: validation/error/pending create; sealed vs two-pods interaction recheck; 320px / 200% zoom; join-only state not re-shot this pass.
+- Next page: Tournament result (below).
+
+## Tournament result `/tournament/[id]/match/[matchId]` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/tournament/346c777e-…/match/4683a701-…` Craig vs Michael; Round 3 of 3; result recorded 2–1; Craig; canOperate.
+- Keep: Event nav; back to tournament; required +/− Games won counters; derived outcome; 0–0 unsavable; Correct disclosure; Pairings & standings link; no winner-choice buttons.
+- Change applied: Manrope task matchup title; score reporter above player cards while playing; compact playing contenders; drop generic “Player” label (keep You); plural **1 game won**; loss outcome muted (winner stays ink); shorter correction consequence; correction preview only after a dirty edit; status **Pairings posted** (dropped “Not started”).
+- Light phone / Dark phone / Light laptop / Dark laptop: [phone light](ux-screenshots/ember-tournament-result-audit-phone-light.png), [phone light correct](ux-screenshots/ember-tournament-result-audit-phone-light-correct.png), [phone dark](ux-screenshots/ember-tournament-result-audit-phone-dark.png), [laptop light](ux-screenshots/ember-tournament-result-audit-laptop-light.png), [laptop dark](ux-screenshots/ember-tournament-result-audit-laptop-dark.png).
+- Interactions: opened Correct this result; counters visible; Save correction stayed disabled until edit; no result saved.
+- Remaining gaps: live Playing / waiting Start round / bye states not re-shot; 320px / 200% zoom; join-only permission state.
+- Next page: Quick-game result (below).
+
+## Quick-game result `/events/[id]/match/[matchId]` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/match/87529ffd-…` Commander; Craig · Michael · Chris · Sid; Craig won; one deck recorded; Craig; canManage.
+- Keep: Pod winner/draw choice (not tournament counters); optional decks; Correct disclosure path; Back to event; Event nav from event layout.
+- Change applied: result banner **“{name} won”** / Draw (dropped “takes the win” / THE RESULT); Manrope task head; removed live tutorial line; Report first while in progress; Correct collapsed when finished; quiet **No deck recorded** (no empty art block / duplicate lines); Won/Lost tags muted for loss; single-column seat cards under 520px; Deck (optional) label.
+- Light phone / Dark phone / Light laptop / Dark laptop: [phone light](ux-screenshots/ember-quick-result-audit-phone-light.png), [phone dark](ux-screenshots/ember-quick-result-audit-phone-dark.png), [laptop light](ux-screenshots/ember-quick-result-audit-laptop-light.png), [laptop dark](ux-screenshots/ember-quick-result-audit-laptop-dark.png).
+- Interactions: Correct left collapsed; no result saved or deleted.
+- Remaining gaps: live in-progress report-first shot; Two-Headed Giant / draw; 320px / 200% zoom; replay entry from Start a game.
+- Next page: Start a game.

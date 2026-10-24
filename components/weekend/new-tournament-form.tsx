@@ -11,10 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Layers, Shuffle, Box, PackageOpen, Check } from 'lucide-react';
 
 const FORMATS = [
-  { id: 'set_draft', label: 'Set draft', detail: 'One set. Every pick counts.', icon: Layers },
-  { id: 'chaos_draft', label: 'Chaos draft', detail: 'Mixed packs. Unexpected plays.', icon: Shuffle },
-  { id: 'cube', label: 'Cube', detail: 'A collection built for drafting.', icon: Box },
-  { id: 'sealed', label: 'Sealed', detail: 'Open packs. Build your pool.', icon: PackageOpen },
+  { id: 'set_draft', label: 'Set draft', detail: 'Numbered seats. Pair across the table.', icon: Layers },
+  { id: 'chaos_draft', label: 'Chaos draft', detail: 'Mixed packs. Same seating as set draft.', icon: Shuffle },
+  { id: 'cube', label: 'Cube', detail: 'Your cube. Numbered seats.', icon: Box },
+  { id: 'sealed', label: 'Sealed', detail: 'No draft seats. Random round 1.', icon: PackageOpen },
 ];
 
 export function NewTournamentForm({ eventId, house = false }: { eventId: string; house?: boolean }) {
@@ -41,7 +41,7 @@ export function NewTournamentForm({ eventId, house = false }: { eventId: string;
         name: name.trim() || FORMATS.find((item) => item.id === format)?.label || 'Draft',
         format,
         maxRounds: rounds,
-        podCount: pods,
+        podCount: seated ? pods : 1,
         productNote: note,
         bringing,
         startsOn: day,
@@ -57,60 +57,162 @@ export function NewTournamentForm({ eventId, house = false }: { eventId: string;
       }
       router.push(house ? `/events/${eventId}/room?tournament=${result.tournamentId}` : `/tournament/${result.tournamentId}`);
       router.refresh();
-    } catch { toast.error('Could not save. Check your connection and try again.'); }
-    finally { setPending(false); }
+    } catch {
+      toast.error('Could not save. Check your connection and try again.');
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <form className="space-y-5 tournament-create-form" onSubmit={(event) => { event.preventDefault(); void create(); }}>
+    <form
+      className="space-y-5 tournament-create-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void create();
+      }}
+    >
       <div className="space-y-2">
         <Label htmlFor="t-name">Name</Label>
-        <Input id="t-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Friday draft" />
+        <Input
+          id="t-name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Friday draft"
+        />
       </div>
-      <div className="format-choice-grid" aria-label="Tournament format">
-        {FORMATS.map((item) => (
-          <button key={item.id} type="button" aria-pressed={format === item.id} onClick={() => setFormat(item.id)} className="format-choice">
-            <item.icon size={23} /><strong>{item.label}</strong><small>{item.detail}</small>{format === item.id && <Check size={14} className="format-selected" />}
-          </button>
-        ))}
+
+      <div className="space-y-2">
+        <Label id="t-format-label">Format</Label>
+        <div className="format-choice-grid" role="group" aria-labelledby="t-format-label">
+          {FORMATS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="format-choice"
+              aria-pressed={format === item.id}
+              onClick={() => {
+                setFormat(item.id);
+                if (item.id === 'sealed') setPods(1);
+              }}
+            >
+              <item.icon size={23} aria-hidden="true" />
+              <strong>{item.label}</strong>
+              <small>{item.detail}</small>
+              {format === item.id && <Check size={14} className="format-selected" aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
       </div>
-      <label className="grid gap-1 text-sm">
-        Rounds
-        <Input type="number" min={1} max={10} value={rounds} onChange={(event) => setRounds(Number(event.target.value))} className="h-11 w-28" />
-        <span className="text-xs text-muted-foreground">Six to eight players suggests three rounds. Nine to sixteen suggests four. This locks when round 1 starts.</span>
-      </label>
-      <label className="grid gap-1 text-sm">
-        Round length, minutes
-        <Input type="number" min={1} max={300} value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="h-11 w-28" />
-      </label>
-      <details className="disclosure"><summary>Prizes (optional)</summary><div className="space-y-4"><div className="grid gap-2">
-        <p className="text-sm">Prizes</p>
-        <Input aria-label="First prize" value={prize1st} onChange={(event) => setPrize1st(event.target.value)} placeholder="1st prize" />
-        <Input aria-label="Second prize" value={prize2nd} onChange={(event) => setPrize2nd(event.target.value)} placeholder="2nd prize" />
-        <Input aria-label="Third prize" value={prize3rd} onChange={(event) => setPrize3rd(event.target.value)} placeholder="3rd prize" />
+
+      <div className="space-y-2">
+        <Label htmlFor="t-rounds">Rounds</Label>
+        <Input
+          id="t-rounds"
+          type="number"
+          min={1}
+          max={10}
+          value={rounds}
+          onChange={(event) => setRounds(Number(event.target.value))}
+          className="h-11 w-28"
+        />
+        <p className="text-xs text-muted-foreground">
+          3 for 6–8 players, 4 for 9–16. Locks when round 1 starts.
+        </p>
       </div>
-      </div></details>
+
+      <div className="space-y-2">
+        <Label htmlFor="t-duration">Round length, minutes</Label>
+        <Input
+          id="t-duration"
+          type="number"
+          min={1}
+          max={300}
+          value={duration}
+          onChange={(event) => setDuration(Number(event.target.value))}
+          className="h-11 w-28"
+        />
+      </div>
+
       {seated && (
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={pods === 2} onChange={(event) => setPods(event.target.checked ? 2 : 1)} />
-          Two pods, one leaderboard
+        <label className="flex items-center gap-3 text-sm min-h-11">
+          <input
+            id="t-pods"
+            type="checkbox"
+            checked={pods === 2}
+            onChange={(event) => setPods(event.target.checked ? 2 : 1)}
+            className="size-5 accent-[var(--action)]"
+          />
+          <span>Two pods, one leaderboard</span>
         </label>
       )}
-      <label className="grid gap-1 text-sm">
-        Day
-        <Input type="date" value={day} onChange={(event) => setDay(event.target.value)} className="h-11" />
-      </label>
-      <label className="grid gap-1 text-sm">
-        Packs or cube
-        <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note" />
-      </label>
-      {!house && <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={bringing} onChange={(event) => setBringing(event.target.checked)} />
-        I am bringing them
-      </label>}
+
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? 'Creating tournament…' : 'Create tournament'}
       </Button>
+
+      <details className="disclosure">
+        <summary>Optional details</summary>
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="t-day">Day</Label>
+            <Input
+              id="t-day"
+              type="date"
+              value={day}
+              onChange={(event) => setDay(event.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="t-note">Packs or cube</Label>
+            <Input
+              id="t-note"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Optional note"
+            />
+          </div>
+
+          {!house && (
+            <label className="flex items-center gap-3 text-sm min-h-11">
+              <input
+                id="t-bringing"
+                type="checkbox"
+                checked={bringing}
+                onChange={(event) => setBringing(event.target.checked)}
+                className="size-5 accent-[var(--action)]"
+              />
+              <span>I am bringing them</span>
+            </label>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="t-prize-1">1st prize</Label>
+            <Input
+              id="t-prize-1"
+              value={prize1st}
+              onChange={(event) => setPrize1st(event.target.value)}
+              placeholder="Optional"
+            />
+            <Label htmlFor="t-prize-2">2nd prize</Label>
+            <Input
+              id="t-prize-2"
+              value={prize2nd}
+              onChange={(event) => setPrize2nd(event.target.value)}
+              placeholder="Optional"
+            />
+            <Label htmlFor="t-prize-3">3rd prize</Label>
+            <Input
+              id="t-prize-3"
+              value={prize3rd}
+              onChange={(event) => setPrize3rd(event.target.value)}
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+      </details>
     </form>
   );
 }

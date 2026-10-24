@@ -141,13 +141,13 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
         </>
       )}
 
-      {effective && canSave && (
+      {effective && canSave && (!correcting || dirty) && (
         <div className="result-review">
           <span>{correcting ? 'Save this correction' : 'Ready to record'}</span>
           <strong>{summary}{hasScore ? ` · ${scoreLabel}` : ''}</strong>
           {hasScore && !tournament && <p>{named.map((player) => `${player.name} ${games[player.id] || 0}`).join(' · ')}</p>}
           {correcting && (tournament || showGamesWon) && (
-            <p className="subtle">Standings update immediately. Unstarted next-round pairings may change; started pairings stay fixed. If already finished, finish the tournament again.</p>
+            <p className="subtle">Standings update now. Unstarted next-round pairings may change. After Finish, lock places again.</p>
           )}
         </div>
       )}

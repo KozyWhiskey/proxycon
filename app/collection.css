@@ -136,9 +136,9 @@
 .setup-promise > span { display:flex; align-items:center; gap:14px; color:var(--muted-ink); font:12px var(--font-data),monospace; }
 .setup-promise strong { font:500 12px var(--font-body),sans-serif; color:var(--ink); }
 .format-choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.format-choice { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:18px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:8px; color:var(--muted-ink); }
-.format-choice strong { font-size:13px; color:var(--ink); font-weight:600; }
-.format-choice small { font-size:12px; line-height:1.5; }
+.format-choice { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:16px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:8px; color:var(--muted-ink); min-height:44px; }
+.format-choice strong { font-size:14px; color:var(--ink); font-weight:600; }
+.format-choice small { font-size:12px; line-height:1.45; }
 .format-choice[aria-pressed=true] { background:var(--selected); color:var(--ink); border-color:var(--link); box-shadow:inset 0 0 0 1px var(--link); }
 .format-selected { position:absolute; top:12px; right:12px; }
 .quick-format-shortcuts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
@@ -158,31 +158,38 @@
 .arena-match-detail .page-heading { padding-bottom:22px; border-bottom:1px solid var(--line); }
 .arena-match-detail .page-heading .arena-status { margin-top:16px; }
 .arena-match-detail .panel { background:var(--arena-surface); box-shadow:none; }
-.arena-match-detail .page-heading h1,.arena-match-detail .match-page-head h1 { font-size:clamp(30px,3vw,44px); }
-.match-victory { display:flex; align-items:center; gap:20px; padding:24px; border:1px solid color-mix(in srgb,var(--arena-gold) 40%,var(--line)); border-radius:12px; background:var(--surface); }
-.match-victory > svg { color:var(--arena-gold); flex:none; }
-.match-victory .eyebrow { font-size:12px; color:var(--arena-gold); margin-bottom:5px; }
-.match-victory h2 { font-size:27px; line-height:1.2; }
+.arena-match-detail .page-heading h1,.arena-match-detail .match-page-head h1 { font-family:var(--font-body),sans-serif; font-size:clamp(26px,3vw,36px); letter-spacing:-.025em; font-weight:650; }
+.arena-match-detail.is-playing .match-contender { padding:14px; }
+.arena-match-detail.is-playing .match-contender > .arena-avatar { margin-bottom:10px; }
+.arena-match-detail.is-playing .match-contender h2 { font-size:20px; }
+.match-victory { display:flex; align-items:center; gap:16px; padding:18px 20px; border:1px solid var(--line); border-left:3px solid var(--action); border-radius:12px; background:var(--surface); }
+.match-victory > svg { color:var(--action); flex:none; }
+.match-victory h2 { font:650 22px/1.25 var(--font-body),sans-serif; }
 .match-live-line { display:flex; align-items:center; gap:9px; font-size:12px; color:var(--muted-ink); }
 .match-live-line > svg { color:var(--success); }
 .quick-seat-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .quick-seat-card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; min-width:0; }
-.quick-seat-card.is-winner,.match-contender.is-winner { border-color:color-mix(in srgb,var(--arena-gold) 50%,var(--line)); background:var(--surface); }
-.quick-seat-card > .flex strong { font-size:13px; }
-.seat-commander { display:flex; align-items:center; gap:12px; margin:18px 0; }
+.quick-seat-card.is-winner,.match-contender.is-winner { border-color:color-mix(in srgb,var(--action) 45%,var(--line)); background:var(--surface); }
+.quick-seat-card > .flex strong { font-size:14px; }
+.seat-commander { display:flex; align-items:center; gap:12px; margin:14px 0 0; }
 .seat-commander > div { min-width:0; }
-.seat-commander strong { display:block; font-size:12px; margin-top:5px; overflow-wrap:anywhere; }
-.seat-commander .arena-caption { font-size:12px; letter-spacing:.06em; }
-.quick-seat-card .result-tag { font-size:12px; text-transform:uppercase; color:var(--arena-gold); }
-.quick-seat-card select { width:100%; max-width:100%; font-size:12px; }
+.seat-commander strong { display:block; font-size:13px; margin-top:4px; overflow-wrap:anywhere; }
+.seat-commander .arena-caption { font-size:11px; letter-spacing:.08em; color:var(--muted-ink); }
+.quick-seat-card .result-tag { font-size:12px; font-weight:600; color:var(--muted-ink); }
+.quick-seat-card .result-tag.is-win { color:var(--ink); }
+.quick-seat-card .result-tag.is-loss,.quick-seat-card .result-tag.is-draw { color:var(--muted-ink); font-weight:500; }
+.quick-seat-card select { width:100%; max-width:100%; font-size:14px; }
 .quick-seat-card p.subtle { font-size:12px; }
+@media(max-width:520px) { .quick-seat-grid { grid-template-columns:1fr; } }
 .match-detail-players { position:relative; }
 .match-detail-players:has(> :nth-child(2)):before { content:'VS'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; display:grid; place-items:center; width:32px; height:32px; background:var(--surface); border:1px solid var(--line); border-radius:50%; color:var(--muted-ink); font:12px var(--font-data),monospace; }
 .match-contender { padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:12px; }
 .match-contender > .arena-avatar { display:flex; margin-bottom:18px; }
 .match-contender h2 { font:650 28px var(--font-body),sans-serif; }
 .match-contender .subtle { font-size:12px; }
-.match-contender .recorded-outcome { color:var(--arena-gold); font-size:12px; }
+.match-contender .recorded-outcome { color:var(--muted-ink); font-size:13px; font-weight:600; }
+.match-contender.is-winner .recorded-outcome { color:var(--ink); }
+.match-contender.is-loss .recorded-outcome { color:var(--muted-ink); font-weight:500; }
 .arena-tournament-detail .tournament-live-head { padding:28px; border:1px solid var(--line); background:var(--arena-surface); border-top:2px solid var(--action); border-radius:12px; box-shadow:none; }
 .arena-tournament-detail .tournament-live-copy { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
 .arena-tournament-detail > .feature-panel { padding:20px 24px; display:grid; grid-template-columns:auto 1fr auto; gap:8px 20px; }

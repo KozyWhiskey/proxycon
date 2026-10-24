@@ -50,21 +50,40 @@ export function QuickMatchTable({
 
   const showGames = players.some((player) => (player.gamesWon || 0) > 0);
 
-  function deckLabel(deckId: string | null | undefined) {
-    if (!deckId) return null;
-    const deck = decks.find((row) => row.id === deckId);
-    if (!deck) return null;
-    return deck.commanders ? `${deck.name} · ${deck.commanders}` : deck.name;
-  }
+  const reporter = canReport ? (
+    <MatchReporter
+      matchId={matchId}
+      teams={teams}
+      returnTo={returnTo}
+      decks={deckIds}
+      players={players.filter((player) => player.profileId).map((player) => ({
+        id: player.profileId!,
+        name: player.name,
+        team: player.team,
+        result: player.result,
+        gamesWon: player.gamesWon,
+      }))}
+    />
+  ) : null;
 
   return (
     <div className="space-y-6 quick-table-detail">
+      {!finished && reporter && (
+        <div className="space-y-3">
+          <h2 className="text-xl">Report the result</h2>
+          {reporter}
+        </div>
+      )}
+
       <div className="quick-seat-grid">
         {players.map((player) => {
           const profileId = player.profileId;
           const mine = profileId ? decks.filter((deck) => deck.ownerId === profileId) : [];
-          const recorded = deckLabel(finished ? player.deckId : deckIds[profileId || ''] || player.deckId);
-          const deck = decks.find(d => d.id === (finished ? player.deckId : deckIds[profileId || ''] || player.deckId));
+          const selectedId = finished ? player.deckId : deckIds[profileId || ''] || player.deckId;
+          const deck = decks.find((row) => row.id === selectedId);
+          const hasDeck = Boolean(deck?.commanders || deck?.name);
+          const resultClass =
+            player.result === 'win' ? ' is-win' : player.result === 'loss' ? ' is-loss' : player.result === 'draw' ? ' is-draw' : '';
 
           return (
             <div key={player.id} className={`quick-seat-card${player.result === 'win' ? ' is-winner' : ''}`}>
@@ -75,57 +94,52 @@ export function QuickMatchTable({
                   {player.team ? <span className="subtle">Team {player.team}</span> : null}
                 </div>
                 {finished && (
-                  <span className="result-tag shrink-0">
-                    {player.result === 'win' ? 'Winner' : player.result === 'loss' ? 'Loss' : 'Draw'}
-                    {showGames ? ` (${player.gamesWon || 0})` : ''}
+                  <span className={`result-tag shrink-0${resultClass}`}>
+                    {player.result === 'win' ? 'Won' : player.result === 'loss' ? 'Lost' : 'Draw'}
+                    {showGames ? ` · ${player.gamesWon || 0}` : ''}
                   </span>
                 )}
               </div>
-              <div className="seat-commander"><DeckArt src={deck?.image} name={deck?.commanders || 'Deck'} /><div><span className="arena-caption">AT THE TABLE WITH</span><strong>{deck?.commanders || deck?.name || 'Deck not recorded'}</strong></div></div>
+
+              {hasDeck ? (
+                <div className="seat-commander">
+                  <DeckArt src={deck?.image} name={deck?.commanders || deck?.name || 'Deck'} />
+                  <div>
+                    <span className="arena-caption">Commander</span>
+                    <strong>{deck?.commanders || deck?.name}</strong>
+                  </div>
+                </div>
+              ) : finished ? (
+                <p className="subtle text-sm mt-3">No deck recorded</p>
+              ) : null}
 
               {canReport && profileId && !finished && (
                 <label className="grid gap-1 text-sm">
-                  <span className="subtle">Deck</span>
+                  <span className="subtle">Deck (optional)</span>
                   <select
                     className="h-11 rounded-md border border-border bg-card px-3"
                     value={deckIds[profileId] || ''}
                     onChange={(event) => setDeckIds((current) => ({ ...current, [profileId]: event.target.value }))}
                   >
                     <option value="">No deck yet</option>
-                    {mine.map((deck) => (
-                      <option key={deck.id} value={deck.id}>
-                        {deck.name}{deck.commanders ? ` · ${deck.commanders}` : ''}
+                    {mine.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name}{option.commanders ? ` · ${option.commanders}` : ''}
                       </option>
                     ))}
                   </select>
                 </label>
-              )}
-
-              {(finished || (!canReport && recorded)) && (
-                <p className="subtle text-sm">{recorded || 'No deck recorded'}</p>
               )}
             </div>
           );
         })}
       </div>
 
-      {canReport && (
-        <div className="space-y-3">
-          <h2 className="text-xl">{finished ? 'Replace the result' : 'Report the result'}</h2>
-          <MatchReporter
-            matchId={matchId}
-            teams={teams}
-            returnTo={returnTo}
-            decks={deckIds}
-            players={players.filter((player) => player.profileId).map((player) => ({
-              id: player.profileId!,
-              name: player.name,
-              team: player.team,
-              result: player.result,
-              gamesWon: player.gamesWon,
-            }))}
-          />
-        </div>
+      {finished && reporter && (
+        <details className="disclosure">
+          <summary>Correct this result</summary>
+          <div>{reporter}</div>
+        </details>
       )}
     </div>
   );
