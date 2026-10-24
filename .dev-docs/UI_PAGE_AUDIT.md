@@ -50,8 +50,8 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Start game / `/events/[id]/play` | Task | Pass recorded 24 Oct 2026 (format + players + Start hint). Team/THG and validation toast still open. |
 | Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pass recorded 23 Oct 2026 (compact task voice + Create above optionals). Validation/error and 320px/200% zoom still open. |
 | Statistics / `/events/[id]/stats` | Destination | Pass recorded 24 Oct 2026 (commander filter + empty-card trim). Light/laptop and empty-format still open. |
-| Event players / `/events/[id]/players` | Utility destination | Pending: joined/unjoined profiles and invite entry. |
-| Event tools / `/events/[id]/manage` | Task | Pending: membership, QR/code, copy feedback, corrections and permissions. |
+| Event players / `/events/[id]/players` | Utility destination | Pass recorded 24 Oct 2026 (trimmed intro). Light still open. |
+| Event tools / `/events/[id]/manage` | Task | Pass recorded 24 Oct 2026 (room demoted, quieter copy). Light still open. |
 | My decks / `/decks` | Destination anchor | Pending full pass: gallery, empty, inspector, new/edit, artwork choice and delete confirmation. |
 | Playgroup / `/players` | Destination | Pending: search, missing identity, long names and profile links. |
 | Player / `/players/[id]` | Destination | Pending: own/other player and missing/long deck names. |
@@ -182,4 +182,22 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - Change applied: event-only header note; win pluralization; player cards only when they have results in the selected format; empty streak/title copy; notebook omits empty setup tournaments; “Deck not recorded” instead of No commander in player detail.
 - Evidence: [phone dark](ux-screenshots/ember-stats-audit-phone-dark.png). Light/laptop pending.
 - Remaining gaps: empty Other games tab; table overflow at 320px; light theme.
-- Next page: Event players.
+- Next page: Event players (below).
+
+## Event players `/events/[id]/players` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/players`; Craig; roster of 8.
+- Keep: Fraunces “Players”; mana chips; manager invite link.
+- Change applied: dropped redundant intro; empty copy → “No one joined yet.”
+- Evidence: [phone dark](ux-screenshots/ember-players-audit-phone-dark.png).
+- Remaining gaps: light theme; chip vs row layout optional.
+- Next page: Event tools (below).
+
+## Event tools `/events/[id]/manage` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/manage` task; Craig can manage.
+- Keep: compact Manrope PageIntro; Add players; invite ShareCode; correct-result disclosures.
+- Change applied: room FeaturePanel → quiet utility-link; shorter page/add-players/roster copy; mana on roster; ShareCode label 12px; dropped optional-score tutorial line in MatchReporter.
+- Evidence: [phone dark](ux-screenshots/ember-manage-audit-phone-dark.png).
+- Remaining gaps: light; long correction list density; QR theming.
+- Next page: My decks.

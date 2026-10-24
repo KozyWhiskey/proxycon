@@ -14,7 +14,6 @@ export default async function EventPlayersPage({ params }: { params: Promise<{ i
         <div>
           <p className="eyebrow">{board.event.name}</p>
           <h1>Players</h1>
-          <p className="subtle">Who is in this event. Decks and results stay on each player.</p>
         </div>
       </header>
 
@@ -31,7 +30,7 @@ export default async function EventPlayersPage({ params }: { params: Promise<{ i
             </Link>
           ))}
         </div>
-        {!board.members.length && <p className="subtle">Add players to get the event started.</p>}
+        {!board.members.length && <p className="subtle">No one joined yet.</p>}
         {board.canManage && (
           <Link href={`/events/${id}/manage`} className="text-link inline-block mt-5">
             Add players & invite friends →
