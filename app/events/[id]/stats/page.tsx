@@ -54,7 +54,28 @@ export default async function EventStatsPage({ params }: { params: Promise<{ id:
     });
   });
 
-  return <EventStatistics event={board.event} members={board.members} games={games} places={places} tournaments={board.tournaments.map(t => ({ id: t.id, name: t.name, status: t.status }))} decks={board.decks} matchTournaments={Object.fromEntries(board.matches.filter(m => m.tournament_id).map(m => [m.id, m.tournament_id!]))} />;
+  const commanderArt = new Map<string, { commander_name: string | null; partner_name: string | null; image_url?: string | null }>();
+  for (const deck of board.decks) {
+    const key = commanderKey(deck.commander_name, deck.partner_name);
+    if (!key || key === 'No commander' || commanderArt.has(key)) continue;
+    commanderArt.set(key, {
+      commander_name: deck.commander_name,
+      partner_name: deck.partner_name,
+      image_url: deck.image_url,
+    });
+  }
+
+  return (
+    <EventStatistics
+      event={board.event}
+      members={board.members.map((member) => ({ id: member.id, name: member.name, color: member.color }))}
+      games={games}
+      places={places}
+      tournaments={board.tournaments.map((tournament) => ({ id: tournament.id, name: tournament.name, status: tournament.status }))}
+      decks={[...commanderArt.values()]}
+      matchTournaments={Object.fromEntries(board.matches.flatMap((match) => (match.tournament_id ? [[match.id, match.tournament_id]] : [])))}
+    />
+  );
 }
 
 

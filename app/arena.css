@@ -103,8 +103,9 @@
 .arena-tabs { display:flex; flex-wrap:wrap; padding:4px; gap:3px; background:var(--surface); border:1px solid var(--line); border-radius:12px; }
 .arena-tabs button { padding:8px 13px; border-radius:6px; color:var(--muted-ink); font-size:12px; font-weight:550; }
 .arena-tabs button[aria-pressed=true] { background:var(--selected); color:var(--link); box-shadow:none; }
-.arena-day-picker { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted-ink); }
-.arena-day-picker select { color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:8px 12px; font:12px var(--font-body),sans-serif; max-width:240px; }
+.arena-day-picker { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted-ink); min-width:0; }
+.arena-day-picker select { color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:8px 12px; font:12px var(--font-body),sans-serif; max-width:min(220px,100%); min-width:0; }
+.arena-headtohead .arena-day-picker select { max-width:min(180px,42vw); }
 .arena-stat-ticker { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:18px 0; border-block:1px solid var(--line); gap:20px; }
 .arena-stat-ticker > div { display:flex; align-items:center; gap:12px; border-right:1px solid var(--line); }
 .arena-stat-ticker > div:last-child { border-right:0; }

@@ -49,7 +49,7 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Quick-game result / `/events/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded Commander pod). Live report-first, team, and draw states still open. |
 | Start game / `/events/[id]/play` | Task | Pass recorded 24 Oct 2026 (format + players + Start hint). Team/THG and validation toast still open. |
 | Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pass recorded 23 Oct 2026 (compact task voice + Create above optionals). Validation/error and 320px/200% zoom still open. |
-| Statistics / `/events/[id]/stats` | Destination | Pass recorded 24 Oct 2026 (commander filter + empty-card trim). Light/laptop and empty-format still open. |
+| Statistics / `/events/[id]/stats` | Destination | Pass recorded 24 Oct 2026 (commander filter + empty-card trim). Light phone spot-check 24 Oct 2026 ([phone light](ux-screenshots/ember-stats-phone-light-spot.png)); client payload thinned to unique commander art. Empty-format still open. |
 | Event players / `/events/[id]/players` | Utility destination | Pass recorded 24 Oct 2026 (trimmed intro). Light still open. |
 | Event tools / `/events/[id]/manage` | Task | Pass recorded 24 Oct 2026 (room demoted, quieter copy). Invite QR uses `houseOrigin` / `PROXYCON_HOUSE_URL` (LAN verified 24 Oct 2026). Light still open. |
 | My decks / `/decks` | Destination anchor | Pass recorded 24 Oct 2026 (eyebrow/summary/empty trim). Empty/inspector/edit still open. |
@@ -58,7 +58,7 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Profile / `/profile` | Task | Pass recorded 24 Oct 2026 (compact task, duplicate heading removed). Save-error still open. |
 | Create event / `/events/new` | Task | Pass recorded 24 Oct 2026 (single intro). Validation still open. |
 | Pick a player / unbound `/` | Entry task | Pass recorded 24 Oct 2026 (Manrope title, shorter help). House-mode shot still open. |
-| Login / `/login` | Entry task | Pass recorded 24 Oct 2026 (shorter form help). Form-first phone reorder still open. |
+| Login / `/login` | Entry task | Pass recorded 24 Oct 2026 (shorter form help). Form-first phone via grid areas 24 Oct 2026 ([phone light](ux-screenshots/ember-login-phone-light.png)). |
 | Onboarding / `/onboarding` | Entry task | Pass recorded 24 Oct 2026 (task title + shorter help; code review). Live disposable session still open. |
 | Guest / `/guest`, `/guest/[token]` | Entry task | Pass recorded 24 Oct 2026 (`/guest`→`/`; claim copy trimmed). Invalid/claimed live shots still open. |
 | Invite / `/invite/[code]` | Entry task | Pass recorded 24 Oct 2026 (shorter CTA copy). Invalid/expired still open. |

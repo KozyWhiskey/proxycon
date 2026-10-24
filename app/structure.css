@@ -109,7 +109,9 @@ details.disclosure:not([open])::details-content { display:none; height:0; overfl
 .stats-highlight { padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
 .stats-highlight span { display:block; color:var(--muted-ink); font-size:12px; margin-bottom:12px; }
 .stats-highlight strong { font-family:var(--font-heading); font-size:25px; font-weight:500; }
-.login-page { min-height:100dvh; display:grid; grid-template-columns:1fr 1fr; }
+.login-page { min-height:100dvh; display:grid; grid-template-columns:1fr 1fr; grid-template-areas:"story form"; }
+.login-page .login-story { grid-area:story; }
+.login-page .login-form-area { grid-area:form; }
 .login-story { background:var(--ink); color:var(--surface); padding:60px; display:flex; flex-direction:column; justify-content:space-between; }
 .login-story h1 { font-size:clamp(48px,5vw,78px); max-width:550px; line-height:1.05; }
 .login-story p { color:var(--nav-ink); max-width:360px; line-height:1.8; font-size:14px; margin-top:25px; }
@@ -133,7 +135,7 @@ details.disclosure:not([open])::details-content { display:none; height:0; overfl
  .event-nav { padding:0 20px; gap:24px; min-height:55px; } .event-nav a { min-height:55px; font-size:12px; gap:6px; border:0; border-radius:8px; }
  .match-slip { grid-template-columns:98px 1fr; } .slip-table { padding:18px 14px; } .slip-table strong { font-size:20px; }
  .slip-opponent { padding:20px; } .slip-opponent h2 { font-size:24px; }
- .login-page { grid-template-columns:1fr; } .login-story { padding:30px 24px; gap:36px; } .login-story h1 { font-size:42px; } .login-story footer { display:none; } .login-story p { margin-top:16px; } .login-form-area { padding:30px 20px; }
+ .login-page { grid-template-columns:1fr; grid-template-areas:"form" "story"; } .login-story { padding:30px 24px; gap:36px; } .login-story h1 { font-size:42px; } .login-story footer { display:none; } .login-story p { margin-top:16px; } .login-form-area { padding:30px 20px; }
  .stats-highlights { gap:10px; } .stats-highlight { padding:16px; } .stats-highlight strong { font-size:22px; }
  td,th { padding:11px 7px; }
 }

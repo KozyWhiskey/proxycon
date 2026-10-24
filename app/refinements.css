@@ -99,9 +99,9 @@
  .arena-stats .arena-event-header h1 { font-size:32px; }
  .arena-tabs { display:grid; grid-template-columns:1fr 1fr; }
  .arena-tabs button { min-height:44px; font-size:14px; }
- .arena-login { display:flex; flex-direction:column; min-height:100dvh; }
- .arena-login .login-form-area { order:0; padding:24px 16px; }
- .arena-login .login-story { order:1; min-height:0; padding:24px; }
+ .arena-login { min-height:100dvh; }
+ .arena-login .login-form-area { padding:24px 16px; }
+ .arena-login .login-story { min-height:0; padding:24px; }
  .arena-login .login-story h1 { font-size:32px; }
  .arena-login .login-story .brand { display:none; }
  .arena-login .login-story p { font-size:14px; }
