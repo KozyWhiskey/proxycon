@@ -51,7 +51,7 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pass recorded 23 Oct 2026 (compact task voice + Create above optionals). Validation/error and 320px/200% zoom still open. |
 | Statistics / `/events/[id]/stats` | Destination | Pass recorded 24 Oct 2026 (commander filter + empty-card trim). Light/laptop and empty-format still open. |
 | Event players / `/events/[id]/players` | Utility destination | Pass recorded 24 Oct 2026 (trimmed intro). Light still open. |
-| Event tools / `/events/[id]/manage` | Task | Pass recorded 24 Oct 2026 (room demoted, quieter copy). Light still open. |
+| Event tools / `/events/[id]/manage` | Task | Pass recorded 24 Oct 2026 (room demoted, quieter copy). Invite QR uses `houseOrigin` / `PROXYCON_HOUSE_URL` (LAN verified 24 Oct 2026). Light still open. |
 | My decks / `/decks` | Destination anchor | Pass recorded 24 Oct 2026 (eyebrow/summary/empty trim). Empty/inspector/edit still open. |
 | Playgroup / `/players` | Destination | Pass recorded 24 Oct 2026 (mana divider, denser cards). Light still open. |
 | Player / `/players/[id]` | Destination | Pass recorded 24 Oct 2026 (FeaturePanel demoted). Other-player empty decks still open. |

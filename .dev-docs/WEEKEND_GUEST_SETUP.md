@@ -31,7 +31,7 @@ The live project's public auth settings reported **anonymous sign-in disabled** 
 2. Inspect existing auth user/profile-creation triggers. Anonymous auth users have no email. The app supplies a generated username and the selected display name during signup, but any custom trigger must also handle a null email and default to role user.
 3. Review and apply `scripts/sql/weekend_guest_accounts.sql` in the Supabase SQL Editor as the database administrator.
 4. Enable **Anonymous Sign-Ins** in Supabase Auth. Reference: https://supabase.com/docs/guides/auth/auth-anonymous
-5. Deploy the app with the existing Supabase URL and public key. For house-network hosting, configure `PROXYCON_HOUSE_URL` with the reachable address and port so phones can open the QR link. No service-role key is required or sent to the browser.
+5. Deploy the app with the existing Supabase URL and public key. Set `PROXYCON_HOUSE_URL` to the address phones should open (production site or house LAN URL with port). Invite QR codes and copy links prefer that origin over localhost or preview hosts. If it is unset on Vercel, the app falls back to `NEXT_PUBLIC_SITE_URL` / the production Vercel URL, and never invents a serverless LAN address. No service-role key is required or sent to the browser.
 6. As the permanent admin, create a test guest list. From a separate phone/browser, claim a test spot, reload, join a game, save a deck, and verify that another phone cannot take that spot.
 7. Confirm Craig and Miko each still see their four existing decks and Test Player still sees Harold. Confirm a signed-in player can read another profile and deck list but cannot edit those rows.
 
