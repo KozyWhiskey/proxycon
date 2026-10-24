@@ -49,7 +49,7 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Quick-game result / `/events/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded Commander pod). Live report-first, team, and draw states still open. |
 | Start game / `/events/[id]/play` | Task | Pass recorded 24 Oct 2026 (format + players + Start hint). Team/THG and validation toast still open. |
 | Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pass recorded 23 Oct 2026 (compact task voice + Create above optionals). Validation/error and 320px/200% zoom still open. |
-| Statistics / `/events/[id]/stats` | Destination | Pending: category/day filters, no results, names/art and table overflow. |
+| Statistics / `/events/[id]/stats` | Destination | Pass recorded 24 Oct 2026 (commander filter + empty-card trim). Light/laptop and empty-format still open. |
 | Event players / `/events/[id]/players` | Utility destination | Pending: joined/unjoined profiles and invite entry. |
 | Event tools / `/events/[id]/manage` | Task | Pending: membership, QR/code, copy feedback, corrections and permissions. |
 | My decks / `/decks` | Destination anchor | Pending full pass: gallery, empty, inspector, new/edit, artwork choice and delete confirmation. |
@@ -173,4 +173,13 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - Light phone / Dark phone: [phone light](ux-screenshots/ember-start-game-audit-phone-light.png), [phone dark](ux-screenshots/ember-start-game-audit-phone-dark.png). Laptop pending.
 - Interactions: no game created.
 - Remaining gaps: Two-Headed Giant teams; Save result path; laptop/light full; 320px zoom.
-- Next page: Statistics.
+- Next page: Statistics (below).
+
+## Statistics `/events/[id]/stats` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/stats` destination; Craig; Commander · Whole weekend.
+- Keep: Fraunces destination heading; format tabs; day filter; ranking with wins/played; streaks; head-to-head; tournament notebook.
+- Change applied: event-only header note; win pluralization; player cards only when they have results in the selected format; empty streak/title copy; notebook omits empty setup tournaments; “Deck not recorded” instead of No commander in player detail.
+- Evidence: [phone dark](ux-screenshots/ember-stats-audit-phone-dark.png). Light/laptop pending.
+- Remaining gaps: empty Other games tab; table overflow at 320px; light theme.
+- Next page: Event players.
