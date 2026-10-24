@@ -113,7 +113,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="page collection-page events-collection">
+    <main className={`page collection-page events-collection${slips.length ? ' has-live-matches' : ''}`}>
       <PageIntro
         eyebrow="PROXYCON / THE PLAYGROUP"
         title={introTitle}
@@ -121,8 +121,8 @@ export default async function HomePage() {
         actions={createEvent && (!slips.length || createIsPrimary) ? createEvent : undefined}
       />
       {slips.length > 0 && <section className="personal-games" aria-label="Your live matches">{slips.map(slip => <LiveSlip key={slip.id} href={slip.href} kicker={slip.kicker} title={slip.title} detail={slip.detail} actionLabel={slip.actionLabel} />)}</section>}
-      {slips.length > 0 && createEvent && <div className="action-row">{createEvent}</div>}
-      <section>
+      {slips.length > 0 && createEvent && <div className="action-row events-live-secondary">{createEvent}</div>}
+      <section className="events-discovery">
         <div className="arena-section-title"><h2><CalendarDays size={18} />Your events</h2></div>
         <div className="event-grid">{eventList.map(event => {
           const mine = joined.has(event.id);

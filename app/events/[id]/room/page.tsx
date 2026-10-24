@@ -16,6 +16,7 @@ import {
 } from '@/app/weekend/actions';
 import { ActButton } from '@/components/weekend/act-button';
 import { FinishForm } from '@/components/weekend/finish-form';
+import { LiveSlip } from '@/components/weekend/live-slip';
 import { MatchReporter } from '@/components/weekend/match-reporter';
 import { RoundClock } from '@/components/weekend/round-clock';
 import { SeatRandomizer } from '@/components/weekend/seat-randomizer';
@@ -130,9 +131,35 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
     <ActButton label={round.round ? 'Post next round' : 'Post pairings'} action={postPairings.bind(null, row.id)} />
   ) : null;
 
+  const personalMatches = board.userId && !board.house
+    ? [...(finalWaiting && finalMatch ? [finalMatch] : []), ...round.matches].filter((match) =>
+        matchPlayers(board, match.id).some((seat) => seat.profile_id === board.userId && !seat.result)
+      )
+    : [];
+  const mineStanding = board.userId ? standings.find((player) => player.profileId === board.userId) : null;
+
   return (
     <>
-      <section className={`room-stage${round.round ? ' has-round' : ' is-setup'}`}>
+      {personalMatches.length > 0 && (
+        <section className="personal-games room-personal" aria-label="Your games">
+          {personalMatches.map((match) => {
+            const opponents = matchPlayers(board, match.id).filter((seat) => seat.profile_id !== board.userId);
+            const table = match.table_label || (match.is_final ? 'Final' : match.table_number ? `Table ${match.table_number}` : 'Bye');
+            return (
+              <LiveSlip
+                key={match.id}
+                href={`/tournament/${row.id}/match/${match.id}`}
+                kicker={opponents.length ? table : 'Bye'}
+                title={opponents.length ? opponents.map((seat) => seat.name).join(' / ') : 'You have the bye'}
+                detail={`Round ${match.round_number || round.round} · ${match.started_at ? 'In progress' : 'Pairings posted'}`}
+                record={mineStanding ? `${mineStanding.points} points · ${mineStanding.wins}–${mineStanding.losses}–${mineStanding.draws}` : undefined}
+                actionLabel={match.started_at ? 'Report result' : 'View match'}
+              />
+            );
+          })}
+        </section>
+      )}
+      <section className={`room-stage${round.round ? ' has-round' : ' is-setup'}${personalMatches.length ? ' has-personal' : ''}`}>
           <header className="room-mast">
             <div className="room-mast-copy">
               <div className="room-round-heading">
@@ -229,7 +256,11 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
           {(round.matches.length > 0 || finalMatch) && (
             <MatchPages key={`${row.id}-${round.round}`}>
               {finalWaiting && finalMatch && <TableCard board={board} match={finalMatch} posted={false} final />}
-              {[...round.matches].sort((a, b) => Number(Boolean(a.completed_at)) - Number(Boolean(b.completed_at)) || (a.table_number || 0) - (b.table_number || 0)).map((match) => <TableCard key={match.id} board={board} match={match} posted={posted} />)}
+              {[...round.matches].sort((a, b) => {
+                const aMine = board.userId ? Number(matchPlayers(board, a.id).some((seat) => seat.profile_id === board.userId && !seat.result)) : 0;
+                const bMine = board.userId ? Number(matchPlayers(board, b.id).some((seat) => seat.profile_id === board.userId && !seat.result)) : 0;
+                return bMine - aMine || Number(Boolean(a.completed_at)) - Number(Boolean(b.completed_at)) || (a.table_number || 0) - (b.table_number || 0);
+              }).map((match) => <TableCard key={match.id} board={board} match={match} posted={posted} />)}
               {finalMatch && !finalWaiting && <TableCard board={board} match={finalMatch} posted={false} final />}
             </MatchPages>
           )}
@@ -383,12 +414,13 @@ function TableCard({
   const bye = players.length === 1;
   const reported = players.length > 0 && players.every((player) => player.result);
   const open = Boolean(match.started_at) && !bye && players.some((player) => !player.result);
+  const yours = Boolean(board.userId && !board.house && players.some((player) => player.profile_id === board.userId && !player.result));
   const canReport = board.canManage && players.length >= 2 && (final || Boolean(match.started_at));
   const label = match.table_label || (final ? 'Final' : `Table ${match.table_number}`);
   const showGames = !bye && players.some((seat) => (seat.games_won || 0) > 0);
 
   return (
-    <article className={`room-table${open ? ' is-open' : ''}${reported ? ' is-settled' : ''}${bye ? ' is-bye' : ''}`}>
+    <article className={`room-table${open ? ' is-open' : ''}${reported ? ' is-settled' : ''}${bye ? ' is-bye' : ''}${yours ? ' is-yours' : ''}`}>
       <div className="room-table-top">
         <h3>{label}</h3>
         <div className="room-table-flags">

@@ -38,18 +38,41 @@
   .task-page > .panel { padding:18px; }
   .collection-footer-links { grid-template-columns:1fr; gap:16px; }
   .collection-footer-links .utility-link { margin-top:0; }
-  .arena-hub.has-personal-games { gap:18px; padding-top:18px; }
-  .arena-hub.has-personal-games .arena-event-header { padding-bottom:16px; gap:12px; }
-  .arena-hub.has-personal-games .arena-event-header h1 { font-size:28px; }
-  .arena-hub.has-personal-games .arena-event-meta { margin-top:10px; font-size:12px; }
-  .arena-hub.has-personal-games .arena-event-header .eyebrow { font-size:12px; margin-bottom:8px; }
+  /* Returning-player phone: identity → live slip → discovery */
+  .events-collection.has-live-matches { gap:16px; }
+  .events-collection.has-live-matches .collection-heading { padding-bottom:12px; gap:10px; }
+  .events-collection.has-live-matches .collection-heading h1 { font-size:28px; line-height:1.12; }
+  .events-collection.has-live-matches .collection-heading .eyebrow { margin-bottom:6px; }
+  .events-collection.has-live-matches .collection-heading .subtle { margin-top:8px; font-size:13px; line-height:1.45; }
+  .events-collection.has-live-matches .mana-divider { margin-bottom:8px; }
+  .events-collection.has-live-matches .events-live-secondary { order:3; }
+  .events-collection.has-live-matches .events-discovery { order:2; }
+  .events-collection.has-live-matches .personal-games { order:1; }
+  .events-collection.has-live-matches .collection-heading { order:0; }
+  .events-collection.has-live-matches .collection-footer-links { order:4; }
+  .events-collection.has-live-matches { display:flex; flex-direction:column; }
+  .arena-hub.has-personal-games { display:flex; flex-direction:column; gap:16px; padding-top:14px; }
+  .arena-hub.has-personal-games .arena-event-header { order:0; padding-bottom:10px; gap:8px; }
+  .arena-hub.has-personal-games .personal-games { order:1; }
+  .arena-hub.has-personal-games .weekend-record-strip { order:2; }
+  .arena-hub.has-personal-games .arena-hub-grid { order:3; }
+  .arena-hub.has-personal-games .hub-quick-actions { order:4; }
+  .arena-hub.has-personal-games .arena-event-header h1 { font-size:26px; }
+  .arena-hub.has-personal-games .arena-event-meta { display:none; }
+  .arena-hub.has-personal-games .arena-event-header .eyebrow { font-size:12px; margin-bottom:6px; }
+  .arena-hub.has-personal-games .mana-divider { margin-bottom:6px; }
+  .arena-room:has(.room-personal) { gap:16px; }
+  .arena-room:has(.room-personal) .room-top { gap:8px; }
+  .arena-room:has(.room-personal) .room-top h1 { font-size:22px; }
+  .arena-room:has(.room-personal) .room-top-actions { display:none; }
+  .arena-room:has(.room-personal) .room-top .subtle { margin-top:4px; }
   .weekend-record-strip { padding:14px 16px; gap:10px 20px; }
   .weekend-record-strip > div { flex:1; flex-direction:column; gap:6px; }
   .weekend-record-strip > a { margin-left:0; min-height:32px; }
   .weekend-record-strip small { flex-basis:auto; margin-left:auto; max-width:130px; text-align:right; line-height:1.5; }
   .hub-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .arena-hub .hub-quick-actions a { padding:10px 8px; font-size:13px; min-height:48px; }
-  .arena-hub .match-slip,.events-collection .match-slip { grid-template-columns:104px minmax(0,1fr); }
+  .arena-hub .match-slip,.events-collection .match-slip,.arena-room .match-slip { grid-template-columns:104px minmax(0,1fr); }
   .match-slip .slip-table strong { font-size:18px; letter-spacing:-.045em; }
   .match-slip .slip-opponent .slip-action { display:flex; width:100%; min-height:44px; background:var(--action); color:var(--action-ink); border:1px solid var(--action); border-radius:8px; }
 }
