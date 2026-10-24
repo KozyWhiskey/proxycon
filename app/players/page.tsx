@@ -12,6 +12,11 @@ export default async function PlayersPage() {
     db.from('decks').select('owner_id'),
   ]);
   if (error || deckError) throw new Error('Could not load the playgroup. Try again.');
+  const deckCounts = new Map<string, number>();
+  for (const deck of decks || []) {
+    if (!deck.owner_id) continue;
+    deckCounts.set(deck.owner_id, (deckCounts.get(deck.owner_id) || 0) + 1);
+  }
   return (
     <main className="page">
       <header className="page-heading">
@@ -29,7 +34,7 @@ export default async function PlayersPage() {
           username: player.username,
           avatar: player.avatar_url,
           color: player.color,
-          deckCount: (decks || []).filter((deck) => deck.owner_id === player.id).length,
+          deckCount: deckCounts.get(player.id) || 0,
         }))}
       />
       <section className="panel">

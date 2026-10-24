@@ -17,10 +17,34 @@ export const loadEventBoard = cache(async (eventId: string) => {
     .maybeSingle();
   if (!event) return null;
 
-  const { data: memberRows } = await supabase
-    .from('event_members')
-    .select('profile_id, role, profile:profiles(id, display_name, username, color)')
-    .eq('event_id', eventId);
+  const [
+    { data: memberRows },
+    { data: tournaments },
+    { data: matches },
+    { data: prizes },
+  ] = await Promise.all([
+    supabase
+      .from('event_members')
+      .select('profile_id, role, profile:profiles(id, display_name, username, color)')
+      .eq('event_id', eventId),
+    supabase
+      .from('tournaments')
+      .select('id, name, format, status, max_rounds, prizes_enabled, pod_count, field_locked, starts_on, product_note, brought_by, invite_code, prize_1st, prize_2nd, prize_3rd, round_duration_minutes, clock_round, clock_anchor, clock_paused_at, clock_remaining_seconds')
+      .eq('event_id', eventId)
+      .or('is_archived.eq.false,is_archived.is.null')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('matches')
+      .select('id, tournament_id, round_number, table_number, table_label, game_type, format_label, started_at, completed_at, played_on, is_final, is_rematch, created_at')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('event_prizes')
+      .select('id, name, note, awarded_to, tournament_id, place')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: true }),
+  ]);
+
   const members = (memberRows || []).map((row) => {
     const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
     return {
@@ -31,48 +55,34 @@ export const loadEventBoard = cache(async (eventId: string) => {
     };
   }).filter((member) => member.id);
 
-  const { data: tournaments } = await supabase
-    .from('tournaments')
-    .select('id, name, format, status, max_rounds, prizes_enabled, pod_count, field_locked, starts_on, product_note, brought_by, invite_code, prize_1st, prize_2nd, prize_3rd, round_duration_minutes, clock_round, clock_anchor, clock_paused_at, clock_remaining_seconds')
-    .eq('event_id', eventId)
-    .or('is_archived.eq.false,is_archived.is.null')
-    .order('created_at', { ascending: false });
-
   const tournamentIds = (tournaments || []).map((tournament) => tournament.id);
-  const { data: roster } = tournamentIds.length
-    ? await supabase
-      .from('tournament_participants')
-      .select('id, tournament_id, profile_id, draft_seat, pod, dropped, place')
-      .in('tournament_id', tournamentIds)
-    : { data: [] as RosterRow[] };
-
-  const { data: matches } = await supabase
-    .from('matches')
-    .select('id, tournament_id, round_number, table_number, table_label, game_type, format_label, started_at, completed_at, played_on, is_final, is_rematch, created_at')
-    .eq('event_id', eventId)
-    .order('created_at', { ascending: false });
-
   const matchIds = (matches || []).map((match) => match.id);
-  const { data: seats } = matchIds.length
-    ? await supabase
-      .from('match_participants')
-      .select('id, match_id, profile_id, participant_id, result, games_won, deck_id, team, seat_number, finish_order')
-      .in('match_id', matchIds)
-    : { data: [] as SeatRow[] };
-
-  const { data: prizes } = await supabase
-    .from('event_prizes')
-    .select('id, name, note, awarded_to, tournament_id, place')
-    .eq('event_id', eventId)
-    .order('created_at', { ascending: true });
-
   const profileIds = [...new Set(members.map((member) => member.id))];
-  const { data: decks } = profileIds.length
-    ? await supabase
-      .from('decks')
-      .select('id, owner_id, name, commander_name, partner_name, image_url')
-      .in('owner_id', profileIds)
-    : { data: [] as DeckRow[] };
+
+  const [
+    { data: roster },
+    { data: seats },
+    { data: decks },
+  ] = await Promise.all([
+    tournamentIds.length
+      ? supabase
+        .from('tournament_participants')
+        .select('id, tournament_id, profile_id, draft_seat, pod, dropped, place')
+        .in('tournament_id', tournamentIds)
+      : Promise.resolve({ data: [] as RosterRow[] }),
+    matchIds.length
+      ? supabase
+        .from('match_participants')
+        .select('id, match_id, profile_id, participant_id, result, games_won, deck_id, team, seat_number, finish_order')
+        .in('match_id', matchIds)
+      : Promise.resolve({ data: [] as SeatRow[] }),
+    profileIds.length
+      ? supabase
+        .from('decks')
+        .select('id, owner_id, name, commander_name, partner_name, image_url')
+        .in('owner_id', profileIds)
+      : Promise.resolve({ data: [] as DeckRow[] }),
+  ]);
 
   const names = new Map(members.map((member) => [member.id, member.name]));
   for (const seat of seats || []) {

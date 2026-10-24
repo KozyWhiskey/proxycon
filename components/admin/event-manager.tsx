@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getEvents, updateEvent } from '@/app/admin/actions';
+import { useState } from 'react';
+import { updateEvent } from '@/app/admin/actions';
 import { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,39 +11,27 @@ import { Loader2, ExternalLink, Power } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-export default function EventManager() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+type ManagedEvent = Pick<Event, 'id' | 'name' | 'slug' | 'is_active' | 'start_date'>;
+
+export default function EventManager({ initialEvents }: { initialEvents: ManagedEvent[] }) {
+  const [events, setEvents] = useState(initialEvents);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadEvents();
-  }, []);
-
-  async function loadEvents() {
-    setIsLoading(true);
-    const result = await getEvents();
-    if (result.success && result.data) {
-      setEvents(result.data);
-    }
-    setIsLoading(false);
-  }
 
   async function handleToggleActive(eventId: string, currentStatus: boolean) {
     setIsUpdating(eventId);
     const result = await updateEvent(eventId, { is_active: !currentStatus });
-    
+
     if (result.success) {
       toast.success(currentStatus ? 'Event archived' : 'Event activated');
-      await loadEvents();
+      setEvents((current) =>
+        current.map((event) =>
+          event.id === eventId ? { ...event, is_active: !currentStatus } : event,
+        ),
+      );
     } else {
       toast.error(result.message);
     }
     setIsUpdating(null);
-  }
-
-  if (isLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
 
   return (
@@ -78,22 +66,20 @@ export default function EventManager() {
                   {event.start_date ? new Date(event.start_date).toLocaleDateString() : 'TBD'}
                 </TableCell>
                 <TableCell className="text-right flex justify-end gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    asChild
-                  >
+                  <Button variant="ghost" size="sm" asChild>
                     <Link href={`/events/${event.id}`}>
                       <ExternalLink className="w-4 h-4" />
                     </Link>
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     disabled={isUpdating === event.id}
                     onClick={() => handleToggleActive(event.id, event.is_active)}
                   >
-                    {isUpdating === event.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                    {isUpdating === event.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
                       <Power className={`w-4 h-4 ${event.is_active ? 'text-red-500' : 'text-green-500'}`} />
                     )}
                   </Button>

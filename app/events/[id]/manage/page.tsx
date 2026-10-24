@@ -89,7 +89,7 @@ export default async function ManageEventPage({ params }: { params: Promise<{ id
                     <div>
                       <MatchReporter
                         matchId={m.id}
-                        showGamesWon={Boolean(m.tournament_id)}
+                        tournament={Boolean(m.tournament_id)}
                         players={players
                           .filter((p) => p.profile_id)
                           .map((p) => ({

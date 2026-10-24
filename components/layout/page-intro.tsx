@@ -5,12 +5,26 @@ import { ManaDivider } from '@/components/ui/mana-identity';
 
 const icons: Record<string, LucideIcon> = { calendar: CalendarDays, decks: Layers, room: Monitor, game: Swords, players: Users, profile: UserRound };
 
-export function PageIntro({ eyebrow, title, description, actions, children, compact = false }: { eyebrow: string; title: ReactNode; description?: string; actions?: ReactNode; children?: ReactNode; compact?: boolean }) {
+export function PageIntro({
+  eyebrow,
+  title,
+  description,
+  actions,
+  children,
+  compact = false,
+}: {
+  eyebrow?: string;
+  title: ReactNode;
+  description?: string;
+  actions?: ReactNode;
+  children?: ReactNode;
+  compact?: boolean;
+}) {
   return (
     <header className={`collection-heading${compact ? ' is-compact' : ''}`}>
       <div>
         {!compact && <ManaDivider />}
-        <p className="eyebrow">{eyebrow}</p>
+        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1>{title}</h1>
         {description && <p className="subtle">{description}</p>}
         {children}
