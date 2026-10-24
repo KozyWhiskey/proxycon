@@ -1,6 +1,8 @@
 # UI implementation verification
 
-23 October 2026, updated after owner review of typography and tournament score entry. Implementation of [the approved UI design system](UI_DESIGN_SYSTEM.md). Product behavior remains governed by PROJECT_SUMMARY.md.
+23 October 2026 baseline for implementing [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md), updated after owner review of typography and tournament score entry. Product behavior remains governed by [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md).
+
+**Ongoing consistency work** (24 October 2026 Ember Folio page audit and later) is tracked in [UI_PAGE_AUDIT.md](UI_PAGE_AUDIT.md). Prefer that tracker for remaining gaps; this file is the rollout verification snapshot.
 
 ## Applied system
 

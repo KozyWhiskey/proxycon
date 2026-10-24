@@ -1,6 +1,6 @@
 # UX implementation plan
 
-> Historical implementation record. For new UI work, follow [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md) and [UI_SCREEN_GUIDELINES.md](UI_SCREEN_GUIDELINES.md). The 23 October 2026 approved design supersedes earlier visual proposals. Saving the new specification does not mean it has been applied to the running app.
+> **Historical record only (22–23 October 2026).** Ember Folio is implemented in the running app. For new work use [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md), [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md), [UI_SCREEN_GUIDELINES.md](UI_SCREEN_GUIDELINES.md), and the live tracker [UI_PAGE_AUDIT.md](UI_PAGE_AUDIT.md). Do not treat delivery stages or acceptance criteria below as an open backlog without verifying current behavior—especially tournament score rules (required +/− counters, not optional scores).
 
 Based on UX_DESIGN_REVIEW.md and PROJECT_SUMMARY.md. Started 22 October 2026.
 

@@ -1,6 +1,6 @@
 # One-page UI consistency review
 
-23 October 2026. Use [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md) for the visual rules and [UI_SCREEN_GUIDELINES.md](UI_SCREEN_GUIDELINES.md) for page priorities. Product behavior remains in PROJECT_SUMMARY.md.
+Started 23 October 2026; Ember Folio route passes recorded through 24 October 2026. Use [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md) for visual rules, [UI_SCREEN_GUIDELINES.md](UI_SCREEN_GUIDELINES.md) for page targets, and [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) for product behavior. This file is the living pass tracker—not a second design system.
 
 ## How to work through the app
 

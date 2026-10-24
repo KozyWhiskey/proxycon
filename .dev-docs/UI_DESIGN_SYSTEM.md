@@ -1,10 +1,10 @@
 # ProxyCon UI design system
 
-**Version 1.1 · approved direction with owner-requested depth refinement · 23 October 2026**
+**Version 1.2 · approved direction with owner-requested depth refinement · updated 24 October 2026**
 
-This is the source of truth for ProxyCon's visual design. The owner selected **Ember Folio**, **Quiet Frame**, the **five-mana divider**, and **simple neutral navigation** through visual review. These decisions supersede the earlier palette, typography, decorative-frame and navigation proposals in UX_DESIGN_REVIEW.md, old mockups, and the current application where it differs.
+This is the source of truth for ProxyCon's visual design. The owner selected **Ember Folio**, **Quiet Frame**, the **five-mana divider**, and **simple neutral navigation** through visual review. These decisions supersede earlier palette, typography, decorative-frame and navigation proposals in [UX_DESIGN_REVIEW.md](UX_DESIGN_REVIEW.md), [UX_IMPLEMENTATION_PLAN.md](UX_IMPLEMENTATION_PLAN.md), and exploratory mockups.
 
-This document specifies the approved target. The shared system has been implemented; see [implementation verification](UI_IMPLEMENTATION_VERIFICATION.md) for tested coverage and remaining limits. PROJECT_SUMMARY.md remains authoritative for behavior, permissions, data and product scope. A visual example never authorizes a new feature or a change to tournament rules.
+The shared system is implemented in the running app. See [implementation verification](UI_IMPLEMENTATION_VERIFICATION.md) for the baseline rollout checks, and [UI_PAGE_AUDIT.md](UI_PAGE_AUDIT.md) for ongoing one-page consistency status. [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) remains authoritative for behavior, permissions, data and product scope. A visual example never authorizes a new feature or a change to tournament rules.
 
 ## Reference package
 
@@ -201,6 +201,7 @@ Use approximately 120–180ms for hover/focus feedback and 180–240ms for a mea
 | Rejected navigation | Half arch / Commander Arch, underline, decorative diamond; room rail is not the default |
 | Generic sample | Replace “Character Boundaries” with an actual mana-signature example and usage rules |
 | Themes | Equal light/dark support; System preference also supported |
-| Delivery scope | Saved design specification and reference examples; no runtime styling changes |
+| Runtime | Ember Folio tokens and shared components are live in the app (23 Oct 2026); page-level consistency continues via UI_PAGE_AUDIT |
+| Superseded | Green/brass exploration, half-arch navigation, optional tournament score disclosure, winner-choice tournament save |
 
 Further refinement stays within this direction unless the owner explicitly changes it.

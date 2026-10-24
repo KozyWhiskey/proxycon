@@ -1,12 +1,14 @@
 # ProxyCon product spec
 
-Product end state, updated 21 October 2026. This file is the product.
+Product end state, updated 24 October 2026. This file is the product.
 
-Account scope update: preserve existing accounts, profiles, and decks. A player profile does not require a login. A phone picks a name from the home screen.
+Preserve existing accounts, profiles, and decks. A player profile does not require a login. A phone picks a name from the home screen.
 
 The app is a quality-of-life tool for one friend group. It shows what is being played, what each person is playing, who they sit down against next, and the stats for that event.
 
-The code still contains older surfaces (guilds, a personal trophy feed, badges, a global directory). Do not extend those. Change the product toward this spec.
+The code still contains older surfaces (guilds, a personal trophy feed, badges, a global directory, and a legacy tournament dashboard route). Do not extend those. Change the product toward this spec. The working tournament surface is the **Room**, not the legacy dashboard.
+
+Visual design follows [UI_DESIGN_SYSTEM.md](UI_DESIGN_SYSTEM.md). Do not invent product behavior from mockups or screenshots.
 
 ## What it is
 
@@ -19,15 +21,15 @@ Inside an event, quick matches and tournaments run at the same time. There is no
 ## Accounts and home
 
 - One claimed profile per person. A profile can exist before anyone signs in, and it keeps that person's decks, seats, and results.
-- The home screen is the playgroup list. A phone picks a name, or adds a name that is not there, and that browser stays on that player until they switch. No email, password, or Google account is required for that.
+- **Unbound browser:** the first screen is the playgroup name list. A phone picks a name, or adds a name that is not there, and that browser stays on that player until they switch. No email, password, or Google account is required for that.
+- **Bound browser:** after a name is chosen (or an existing account is signed in), the app opens on the list of events. Anyone with a session can read and join any event without invitation or approval. Joining is what puts them into that event's games.
 - Google and email sign-in remain for existing accounts and for the permanent admin. A picked name never becomes an administrator.
 - The house laptop can open the room without becoming a player. Results are still stored on the players in the game.
 - A signed-in playgroup directory shows player profiles and their decks. A player can read another profile, but only edit their own profile and decks. This is not a public directory or an all-time ranking.
 - Each person sets a play name once. The Google name is only the suggestion. Changing the play name later updates every event already played. If they never set one, the Google name is kept.
 - Each person can set a color: white, blue, black, red, green, or a two-color guild. The seat chart and the room use it.
 - Event members and permanent admins can add existing player profiles to an event without that person signing in or joining themselves. Event members can add any event player to a tournament until Start round 1. Existing accounts and deck ownership stay unchanged. A player with no phone can still hold a seat.
-- The app opens on a list of every event. Anyone logged in can read and join any event, without an invitation or approval. Joining is what puts them into that event's games.
-- An invite link and a short code still work. The link must be an address the house can open.
+- An invite link and a short code still work. The link must be an address the house can open (`PROXYCON_HOUSE_URL` on hosted deploys).
 - There is no arrival check-in. A quick match is started by picking names from people who joined the event.
 - There is no push notification. Opening the app shows a live opponent and table first.
 - The event page shows your record for this event and the recent games.
@@ -58,7 +60,7 @@ A tournament is a set draft, a chaos draft, a cube, or a sealed. Commander, Two-
 - The round count is chosen in setup. Six to eight players suggests three rounds. Nine to sixteen suggests four. It can be changed until Start round 1, then it stays fixed.
 - People join the tournament before they have a seat. A draft or cube uses numbered seats. Sealed does not.
 - The seating screen draws those seats clockwise. The low numbers sit across the top from left to right, and the rest continue around the bottom. Tapping a seat assigns any player who joined.
-- Each player claims a seat, or anyone hits Randomize. Randomize asks: fill empty seats, or reshuffle everyone who joined. Fill empty keeps existing claims, seats the unseated players, and adds seats if needed. Reshuffle gives every joined player a new seat and drops extra empty seats. The first claim on a seat keeps it. The dashboard can move someone. A seat can be added.
+- Each player claims a seat, or anyone hits Randomize. Randomize asks: fill empty seats, or reshuffle everyone who joined. Fill empty keeps existing claims, seats the unseated players, and adds seats if needed. Reshuffle gives every joined player a new seat and drops extra empty seats. The first claim on a seat keeps it. Anyone operating the room or tournament setup can move someone. A seat can be added.
 - A large draft can be two pods with one leaderboard. Setup shows the split. Round 1 stays inside the pod. Later rounds may cross.
 - Who is bringing the packs or the cube is optional: a person on the event, and a short note.
 - Setup can name a 1st, 2nd, and 3rd prize in freeform text. Blank lines mean that place has no prize. A tournament without prize text still has standings, places, and the same Finish flow.
@@ -83,7 +85,7 @@ A tournament is a set draft, a chaos draft, a cube, or a sealed. Commander, Two-
 - Dropping before the current round has started removes that player, and the pairings can be regenerated. Dropping during a started match records a loss for them and a win for the opponent. They are left out of later rounds. Results they already played stay.
 - A quick match with no result can be deleted. A reported quick match stays, and its result can only be replaced. A started tournament can be ended early. That is Finish with the current standings.
 - Running match points stay visible during the rounds.
-- When the set rounds are complete, someone taps Finish. A top-two final is the only extra match, and it can be added before Finish. Finish labels 1st, 2nd, and 3rd from the standings, including anyone who dropped. The full order is shown.
+- When the set rounds are complete, someone taps **Finish**. Places are never locked automatically when the last result is saved. A top-two final is the only extra match, and it can be added before Finish. Finish labels 1st, 2nd, and 3rd from the standings, including anyone who dropped. The full order is shown.
 
 ## Stats
 
@@ -110,19 +112,17 @@ Quick matches do not name prizes. There is no money, buy-in, or paid tracking in
 
 ## The room
 
-The event page is the weekend dashboard: live tournaments, open quick matches, and recent results. Opening a tournament or a quick match goes to a page for that game alone.
+The event page is the weekend overview: live tournaments, open quick matches, and recent results. Opening a tournament or a quick match goes to a page for that game alone.
 
 The room is the working screen for one tournament. It is opened on a laptop or a tablet that anyone in the house can use. It is not a display-only board. Anyone on the event can seat players, post pairings, start the round, enter or correct a result, and finish. It shows the current round, the clock, standings, and open tables for that tournament only. When the event has more than one tournament, the screen can switch which one it is working. Quick matches are not listed on the room.
 
-A quick match opens on its own page. Report the result there. After it is saved, the phone returns to the event dashboard.
+A quick match opens on its own page. Report the result there. After it is saved, the phone returns to the event overview.
 
 One person can be in a live tournament match and a live Commander game at the same time. The phone lists both, tournament match first. Each slip opens that game’s page.
 
 Words on the screen: game, draft, seat, table, room.
 
-### Visual direction
-
-Keep the charcoal-and-orange palette, commander artwork, layered surfaces, and the “Take a seat. Run the room.” destination. Visual character should help people find the next useful action. On a phone, a returning player's table, opponent, round state, and result action take priority over discovery content; event records remain close to their games. Setup and settings use compact, direct headings. Expressive display copy and prominent feature panels belong where they help explain a destination, rather than repeating above every form. Room controls and standings must remain readable and usable at laptop sizes.
+On a phone, a returning player's table, opponent, round state, and result action take priority over discovery content. Setup and settings use compact, direct headings. Room controls and standings must remain readable and usable at laptop sizes. Detail for surfaces, type, and navigation lives in the UI design system.
 
 ## Out of scope
 
@@ -138,6 +138,7 @@ Keep the charcoal-and-orange palette, commander artwork, layered surfaces, and t
 - Constructed rounds, and Two-Headed Giant with rounds
 - Money
 - A prize inventory
+- Extending or restyling the legacy `/tournament/[id]/dashboard` as a second room (use Room instead; decide redirect later)
 
 ## Later
 
