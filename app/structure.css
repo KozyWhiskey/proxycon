@@ -142,7 +142,7 @@ details.disclosure:not([open])::details-content { display:none; height:0; overfl
 .mobile-record { display:none; }
 @media(max-width:767px) { .desktop-record { display:none; } .mobile-record { display:block; } .mobile-record-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .mobile-record-grid > div { border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:16px; } .mobile-record-grid span,.mobile-record-grid small { display:block; color:var(--muted-ink); font-size:12px; } .mobile-record-grid strong { display:block; font-size:25px; font-family:var(--font-heading); font-weight:500; margin:8px 0 4px; } }
 
-.player-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+.player-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
 .player-card { display:block; transition:border-color .15s,box-shadow .15s; }
 .player-card:hover { border-color:var(--line); box-shadow:none; }
 .guest-name-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }

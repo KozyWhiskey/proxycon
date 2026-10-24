@@ -102,7 +102,7 @@
 .stats-format-empty h3 { font-size:20px; margin-bottom:8px; }
 .round-clock.is-paused .text-5xl,.arena-room .round-clock.is-urgent .text-5xl { color:var(--warning); }
 .clock-label { color:var(--muted-ink); }
-.player-card { padding:20px; }
+.player-card { padding:14px; }
 .player-card-banner { padding-top:0; align-items:center; }
 .player-card .player-card-meta { margin-top:16px; font-size:14px; }
 .player-card .subtle { font-size:13px; }

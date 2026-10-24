@@ -26,7 +26,7 @@ export function PlayerDirectory({ players, currentId }: { players: DirectoryPlay
       <div className="player-card-banner"><Avatar className="h-14 w-14"><AvatarImage src={player.avatar || undefined} alt="" /><AvatarFallback>{player.name.split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase()}</AvatarFallback></Avatar><ArrowUpRight size={18} className="text-muted-foreground" /></div>
       <h2 className="text-2xl mt-5">{player.name} <ManaIdentity color={player.color} />{player.id === currentId && <span className="text-xs font-normal text-muted-foreground ml-2">you</span>}</h2>
       {player.username && <p className="subtle">@{player.username.replace(/^@/, '').trim()}</p>}
-      <div className="player-card-meta"><span><Layers size={14} />{player.deckCount} {player.deckCount === 1 ? 'deck' : 'decks'}</span><span>View player <ArrowUpRight size={13} /></span></div>
+      <div className="player-card-meta"><span><Layers size={14} />{player.deckCount} {player.deckCount === 1 ? 'deck' : 'decks'}</span></div>
     </Link>)}</div>
     {!shown.length && <div className="empty-state"><h2 className="text-xl">No players found</h2><p>Try another play name or username.</p></div>}
   </section>;
