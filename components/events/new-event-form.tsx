@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createEvent } from '@/app/events/actions';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -40,7 +40,6 @@ export default function NewEventForm() {
     <Card className="glass-panel border-border">
       <CardHeader>
         <CardTitle className="text-xl font-heading">Event details</CardTitle>
-        <CardDescription>Give the event a name and dates. You can invite everyone next.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={handleCreate} className="space-y-6">

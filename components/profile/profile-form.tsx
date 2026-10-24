@@ -65,7 +65,6 @@ export default function ProfileForm({
           disabled
           className="h-12 bg-muted border-border text-muted-foreground"
         />
-        <p className="text-xs text-muted-foreground">Your registered account name.</p>
       </div>
 
       <div className="space-y-2">

@@ -9,7 +9,7 @@ export default async function NewEventPage() {
   return (
     <main className="page collection-page task-page">
       <Link href="/" className="subtle">← Events</Link>
-      <PageIntro compact eyebrow="THE PLAYGROUP" title="Create event" description="Set the dates for your next gathering, then invite the playgroup." />
+      <PageIntro compact title="Create event" description="Name the weekend and set the dates." />
       <NewEventForm />
     </main>
   );
