@@ -52,6 +52,13 @@ export function QuickMatchForm({
   const [order, setOrder] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const spec = quickFormat(format);
+  const canStart = selected.length >= spec.min;
+  const startHint =
+    selected.length === 0
+      ? `Select ${spec.min === spec.max ? spec.min : `${spec.min}–${spec.max}`} players to start.`
+      : selected.length < spec.min
+        ? `Select ${spec.min - selected.length} more player${spec.min - selected.length === 1 ? '' : 's'}.`
+        : null;
 
   function toggle(id: string) {
     setSelected((current) => {
@@ -93,18 +100,40 @@ export function QuickMatchForm({
       if (!withResult && result.matchId) router.push(`/events/${eventId}/match/${result.matchId}`);
       else router.push(`/events/${eventId}`);
       router.refresh();
-    } catch { toast.error('Could not save. Check your connection and try again.'); }
-    finally { setPending(false); }
+    } catch {
+      toast.error('Could not save. Check your connection and try again.');
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <div className="space-y-8 quick-create-form">
-      <label className="grid gap-2 text-sm">Game format
-        <select className="h-12 rounded-md border border-input bg-card px-3" value={format} onChange={event=>{setFormat(event.target.value);setSelected([]);setWinnerIds([]);setDraw(false);}}>
-          <optgroup label="Commander">{QUICK_FORMATS.filter(item=>isCommanderFormat(item.id)).map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>
-          <optgroup label="Other games">{QUICK_FORMATS.filter(item=>!isCommanderFormat(item.id)).map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>
+    <div className="space-y-6 quick-create-form">
+      <div className="space-y-2">
+        <Label htmlFor="quick-format">Game format</Label>
+        <select
+          id="quick-format"
+          className="h-12 w-full rounded-md border border-input bg-card px-3 text-base"
+          value={format}
+          onChange={(event) => {
+            setFormat(event.target.value);
+            setSelected([]);
+            setWinnerIds([]);
+            setDraw(false);
+          }}
+        >
+          <optgroup label="Commander">
+            {QUICK_FORMATS.filter((item) => isCommanderFormat(item.id)).map((item) => (
+              <option key={item.id} value={item.id}>{item.label}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Other games">
+            {QUICK_FORMATS.filter((item) => !isCommanderFormat(item.id)).map((item) => (
+              <option key={item.id} value={item.id}>{item.label}</option>
+            ))}
+          </optgroup>
         </select>
-      </label>
+      </div>
 
       {format === 'custom' && (
         <div className="space-y-2">
@@ -114,8 +143,8 @@ export function QuickMatchForm({
       )}
 
       <div className="space-y-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-heading text-lg">Players</h2>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-semibold">Players</h2>
           <p className="text-xs text-muted-foreground">
             {selected.length} selected · {spec.min === spec.max ? `${spec.min} needed` : `${spec.min}–${spec.max} players`}
           </p>
@@ -131,7 +160,9 @@ export function QuickMatchForm({
                 onClick={() => toggle(person.id)}
                 className="setup-player-choice"
               >
-                <PlayerAvatar name={person.name} small /><span>{person.name}</span>{on && <Check size={16} />}
+                <PlayerAvatar name={person.name} small />
+                <span>{person.name}</span>
+                {on && <Check size={16} aria-hidden="true" />}
               </button>
             );
           })}
@@ -140,7 +171,7 @@ export function QuickMatchForm({
 
       {spec.teams && chosen.length > 0 && (
         <div className="space-y-2">
-          <h2 className="font-heading text-lg">Teams</h2>
+          <h2 className="text-lg font-semibold">Teams</h2>
           {chosen.map((person) => (
             <div key={person.id} className="flex items-center justify-between gap-3">
               <span>{person.name}</span>
@@ -150,7 +181,7 @@ export function QuickMatchForm({
                     key={side}
                     type="button"
                     onClick={() => setTeams((current) => ({ ...current, [person.id]: side }))}
-                    className={`rounded-md border px-3 py-1 text-sm ${teams[person.id] === side ? 'border-primary text-link' : 'border-border'}`}
+                    className={`rounded-md border px-3 py-2 text-sm min-h-11 ${teams[person.id] === side ? 'border-primary text-link' : 'border-border'}`}
                   >
                     Team {side}
                   </button>
@@ -161,101 +192,120 @@ export function QuickMatchForm({
         </div>
       )}
 
-      <details className="disclosure"><summary>Decks & day (optional)</summary><div className="space-y-4">{chosen.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="font-heading text-lg">Decks</h2>
-          <p className="text-xs text-muted-foreground">A deck can be filled in with the result, or left blank.</p>
-          {chosen.map((person) => {
-            const mine = decks.filter((deck) => deck.ownerId === person.id);
-            return (
-              <label key={person.id} className="grid gap-1 text-sm">
-                <span>{person.name}</span>
-                <select
-                  className="h-11 rounded-md border border-border bg-card px-3"
-                  value={deckIds[person.id] || ''}
-                  onChange={(event) => setDeckIds((current) => ({ ...current, [person.id]: event.target.value }))}
-                >
-                  <option value="">No deck yet</option>
-                  {mine.map((deck) => (
-                    <option key={deck.id} value={deck.id}>
-                      {deck.name}{deck.commanders ? ` · ${deck.commanders}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            );
-          })}
-        </div>
-      )}
+      <div className="space-y-2">
+        <Button type="button" disabled={pending || !canStart} className="w-full" onClick={() => save(false)}>
+          {pending ? 'Saving game…' : 'Start game'}
+        </Button>
+        {startHint && <p className="text-xs text-muted-foreground">{startHint}</p>}
+      </div>
 
-      <label className="grid gap-1 text-sm">
-        Day
-        <Input type="date" value={day} onChange={(event) => setDay(event.target.value)} className="h-11" />
-      </label>
-      </div></details>
-
-      {chosen.length >= spec.min && (
-        <div className="space-y-3">
-          <details className="disclosure"><summary>Already finished? Record a result</summary><div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {spec.teams
-              ? [1, 2].map((side) => {
-                  const ids = chosen.filter((person) => teams[person.id] === side).map((person) => person.id);
-                  const names = chosen.filter((person) => teams[person.id] === side).map((person) => person.name);
-                  if (ids.length === 0) return null;
-                  const on = !draw && ids.every((id) => winnerIds.includes(id)) && winnerIds.length === ids.length;
-                  return (
-                    <button key={side} type="button" onClick={() => { setDraw(false); setWinnerIds(ids); }} className={`rounded-lg border px-3 py-2 ${on ? 'border-primary text-link' : 'border-border'}`}>
-                      {names.join(' & ')} win
-                    </button>
-                  );
-                })
-              : chosen.map((person) => (
-                  <button
-                    key={person.id}
-                    type="button"
-                    onClick={() => { setDraw(false); setWinnerIds([person.id]); }}
-                    className={`rounded-lg border px-3 py-2 ${!draw && winnerIds.length === 1 && winnerIds[0] === person.id ? 'border-primary text-link' : 'border-border'}`}
-                  >
-                    {person.name} wins
-                  </button>
-                ))}
-            <button type="button" onClick={() => { setDraw(true); setWinnerIds([]); }} className={`rounded-lg border px-3 py-2 ${draw ? 'border-primary text-link' : 'border-border'}`}>
-              Draw
-            </button>
-          </div>
-          {isCommanderFormat(format) && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Finishing order is optional and does not change the win.</p>
-              {chosen.map((person) => (
-                <label key={person.id} className="flex items-center gap-2 text-sm">
-                  <span className="w-32 truncate">{person.name}</span>
-                  <Input
-                    inputMode="numeric"
-                    className="h-10 w-20"
-                    placeholder="#"
-                    value={order.includes(person.id) ? String(order.indexOf(person.id) + 1) : ''}
-                    onChange={(event) => {
-                      const place = Number(event.target.value);
-                      setOrder((current) => {
-                        const next = current.filter((id) => id !== person.id);
-                        if (!place) return next;
-                        next.splice(place - 1, 0, person.id);
-                        return next;
-                      });
-                    }}
-                  />
-                </label>
-              ))}
+      <details className="disclosure">
+        <summary>Optional details</summary>
+        <div className="space-y-4">
+          {chosen.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-base font-semibold">Decks</h2>
+              <p className="text-xs text-muted-foreground">Optional now. You can add commanders with the result.</p>
+              {chosen.map((person) => {
+                const mine = decks.filter((deck) => deck.ownerId === person.id);
+                return (
+                  <label key={person.id} className="grid gap-1 text-sm">
+                    <span>{person.name}</span>
+                    <select
+                      className="h-11 rounded-md border border-border bg-card px-3"
+                      value={deckIds[person.id] || ''}
+                      onChange={(event) => setDeckIds((current) => ({ ...current, [person.id]: event.target.value }))}
+                    >
+                      <option value="">No deck yet</option>
+                      {mine.map((deck) => (
+                        <option key={deck.id} value={deck.id}>
+                          {deck.name}{deck.commanders ? ` · ${deck.commanders}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
             </div>
           )}
-        <Button type="button" disabled={pending || (!draw && !winnerIds.length)} onClick={() => save(true)}>Save result</Button>
-        </div></details></div>
-      )}
+          <div className="space-y-2">
+            <Label htmlFor="quick-day">Day</Label>
+            <Input id="quick-day" type="date" value={day} onChange={(event) => setDay(event.target.value)} className="h-11" />
+          </div>
+        </div>
+      </details>
 
-      <Button type="button" disabled={pending || selected.length < spec.min} className="w-full" onClick={() => save(false)}>
-        {pending ? 'Saving game…' : 'Start game'}
-      </Button>
+      {canStart && (
+        <details className="disclosure">
+          <summary>Already finished? Record a result</summary>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {spec.teams
+                ? [1, 2].map((side) => {
+                    const ids = chosen.filter((person) => teams[person.id] === side).map((person) => person.id);
+                    const names = chosen.filter((person) => teams[person.id] === side).map((person) => person.name);
+                    if (ids.length === 0) return null;
+                    const on = !draw && ids.every((id) => winnerIds.includes(id)) && winnerIds.length === ids.length;
+                    return (
+                      <button
+                        key={side}
+                        type="button"
+                        onClick={() => { setDraw(false); setWinnerIds(ids); }}
+                        className={`rounded-lg border px-3 py-2 min-h-11 ${on ? 'border-primary text-link' : 'border-border'}`}
+                      >
+                        {names.join(' & ')} win
+                      </button>
+                    );
+                  })
+                : chosen.map((person) => (
+                    <button
+                      key={person.id}
+                      type="button"
+                      onClick={() => { setDraw(false); setWinnerIds([person.id]); }}
+                      className={`rounded-lg border px-3 py-2 min-h-11 ${!draw && winnerIds.length === 1 && winnerIds[0] === person.id ? 'border-primary text-link' : 'border-border'}`}
+                    >
+                      {person.name} wins
+                    </button>
+                  ))}
+              <button
+                type="button"
+                onClick={() => { setDraw(true); setWinnerIds([]); }}
+                className={`rounded-lg border px-3 py-2 min-h-11 ${draw ? 'border-primary text-link' : 'border-border'}`}
+              >
+                Draw
+              </button>
+            </div>
+            {isCommanderFormat(format) && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Finishing order is optional and does not change the win.</p>
+                {chosen.map((person) => (
+                  <label key={person.id} className="flex items-center gap-2 text-sm">
+                    <span className="w-32 truncate">{person.name}</span>
+                    <Input
+                      inputMode="numeric"
+                      className="h-10 w-20"
+                      placeholder="#"
+                      value={order.includes(person.id) ? String(order.indexOf(person.id) + 1) : ''}
+                      onChange={(event) => {
+                        const place = Number(event.target.value);
+                        setOrder((current) => {
+                          const next = current.filter((id) => id !== person.id);
+                          if (!place) return next;
+                          next.splice(place - 1, 0, person.id);
+                          return next;
+                        });
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
+            <Button type="button" disabled={pending || (!draw && !winnerIds.length)} onClick={() => save(true)}>
+              Save result
+            </Button>
+          </div>
+        </details>
+      )}
     </div>
   );
 }

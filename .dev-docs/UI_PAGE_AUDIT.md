@@ -47,7 +47,7 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Tournament / `/tournament/[id]` | Live operations / setup | Finish promotion + voice pass 23 Oct 2026 (last-round all results in). Setup/seating/posted states still open. |
 | Tournament result / `/tournament/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded + correction). Playing/waiting/bye live shots and 320px/200% still open. |
 | Quick-game result / `/events/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded Commander pod). Live report-first, team, and draw states still open. |
-| Start game / `/events/[id]/play` | Task | Pending: format/player selection, optional details, validation. |
+| Start game / `/events/[id]/play` | Task | Pass recorded 24 Oct 2026 (format + players + Start hint). Team/THG and validation toast still open. |
 | Create tournament / `/events/[id]/tournaments/new` | Task anchor | Pass recorded 23 Oct 2026 (compact task voice + Create above optionals). Validation/error and 320px/200% zoom still open. |
 | Statistics / `/events/[id]/stats` | Destination | Pending: category/day filters, no results, names/art and table overflow. |
 | Event players / `/events/[id]/players` | Utility destination | Pending: joined/unjoined profiles and invite entry. |
@@ -163,4 +163,14 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - Light phone / Dark phone / Light laptop / Dark laptop: [phone light](ux-screenshots/ember-quick-result-audit-phone-light.png), [phone dark](ux-screenshots/ember-quick-result-audit-phone-dark.png), [laptop light](ux-screenshots/ember-quick-result-audit-laptop-light.png), [laptop dark](ux-screenshots/ember-quick-result-audit-laptop-dark.png).
 - Interactions: Correct left collapsed; no result saved or deleted.
 - Remaining gaps: live in-progress report-first shot; Two-Headed Giant / draw; 320px / 200% zoom; replay entry from Start a game.
-- Next page: Start a game.
+- Next page: Start a game (below).
+
+## Start a game `/events/[id]/play` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/events/09ec40dc-…/play` Quick Game task; Craig; canManage; Commander default.
+- Keep: Compact task title; format select; player toggle grid; optional decks/day; Already finished disclosure; Play again links.
+- Change applied: **Start game** above optionals with why-disabled hint; Optional details (decks + day); Play again shows names; form in panel; Label on format; larger player choice type.
+- Light phone / Dark phone: [phone light](ux-screenshots/ember-start-game-audit-phone-light.png), [phone dark](ux-screenshots/ember-start-game-audit-phone-dark.png). Laptop pending.
+- Interactions: no game created.
+- Remaining gaps: Two-Headed Giant teams; Save result path; laptop/light full; 320px zoom.
+- Next page: Statistics.
