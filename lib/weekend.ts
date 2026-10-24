@@ -172,6 +172,63 @@ export function formatClock(seconds: number): string {
   return `${minutes}:${rest.toString().padStart(2, '0')}`;
 }
 
+/** Shared Room / tournament live-state labels. Places still lock only on Finish. */
+export type RoundPhaseStatus = 'live' | 'setup' | 'complete' | 'attention';
+export type RoundPhase = {
+  key: 'completed' | 'ready' | 'paused' | 'elapsed' | 'playing' | 'posted' | 'setup';
+  label: string;
+  short: string;
+  status: RoundPhaseStatus;
+};
+
+export function tournamentRoundPhase(input: {
+  tournamentStatus: string;
+  readyToFinish: boolean;
+  started: boolean;
+  posted: boolean;
+  round: number;
+  pausedAt: string | null;
+  remainingSeconds: number | null;
+  clockRound: number | null;
+  clockAnchor: string | null;
+  durationMinutes: number;
+  nowMs?: number;
+}): RoundPhase {
+  if (input.tournamentStatus === 'completed') {
+    return { key: 'completed', label: 'Finished', short: 'Finished', status: 'complete' };
+  }
+  if (input.readyToFinish) {
+    return { key: 'ready', label: 'All results in · ready to finish', short: 'Finish', status: 'complete' };
+  }
+  if (input.started) {
+    const onClock = input.clockRound === input.round && input.remainingSeconds != null;
+    if (onClock && input.pausedAt) {
+      return { key: 'paused', label: 'Paused', short: 'Paused', status: 'attention' };
+    }
+    if (onClock) {
+      const left = clockSecondsLeft({
+        durationMinutes: input.durationMinutes,
+        anchor: input.clockAnchor,
+        pausedAt: input.pausedAt,
+        remainingSeconds: input.remainingSeconds,
+      }, input.nowMs ?? Date.now());
+      if (left === 0) {
+        return { key: 'elapsed', label: 'Time elapsed', short: 'Elapsed', status: 'attention' };
+      }
+    }
+    return {
+      key: 'playing',
+      label: input.round ? `Round ${input.round} in progress` : 'Playing',
+      short: 'Playing',
+      status: 'live',
+    };
+  }
+  if (input.posted) {
+    return { key: 'posted', label: 'Pairings posted', short: 'Posted', status: 'setup' };
+  }
+  return { key: 'setup', label: 'Joining & seating', short: 'Setup', status: 'setup' };
+}
+
 export function pairAcross(orderedIds: string[]): Pairing[] {
   const half = Math.floor(orderedIds.length / 2);
   const pairs: Pairing[] = [];

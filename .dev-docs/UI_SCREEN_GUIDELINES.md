@@ -40,7 +40,7 @@ For tournament views also inspect setup, pairings posted, started, paused, time 
 ## Enhancement priorities (after Ember Folio audit)
 
 1. ~~Returning-player phone hierarchy on Events, Event, and Room (live table before discovery).~~ Done 24 Oct 2026 — see UI_PAGE_AUDIT evidence.
-2. Full room/tournament live-state coverage (posted, paused, bye, seating, completed).
+2. ~~Full room/tournament live-state coverage (posted, paused, bye, seating, completed).~~ Done 24 Oct 2026 — shared `tournamentRoundPhase` + Room/Tournament badges.
 3. Hosted invite origin (`PROXYCON_HOUSE_URL`) and QR correctness.
 4. Form-first login on phone; light-theme spot-checks; thinner Stats payload as follow-ups.
 

@@ -13,12 +13,15 @@
 .arena-room .room-clock button { min-height: 44px; height: 44px; font-size: 13px; padding: 8px 14px; }
 .arena-room .round-clock details summary { min-height: 44px; font-size: 12px; }
 .arena-room .room-result-progress { gap: 12px; margin-top: 10px; }
-.arena-room .room-round-heading { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.arena-room .room-round-heading { display: flex; align-items: baseline; gap: 12px 16px; flex-wrap: wrap; }
 .arena-room .room-round-heading > .eyebrow { order: 2; margin: 0; }
 .arena-room .room-round-heading h2 { margin: 0; }
+.arena-room .room-round-heading > .arena-status { order: 3; align-self: center; }
 .arena-room .room-round-details { display: flex; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; margin-top: 10px; }
 .arena-room .room-round-details > p { margin: 0; }
 .arena-room .room-round-details > .room-prizes { padding-left: 14px; border-left: 1px solid var(--line); }
+.arena-room .room-places-summary { font-size: 14px; color: var(--ink); font-weight: 600; }
+.arena-room .room-stage.is-attention .room-mast { border-top-color: var(--warning); }
 .arena-room .room-clock .round-clock { display: grid; grid-template-columns: auto auto; align-items: center; gap: 4px 16px; }
 .arena-room .room-clock .round-clock > .flex:first-child { grid-column: 1; grid-row: 1; }
 .arena-room .room-clock .round-clock > p { grid-column: 1; grid-row: 2; margin: 0; text-align: right; }

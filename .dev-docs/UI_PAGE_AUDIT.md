@@ -43,8 +43,8 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | --- | --- | --- |
 | Events / `/` | Destination | Pass recorded 23 Oct 2026 (friend-group voice + hierarchy). Live-match phone hierarchy tightened 24 Oct 2026 ([phone dark](ux-screenshots/ember-phone-hierarchy-events.png)); house and empty-events still open. |
 | Event / `/events/[id]` | Destination | Voice/empty-copy pass applied 23 Oct 2026. Live-slip phone hierarchy rechecked 24 Oct 2026 ([phone dark](ux-screenshots/ember-phone-hierarchy-event.png)); simultaneous Commander + light still open. |
-| Room / `/events/[id]/room` | Live operations | Voice/copy pass applied 23 Oct 2026. Returning-player LiveSlip + yours-table pin 24 Oct 2026 ([phone dark](ux-screenshots/ember-phone-hierarchy-room.png)). Full state coverage still open: posted, paused, bye, completed, setup seating. |
-| Tournament / `/tournament/[id]` | Live operations / setup | Finish promotion + voice pass 23 Oct 2026 (last-round all results in). Setup/seating/posted states still open. |
+| Room / `/events/[id]/room` | Live operations | Voice/copy pass applied 23 Oct 2026. Returning-player LiveSlip 24 Oct 2026. Live-state badges 24 Oct 2026: [elapsed](ux-screenshots/ember-room-state-elapsed.png), [paused](ux-screenshots/ember-room-state-paused.png), [finished+bye](ux-screenshots/ember-room-state-finished-bye.png), [seating](ux-screenshots/ember-room-state-seating.png). Posted wired (no live posted field this pass). |
+| Tournament / `/tournament/[id]` | Live operations / setup | Finish promotion + voice pass 23 Oct 2026. Round-phase status + match Playing/Posted/Bye/Final badges aligned 24 Oct 2026. |
 | Tournament result / `/tournament/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded + correction). Playing/waiting/bye live shots and 320px/200% still open. |
 | Quick-game result / `/events/[id]/match/[matchId]` | Task | Pass recorded 24 Oct 2026 (recorded Commander pod). Live report-first, team, and draw states still open. |
 | Start game / `/events/[id]/play` | Task | Pass recorded 24 Oct 2026 (format + players + Start hint). Team/THG and validation toast still open. |

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { gamesWonFor, loadEventBoard, matchPlayers, nameOf, standingsFor, currentRound } from '@/lib/event-board';
-import { chartSeatCount, manualTieGroups, needsSeats, placeLabel, podForSeat, tournamentLabel, type HistoryMatch } from '@/lib/weekend';
+import { chartSeatCount, manualTieGroups, needsSeats, placeLabel, podForSeat, tournamentLabel, tournamentRoundPhase, type HistoryMatch } from '@/lib/weekend';
 import {
   addFinal,
   addSeat,
@@ -87,16 +87,20 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   });
   const readyToFinish = row.field_locked && round.round >= (row.max_rounds || 1) && allReported && !finalWaiting;
   const showClock = started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null;
-  const statusLabel = row.status === 'completed'
-    ? 'Completed'
-    : readyToFinish
-      ? 'All results in · ready to finish'
-      : started
-        ? `Round ${round.round} in progress`
-        : posted
-          ? 'Pairings posted'
-          : 'Joining & seating';
-  const statusState = row.status === 'completed' || readyToFinish ? 'complete' : started ? 'live' : 'setup';
+  const phase = tournamentRoundPhase({
+    tournamentStatus: row.status,
+    readyToFinish,
+    started,
+    posted,
+    round: round.round,
+    pausedAt: row.clock_paused_at,
+    remainingSeconds: row.clock_remaining_seconds,
+    clockRound: row.clock_round,
+    clockAnchor: row.clock_anchor,
+    durationMinutes: row.round_duration_minutes || 50,
+  });
+  const statusLabel = phase.label;
+  const statusState = phase.status;
   const settings = row.status !== 'completed' && board.canManage ? (
     <details className="disclosure tournament-settings"><summary>Tournament settings</summary><div>
       <RoundEditor
@@ -260,12 +264,24 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         {[...round.matches].sort((a,b) => Number(matchPlayers(board,b.id).some(p=>p.profile_id===board.userId)) - Number(matchPlayers(board,a.id).some(p=>p.profile_id===board.userId))).map((match) => {
           const players = matchPlayers(board, match.id);
           const bye = players.length === 1;
+          const reported = players.length > 0 && players.every((seat) => seat.result);
+          const playing = Boolean(match.started_at) && !bye && !reported;
           const matchup = bye ? `${players[0]?.name || 'Player'} has the bye` : players.map((player) => player.name).join(' vs ');
+          const table = match.table_label || (match.table_number ? `Table ${match.table_number}` : bye ? 'Bye' : 'Match');
           return (
             <article id={`match-${match.id}`} key={match.id} className="match-card space-y-3 rounded-xl border border-border p-4">
               <div className="flex items-baseline justify-between gap-3">
-                <h3 className="font-heading text-xl">{matchup}</h3>
-                {match.is_rematch && <span className="text-xs uppercase tracking-widest text-link">Rematch</span>}
+                <div className="min-w-0">
+                  <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">{table}</p>
+                  <h3 className="font-heading text-xl">{matchup}</h3>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {match.is_rematch && <span className="text-xs uppercase tracking-widest text-link">Rematch</span>}
+                  {bye && <GameStatus state={reported ? 'complete' : 'setup'}>Bye</GameStatus>}
+                  {!bye && playing && <GameStatus state="live">Playing</GameStatus>}
+                  {!bye && reported && <GameStatus state="complete">Final</GameStatus>}
+                  {!bye && !playing && !reported && posted && <GameStatus state="setup">Not started</GameStatus>}
+                </div>
               </div>
               {players.some((player) => player.result) && (
                 <p className="text-sm text-muted-foreground">

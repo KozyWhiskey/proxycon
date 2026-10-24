@@ -30,6 +30,7 @@
 .arena-status.is-live i { width:5px; height:5px; background:currentColor; border-radius:50%; box-shadow:none; }
 .arena-status.is-setup { color:var(--arena-blue); background:var(--arena-blue-bg); }
 .arena-status.is-complete { color:var(--muted-ink); background:var(--surface-soft); }
+.arena-status.is-attention { background:var(--warning-bg); color:var(--warning); }
 .arena-tournament h3 { font-size:29px; line-height:1.15; margin:20px 0; overflow-wrap:anywhere; position:relative; z-index:1; }
 .arena-tournament.is-setup h3,.arena-tournament.is-complete h3 { font-size:23px; margin:16px 0; }
 .arena-tournament > .arena-caption { margin-top:14px; }

@@ -4,7 +4,7 @@ import { addTournamentPlayer } from '@/app/weekend/actions';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { gamesWonFor, currentRound, loadEventBoard, matchPlayers, nameOf, standingsFor, type EventBoard } from '@/lib/event-board';
-import { chartSeatCount, manualTieGroups, needsSeats, placeLabel, podForSeat, tournamentLabel, type HistoryMatch } from '@/lib/weekend';
+import { chartSeatCount, manualTieGroups, needsSeats, placeLabel, podForSeat, tournamentLabel, tournamentRoundPhase, type HistoryMatch } from '@/lib/weekend';
 import {
   addFinal,
   addSeat,
@@ -68,7 +68,7 @@ export default async function RoomPage({
                 href={`/events/${id}/room?tournament=${tournament.id}`}
                 aria-current={selected ? 'page' : undefined}
               >
-                <span>{tournament.name}</span><small>{tournament.status === 'completed' ? 'Finished' : tournament.field_locked ? 'Playing' : 'Setup'}</small>
+                <span>{tournament.name}</span><small>{switchPhase(board, tournament).short}</small>
               </Link>
             );
           })}
@@ -137,6 +137,21 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
       )
     : [];
   const mineStanding = board.userId ? standings.find((player) => player.profileId === board.userId) : null;
+  const phase = tournamentRoundPhase({
+    tournamentStatus: row.status,
+    readyToFinish,
+    started,
+    posted,
+    round: round.round,
+    pausedAt: row.clock_paused_at,
+    remainingSeconds: row.clock_remaining_seconds,
+    clockRound: row.clock_round,
+    clockAnchor: row.clock_anchor,
+    durationMinutes: row.round_duration_minutes || 50,
+  });
+  const podium = row.status === 'completed'
+    ? standings.filter((player) => player.place && player.place <= 3)
+    : [];
 
   return (
     <>
@@ -159,7 +174,7 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
           })}
         </section>
       )}
-      <section className={`room-stage${round.round ? ' has-round' : ' is-setup'}${personalMatches.length ? ' has-personal' : ''}`}>
+      <section className={`room-stage${round.round ? ' has-round' : ' is-setup'}${personalMatches.length ? ' has-personal' : ''}${phase.key === 'paused' || phase.key === 'elapsed' ? ' is-attention' : ''}`}>
           <header className="room-mast">
             <div className="room-mast-copy">
               <div className="room-round-heading">
@@ -167,18 +182,24 @@ function TournamentDesk({ board, eventId, tournamentId }: { board: EventBoard; e
               <h2 className={round.round ? 'room-round' : 'room-setup-title'}>
                 {round.round ? <>Round {round.round}<span className="room-of"> of {row.max_rounds}</span></> : row.name}
               </h2>
+              <GameStatus state={phase.status}>{phase.label}</GameStatus>
               </div>
               <div className="room-round-details">
               <p className="room-status-line">
                 <Link href={`/tournament/${row.id}`}>{row.name}</Link>
                 {' · '}{joined.length} {joined.length === 1 ? 'player' : 'players'}
-                {row.status === 'completed' ? ' · finished' : started ? ' · live' : posted ? ' · posted, not started' : ' · setup'}
                 {startedLabel ? ` · started ${startedLabel}` : ''}
               </p>
               {prizeText && <p className="room-prizes">{prizeText}</p>}
+              {podium.length > 0 && (
+                <p className="room-places-summary">
+                  {podium.map((player) => `${placeLabel(player.place || 0)} ${player.name}`).join(' · ')}
+                </p>
+              )}
               </div>
-              {round.round > 0 && <div className="room-result-progress"><div className="arena-meter" role="progressbar" aria-label="Round results" aria-valuemin={0} aria-valuemax={Math.max(1, round.matches.length)} aria-valuenow={completedTables}><span style={{ width: `${completedTables / Math.max(1, round.matches.length) * 100}%` }} /></div><p className="room-note">{completedTables} / {round.matches.length} results in{openNames.length > 0 ? ` · Waiting on ${openNames.join(', ')}` : ''}</p></div>}
-              {posted && <p className="room-note">Pairings are posted. The round has not started.</p>}
+              {round.round > 0 && row.status !== 'completed' && <div className="room-result-progress"><div className="arena-meter" role="progressbar" aria-label="Round results" aria-valuemin={0} aria-valuemax={Math.max(1, round.matches.length)} aria-valuenow={completedTables}><span style={{ width: `${completedTables / Math.max(1, round.matches.length) * 100}%` }} /></div><p className="room-note">{completedTables} / {round.matches.length} results in{openNames.length > 0 ? ` · Waiting on ${openNames.join(', ')}` : phase.key === 'ready' ? ' · Ready to finish' : ''}</p></div>}
+              {posted && <p className="room-note">Pairings are posted. Start the round when tables are ready.</p>}
+              {seating && <p className="room-note">Assign seats, then post pairings for round 1.</p>}
               {board.joined && canRun && !mine && !row.field_locked && (
                 <div className="room-join"><ActButton label="Join tournament" action={joinTournament.bind(null, row.id)} /></div>
               )}
@@ -426,9 +447,10 @@ function TableCard({
         <div className="room-table-flags">
           {final && <span className="room-rematch">Final</span>}
           {match.is_rematch && <span className="room-rematch">Rematch</span>}
-          {open && <GameStatus state="live">Playing</GameStatus>}
-          {reported && <GameStatus state="complete">Final</GameStatus>}
-          {!open && !reported && posted && <GameStatus state="setup">Not started</GameStatus>}
+          {bye && <GameStatus state={reported ? 'complete' : 'setup'}>Bye</GameStatus>}
+          {!bye && open && <GameStatus state="live">Playing</GameStatus>}
+          {!bye && reported && <GameStatus state="complete">Final</GameStatus>}
+          {!bye && !open && !reported && posted && <GameStatus state="setup">Not started</GameStatus>}
         </div>
       </div>
       {bye ? (
@@ -504,6 +526,31 @@ function PlayerName({
       <ManaIdentity color={color} size={14} />{player.name}
     </span>
   );
+}
+
+function switchPhase(board: EventBoard, tournament: EventBoard['tournaments'][number]) {
+  const round = currentRound(board, tournament.id);
+  const posted = round.matches.length > 0 && round.matches.every((match) => !match.started_at);
+  const started = round.matches.some((match) => match.started_at);
+  const finalMatch = board.matches.find((match) => match.tournament_id === tournament.id && match.is_final);
+  const finalWaiting = Boolean(finalMatch && matchPlayers(board, finalMatch.id).some((seat) => !seat.result));
+  const allReported = round.matches.length > 0 && round.matches.every((match) => {
+    const seats = matchPlayers(board, match.id);
+    return seats.length > 0 && seats.every((seat) => seat.result);
+  });
+  const readyToFinish = tournament.field_locked && round.round >= (tournament.max_rounds || 1) && allReported && !finalWaiting;
+  return tournamentRoundPhase({
+    tournamentStatus: tournament.status,
+    readyToFinish,
+    started,
+    posted,
+    round: round.round,
+    pausedAt: tournament.clock_paused_at,
+    remainingSeconds: tournament.clock_remaining_seconds,
+    clockRound: tournament.clock_round,
+    clockAnchor: tournament.clock_anchor,
+    durationMinutes: tournament.round_duration_minutes || 50,
+  });
 }
 
 function pickTournament(board: EventBoard, limited: EventBoard['tournaments'], requested?: string) {
