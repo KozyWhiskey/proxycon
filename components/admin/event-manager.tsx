@@ -50,7 +50,7 @@ export default function EventManager() {
     <Card className="bg-card border-slate-800">
       <CardHeader>
         <CardTitle>Event Management</CardTitle>
-        <CardDescription>Oversee all events on the platform.</CardDescription>
+        <CardDescription>All playgroup events.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>

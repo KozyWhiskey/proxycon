@@ -55,7 +55,7 @@ export default function LoginForm({ nextPath }: { nextPath?: string }) {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl text-left font-sans">Existing account</CardTitle>
         <CardDescription className="text-muted-foreground">
-          Players pick a name on the home screen. Use this for an account you already have.
+          Email or Google for an account you already have.
         </CardDescription>
       </CardHeader>
       <CardContent>

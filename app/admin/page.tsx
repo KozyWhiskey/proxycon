@@ -23,7 +23,7 @@ export default async function AdminPage() {
   ]);
   const guestProfileIds = (guestProfiles || []).flatMap(spot => spot.profile_id ? [String(spot.profile_id)] : []);
   return <main className="page collection-page admin-collection">
-    <PageIntro eyebrow="ADMINISTRATION / BEHIND THE TABLES" title={<>Keep the<br /><em>weekend running.</em></>} description="Player accounts, guest access, events, and result corrections." />
+    <PageIntro compact eyebrow="ADMINISTRATION" title="Admin tools" description="Players, guests, events, and result corrections." />
     <Tabs defaultValue="users">
       <div className="overflow-x-auto mb-6"><TabsList><TabsTrigger value="users">Players</TabsTrigger><TabsTrigger value="guests">Weekend guests</TabsTrigger><TabsTrigger value="events">Events</TabsTrigger><TabsTrigger value="results">Results</TabsTrigger></TabsList></div>
       <TabsContent value="users"><div className="overflow-x-auto"><UserManager users={profiles || []} guestProfileIds={guestProfileIds} currentUserId={current.profile?.id || current.user.id} /></div></TabsContent>

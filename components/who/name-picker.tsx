@@ -31,8 +31,8 @@ export function NamePicker({ players }: { players: PickerPlayer[] }) {
       <Brand />
       <header>
         <p className="eyebrow mt-6">Your playgroup</p>
-        <h1 className="text-4xl">Who are you?</h1>
-        <p className="subtle mt-4">Pick your name. If it is not here, add it. Your decks and results stay on that player.</p>
+        <h1 className="font-sans text-3xl font-semibold tracking-tight">Who are you?</h1>
+        <p className="subtle mt-4">Pick your name. Decks and results stay with that player.</p>
       </header>
       <form action={async () => { const result = await chooseHouse(); if (result?.message) setMessage(result.message); }}><Button type="submit" variant="outline" className="w-full">Use the house screen</Button></form>
       <section className="panel space-y-4">

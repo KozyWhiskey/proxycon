@@ -36,7 +36,7 @@ export function GuestClaimForm({ invitation, token }: { invitation: GuestInvitat
     {!invitation.spots.some(row => !row.claimed) && <p className="subtle">No spots are available. Ask your admin to add your name.</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <Button type="button" className="w-full" disabled={pending || !spot || spot.claimed} onClick={claim}>{pending ? 'Getting your spot…' : spot ? `Continue as ${spot.name}` : 'Select your name'}<ArrowRight size={16} /></Button>
-    <p className="subtle flex gap-2"><Smartphone size={18} className="shrink-0 mt-1" /><span>This browser remembers you. No email, password, or Google account needed. Keep this browser data during the weekend.</span></p>
+    <p className="subtle flex gap-2"><Smartphone size={18} className="shrink-0 mt-1" /><span>This browser remembers you for the weekend.</span></p>
     <p className="subtle">Already have an account? <Link href={`/login?next=${encodeURIComponent('/events/' + invitation.eventId)}`} className="text-link underline">Sign in instead</Link></p>
   </section>;
 }

@@ -24,7 +24,10 @@ export default async function OnboardingPage() {
   return (
     <div className="onboarding-stage">
       <Brand />
-      <div className="onboarding-intro"><p className="eyebrow">WELCOME TO THE PLAYGROUP</p><h1>A name for<br /><em>every table.</em></h1></div>
+      <div className="onboarding-intro">
+        <p className="eyebrow">WELCOME</p>
+        <h1 className="font-sans text-3xl font-semibold tracking-tight">Choose a play name</h1>
+      </div>
       <OnboardingForm suggestion={suggestion} />
     </div>
   )

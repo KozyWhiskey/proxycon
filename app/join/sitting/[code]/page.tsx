@@ -19,7 +19,7 @@ export default async function JoinSittingPage({ params }: PageProps) {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="glass-panel w-full max-w-md">
           <CardHeader>
-            <CardTitle className="font-heading">Check in</CardTitle>
+            <CardTitle className="font-sans">Check in</CardTitle>
             <CardDescription>Sign in, then you will be added to this sitting.</CardDescription>
           </CardHeader>
           <CardFooter>

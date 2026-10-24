@@ -32,9 +32,9 @@ export default function OnboardingForm({ suggestion }: { suggestion: string }) {
   return (
     <Card className="w-full max-w-md glass-panel">
       <CardHeader>
-        <CardTitle className="text-2xl text-center font-heading">Play name</CardTitle>
+        <CardTitle className="text-2xl text-center font-sans">Play name</CardTitle>
         <CardDescription className="text-center">
-          This is the name on every table. The Google name is only a suggestion. Changing it later updates every event you have already played.
+          Shown beside your games and results.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

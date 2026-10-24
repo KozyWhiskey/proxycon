@@ -28,7 +28,7 @@ export default async function JoinTablePage({ params }: PageProps) {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="glass-panel w-full max-w-md">
           <CardHeader>
-            <CardTitle className="font-heading">Table {code.toUpperCase()}</CardTitle>
+            <CardTitle className="font-sans">Table {code.toUpperCase()}</CardTitle>
             <CardDescription>Sign in to sit down or report this table.</CardDescription>
           </CardHeader>
           <CardFooter>

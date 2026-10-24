@@ -39,7 +39,7 @@ export default async function InvitePage({ params }: PageProps) {
             <CardTitle className="font-heading text-2xl">{event.name}</CardTitle>
             <p className="subtle">{eventDates(event.start_date,event.end_date)}</p>
             <CardDescription>
-              Bring your decks. Find your people. Sign in with your existing account to join this event.
+              Sign in with your account to join.
             </CardDescription>
           </CardHeader>
           <CardFooter>

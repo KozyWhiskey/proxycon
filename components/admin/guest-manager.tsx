@@ -58,7 +58,7 @@ export function GuestManager({ events, invitations, ready, houseOrigin, profileN
   }
 
   return <section className="panel space-y-6">
-    <div><h2 className="text-2xl">Weekend guests</h2><p className="subtle mt-2">Save names for friends who want to play without email or Google. They open the guest link, choose their name, and continue on their phone.</p></div>
+    <div><h2 className="text-2xl">Weekend guests</h2><p className="subtle mt-2">Save names, share one link, and let friends claim a spot on their phone.</p></div>
     {!ready && <p role="status" className="subtle">Weekend guest access needs Supabase setup before you can create spots.</p>}
     <label className="grid gap-2 text-sm">Event<select className="h-11 rounded-md border border-input bg-card px-3" value={eventId} onChange={event => { setEventId(event.target.value); setError(''); }}>{events.map(event => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
     {!events.length && <p className="subtle">Create an event before adding weekend guests.</p>}
@@ -73,6 +73,6 @@ export function GuestManager({ events, invitations, ready, houseOrigin, profileN
     </form>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <div>{(existing?.spots || []).map(spot => <div className="game-row" key={spot.id}><strong>{spot.display_name}</strong>{spot.profile_id ? <Link className="text-link text-sm" href={`/players/${spot.profile_id}`}>Claimed · view profile →</Link> : <span className="subtle">Ready to claim</span>}</div>)}</div>
-    <p className="subtle">Existing accounts and decks stay unchanged. A guest profile is created when its name is claimed. Guests should keep the same browser data during the weekend; this sign-in cannot recover an account on another phone.</p>
+    <p className="subtle">Claiming creates a guest profile. Keep the same browser for the weekend.</p>
   </section>;
 }
