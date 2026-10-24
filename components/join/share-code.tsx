@@ -42,7 +42,7 @@ export default function ShareCode({ path, code, label, houseOrigin, large = fals
       <img src={src} alt={`QR code for ${label}`} className={large ? 'h-40 w-40 shrink-0 rounded-md bg-white' : 'h-24 w-24 shrink-0 rounded-md bg-white'} />
     ) : <div className={large ? 'h-40 w-40 shrink-0 rounded-md bg-muted' : 'h-24 w-24 shrink-0 rounded-md bg-muted'} />}
     <div className="min-w-0 w-full space-y-2">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
       <p className="font-heading text-lg text-foreground">{code}</p>
       <input ref={linkField} aria-label="Invite link" readOnly value={url} onFocus={event => event.target.select()} className="w-full min-w-0 rounded-md border border-input bg-card p-2 text-xs text-muted-foreground" />
       <Button type="button" size="sm" variant="outline" onClick={copy}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Copied' : 'Copy link'}</Button>

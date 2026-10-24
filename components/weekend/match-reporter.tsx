@@ -124,7 +124,6 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
             <details className="disclosure" open={hasScore || undefined}>
               <summary>Game score (optional)</summary>
               <div className="space-y-3">
-                <p className="subtle">A score such as 2–1 sets the match winner. Equal scores above zero mean a draw.</p>
                 {named.map((player) => (
                   <div key={player.id} className="score-stepper">
                     <span>{player.name}</span>

@@ -22,7 +22,7 @@ export function AddPlayers({ players, action, kind, inline = false, memberIds = 
   const available = inline ? players : players.filter(player => !inRoster.has(player.id));
   const shown = available.filter(player => `${player.name} ${player.username || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const picker = <div className="space-y-4">
-      <p className="subtle">{kind === 'event' ? 'Search all platform accounts and add anyone to this event. They do not need to sign in or join themselves.' : 'Choose players from this event before round one starts.'}</p>
+      <p className="subtle">{kind === 'event' ? 'Search the playgroup and add anyone. They don’t need to join themselves.' : 'Choose players from this event before round one starts.'}</p>
       <Input aria-label={`Search players for ${kind}`} placeholder="Search by name" value={query} onChange={event => setQuery(event.target.value)} />
       {inline && <p className="subtle text-sm">{shown.length} of {players.length} platform accounts</p>}
       <div className="max-h-80 overflow-y-auto">
