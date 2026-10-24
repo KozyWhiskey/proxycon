@@ -67,7 +67,6 @@ export default function DeckCard({ deck, isOwner = true }: DeckCardProps) {
           <CardContent className="deck-gallery-footer">
             <div>
               <div className="text-muted-foreground font-medium text-sm flex flex-wrap gap-2 items-center">
-                <span>{deck.format}</span>
                  {deck.mana_cost && <ManaCost manaCost={deck.mana_cost} size={14} className="opacity-80" />}
                  {deck.set_code && <span className="deck-set-code" title={deck.set_name || deck.set_code}>{deck.set_code.toUpperCase()}</span>}
               </div>

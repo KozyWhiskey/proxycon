@@ -20,7 +20,7 @@ export default function CreateDeckDialog() {
       <DialogContent className="sm:max-w-5xl deck-editor-dialog">
         <DialogHeader>
           <DialogTitle>New deck</DialogTitle>
-          <DialogDescription>Name your deck, find its commander, and choose the art that feels right.</DialogDescription>
+          <DialogDescription>Name, commander, and art.</DialogDescription>
         </DialogHeader>
         <DeckForm onSuccess={() => setOpen(false)} />
       </DialogContent>

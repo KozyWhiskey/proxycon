@@ -52,21 +52,21 @@ For a critique-only pass, replace “then implement routine consistency fixes”
 | Statistics / `/events/[id]/stats` | Destination | Pass recorded 24 Oct 2026 (commander filter + empty-card trim). Light/laptop and empty-format still open. |
 | Event players / `/events/[id]/players` | Utility destination | Pass recorded 24 Oct 2026 (trimmed intro). Light still open. |
 | Event tools / `/events/[id]/manage` | Task | Pass recorded 24 Oct 2026 (room demoted, quieter copy). Light still open. |
-| My decks / `/decks` | Destination anchor | Pending full pass: gallery, empty, inspector, new/edit, artwork choice and delete confirmation. |
-| Playgroup / `/players` | Destination | Pending: search, missing identity, long names and profile links. |
-| Player / `/players/[id]` | Destination | Pending: own/other player and missing/long deck names. |
-| Profile / `/profile` | Task | Pending: Player colors vs Appearance, field labels and save errors. |
-| Create event / `/events/new` | Task | Pending: dates, validation and actions. |
-| Pick a player / unbound `/` | Entry task | Pending: search, house mode, add name, focus. |
-| Login / `/login` | Entry task | Pending: form-first phone, email/Google, errors and password controls. |
-| Onboarding / `/onboarding` | Entry task | Pending; requires appropriate disposable account/session. |
-| Guest / `/guest`, `/guest/[token]` | Entry task | Pending: claim, invalid/expired and already claimed states. |
-| Invite / `/invite/[code]` | Entry task | Pending: valid, invalid/expired and existing-member states. |
-| Seat/table join / `/join/sitting/[code]`, `/join/table/[code]` | Entry task | Pending: correct event/table context, invalid links and identity continuity. |
-| Administration / `/admin` | Restricted task | Pending: permanent admin and denied access. Do not grant new access for visual review. |
-| Legacy dashboard / `/tournament/[id]/dashboard` | Older implemented surface | Audit separately for reachability and intent; do not treat its old styling as the new standard. A redirect/replacement needs deliberate scope. |
-| Redirects / `/events`, `/stats`, `/tournaments`, `/tournament/new`, `/guilds`, `/guilds/[slug]` | Legacy entry | Source currently redirects to Events. Verify destination/context; do not rebuild excluded guild features. |
-| Redirects / `/tournament/[id]/seating`, `/pods`, `/deck`, `/play/casual` | Legacy entry | Source redirects to current tournament/start-game/event destinations. Verify actual routing; no separate style redesign. |
+| My decks / `/decks` | Destination anchor | Pass recorded 24 Oct 2026 (eyebrow/summary/empty trim). Empty/inspector/edit still open. |
+| Playgroup / `/players` | Destination | Pass recorded 24 Oct 2026 (mana divider, denser cards). Light still open. |
+| Player / `/players/[id]` | Destination | Pass recorded 24 Oct 2026 (FeaturePanel demoted). Other-player empty decks still open. |
+| Profile / `/profile` | Task | Pass recorded 24 Oct 2026 (compact task, duplicate heading removed). Save-error still open. |
+| Create event / `/events/new` | Task | Pass recorded 24 Oct 2026 (single intro). Validation still open. |
+| Pick a player / unbound `/` | Entry task | Pass recorded 24 Oct 2026 (Manrope title, shorter help). House-mode shot still open. |
+| Login / `/login` | Entry task | Pass recorded 24 Oct 2026 (shorter form help). Form-first phone reorder still open. |
+| Onboarding / `/onboarding` | Entry task | Pass recorded 24 Oct 2026 (task title + shorter help; code review). Live disposable session still open. |
+| Guest / `/guest`, `/guest/[token]` | Entry task | Pass recorded 24 Oct 2026 (`/guest`→`/`; claim copy trimmed). Invalid/claimed live shots still open. |
+| Invite / `/invite/[code]` | Entry task | Pass recorded 24 Oct 2026 (shorter CTA copy). Invalid/expired still open. |
+| Seat/table join / `/join/sitting/[code]`, `/join/table/[code]` | Entry task | Pass recorded 24 Oct 2026 (Manrope titles). Live join continuity still open. |
+| Administration / `/admin` | Restricted task | Pass recorded 24 Oct 2026 (compact task + quieter copy). Denied non-admin → `/`. Permanent-admin live UI still open. |
+| Legacy dashboard / `/tournament/[id]/dashboard` | Older implemented surface | Reachability recorded 24 Oct 2026: still serves big-screen UI (no redirect). No Ember restyle this pass; deliberate scope later. |
+| Redirects / `/events`, `/stats`, `/tournaments`, `/tournament/new`, `/guilds`, `/guilds/[slug]` | Legacy entry | Verified 24 Oct 2026: app route files `redirect('/')`. No rebuild. |
+| Redirects / `/tournament/[id]/seating`, `/pods`, `/deck`, `/play/casual` | Legacy entry | Verified 24 Oct 2026: seating/pods/deck → tournament (or `/`); casual → `/events/{id}/play` or `/`. |
 
 ## Per-page record template
 
@@ -200,4 +200,70 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - Change applied: room FeaturePanel → quiet utility-link; shorter page/add-players/roster copy; mana on roster; ShareCode label 12px; dropped optional-score tutorial line in MatchReporter.
 - Evidence: [phone dark](ux-screenshots/ember-manage-audit-phone-dark.png).
 - Remaining gaps: light; long correction list density; QR theming.
-- Next page: My decks.
+- Next page: My decks (below).
+
+## My decks `/decks` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/decks` destination; Craig; 6 decks with art.
+- Keep: Fraunces “Your decks. Your signature.”; gallery cards; New deck CTA.
+- Change applied: eyebrow THE DECKBOX; summary count only; single empty state; no repeated format on card footer; shorter New deck dialog description.
+- Evidence: [phone dark](ux-screenshots/ember-decks-audit-phone-dark.png).
+- Remaining gaps: empty library; inspector/edit/delete confirmation; light.
+- Next page: Playgroup (below).
+
+## Playgroup `/players` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/players`; Craig; 14 profiles.
+- Keep: Fraunces Players; search; mana; add-player panel.
+- Change applied: THE PLAYGROUP + mana divider; dropped tutorial intro; denser card padding/gap; removed “View player →”.
+- Evidence: [phone dark](ux-screenshots/ember-playgroup-audit-phone-dark.png).
+- Remaining gaps: light; long-name wrap stress.
+- Next page: Player (below).
+
+## Player `/players/[id]` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/players/…` Craig (self).
+- Keep: Fraunces name; decks grid; Edit my profile.
+- Change applied: PLAYGROUP eyebrow; FeaturePanel → Events utility-link.
+- Evidence: [phone dark](ux-screenshots/ember-player-audit-phone-dark.png).
+- Remaining gaps: other player / empty decks; light.
+- Next page: Profile + Create event (below).
+
+## Profile `/profile` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/profile` task; Craig guest session.
+- Keep: compact Manrope title; Player colors; Switching players note; deckbox link.
+- Change applied: dropped PageIntro description and duplicate avatar heading; deckbox subcopy is count only; removed registered-account helper under Account name.
+- Evidence: [phone dark](ux-screenshots/ember-profile-audit-phone-dark.png).
+- Remaining gaps: save error toast; light.
+- Next page: Create event (below).
+
+## Create event `/events/new` — pass record · 24 October 2026
+
+- Route, page job, data/event state and role: `/events/new` task.
+- Keep: compact task title; fields; Create event CTA.
+- Change applied: single intro (no THE PLAYGROUP eyebrow stack); removed CardDescription duplicate.
+- Evidence: [phone dark](ux-screenshots/ember-create-event-audit-phone-dark.png).
+- Remaining gaps: validation/error writes.
+- Next page: Entry flows (below).
+
+## Entry flows — pass record · 24 October 2026
+
+- Pick a player: Manrope title; shorter help (`name-picker.tsx`).
+- Login: shorter Existing account help; [phone dark](ux-screenshots/ember-login-audit-phone-dark.png). Form-first reorder still open.
+- Onboarding: task title “Choose a play name”; shorter form help (code review; no disposable session).
+- Guest: `/guest` → `/`; claim title Manrope; shorter browser note.
+- Invite: shorter sign-in CTA copy.
+- Join sitting/table: Manrope card titles.
+- Remaining gaps: house-mode picker shot; invalid guest/invite; claim continuity.
+
+## Administration `/admin` — pass record · 24 October 2026
+
+- Denied non-admin (Craig guest) → `/`. Copy: compact “Admin tools”; quieter guest/event manager blurbs. Permanent-admin live UI still open (do not grant access for review).
+
+## Legacy dashboard + redirects — pass record · 24 October 2026
+
+- `/tournament/[id]/dashboard` still serves big-screen page (no redirect); out of Ember restyle scope this pass.
+- List/guild redirects: `app/*/page.tsx` → `/`.
+- Seating/pods/deck → tournament (or `/`); `/play/casual` → event play or `/`.
+- Tracker complete for route-level Ember Folio consistency passes. Open gaps remain on individual pages (light/laptop, live states, validation).
