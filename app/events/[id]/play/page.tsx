@@ -10,10 +10,11 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ again?: string }>;
+  searchParams: Promise<{ again?: string; mode?:string }>;
 }) {
   const { id } = await params;
-  const { again } = await searchParams;
+  const { again, mode } = await searchParams;
+  const recording=mode === "record";
   const board = await loadEventBoard(id);
   if (!board) notFound();
 
@@ -39,13 +40,14 @@ export default async function PlayPage({
       <PageIntro
         compact
         eyebrow="QUICK GAME"
-        title="Start a game"
-        description="Choose a format and players. Add commanders now or at the table."
+        title={recording?"Record a finished game":"Start a game"}
+        description={recording?"Choose the group and record who won.":"Choose a format and players. Add commanders now or at the table."}
       />
       {board.canManage ? (
         <section className="panel">
           <QuickMatchForm
-            key={previous?.id || 'new'}
+            key={(previous?.id || "new")+(recording?"record":"start")}
+            mode={recording?"record":"start"} startDate={board.event.start_date} endDate={board.event.end_date}
             eventId={id}
             people={board.members.map((member) => ({ id: member.id, name: member.name }))}
             decks={board.decks.map((deck) => ({
@@ -54,7 +56,7 @@ export default async function PlayPage({
               name: deck.name,
               commanders: commanderKey(deck.commander_name, deck.partner_name) === 'No commander' ? '' : commanderKey(deck.commander_name, deck.partner_name),
             }))}
-            replay={replay}
+            replay={replay ? {...replay,profileIds:replay.profileIds.filter(id=>board.members.some(p=>p.id===id)),deckIds:Object.fromEntries(Object.entries(replay.deckIds).filter(([id,deck])=>board.decks.some(d=>d.id===deck&&d.owner_id===id)).map(([id,deck])=>[id,String(deck)])),issues:[...replay.profileIds.filter(id=>!board.members.some(p=>p.id===id)).map(()=>"A player is no longer in this event. Choose their replacement."),...Object.entries(replay.deckIds).filter(([id,deck])=>!board.decks.some(d=>d.id===deck&&d.owner_id===id)).map(()=>"A deck is no longer available. Choose another or leave it unrecorded.")]}:undefined}
           />
         </section>
       ) : (

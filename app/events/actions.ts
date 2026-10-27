@@ -106,7 +106,7 @@ export async function joinEvent(inviteCode: string): Promise<CreateEventResult> 
       role: 'player',
     });
 
-  if (joinError) {
+  if (joinError && joinError.code !== '23505') {
     return { success: false, message: joinError.message };
   }
 

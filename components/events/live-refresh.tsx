@@ -1,42 +1,14 @@
 'use client';
-import { useEffect, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
-
-function subscribe(listener: () => void) {
-  window.addEventListener('online', listener);
-  window.addEventListener('offline', listener);
-  return () => {
-    window.removeEventListener('online', listener);
-    window.removeEventListener('offline', listener);
-  };
-}
-
-export function LiveRefresh() {
-  const router = useRouter();
-  const online = useSyncExternalStore(subscribe, () => navigator.onLine, () => true);
-
-  useEffect(() => {
-    const refresh = () => {
-      if (navigator.onLine && !document.hidden && !document.querySelector('input:focus, textarea:focus, select:focus, [role="dialog"], [data-editing-result="true"]')) {
-        router.refresh();
-      }
-    };
-    const timer = window.setInterval(refresh, 20000);
-    document.addEventListener('visibilitychange', refresh);
-    window.addEventListener('online', refresh);
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', refresh);
-      window.removeEventListener('online', refresh);
-    };
-  }, [router]);
-
-  if (online) return null;
-
-  return (
-    <div className="live-refresh-status" role="status">
-      <span>Connection interrupted · results may be out of date</span>
-      <button type="button" onClick={() => router.refresh()}>Retry</button>
-    </div>
-  );
+import {useEffect,useRef,useState,useTransition} from 'react';import {usePathname,useRouter} from 'next/navigation';
+export function LiveRefresh({fetchedAt}:{fetchedAt:string}){const router=useRouter();const path=usePathname();const [last,setLast]=useState(fetchedAt);const [state,setState]=useState<'idle'|'offline'|'failed'|'refreshing'|'editing'>('idle');const [pending,start]=useTransition();const [hydrated,setHydrated]=useState(false);const status=useRef(state);status.current=state;
+ useEffect(()=>{setHydrated(true);setLast(fetchedAt);setState(navigator.onLine?'idle':'offline');},[fetchedAt,path]);
+ useEffect(()=>{let active=true;let inFlight=false;const controller=new AbortController();
+ const editing=()=>Boolean(document.querySelector('input:focus,textarea:focus,select:focus,[role="dialog"],[data-editing-result="true"]'));
+ const refresh=async()=>{if(!active||document.hidden||inFlight)return;if(!navigator.onLine){setState('offline');return;}if(editing()){setState('editing');return;}inFlight=true;setState('refreshing');try{const id=path.match(/^\/events\/([^/]+)/)?.[1];const tournament=path.match(/^\/tournament\/([^/]+)/)?.[1];const response=await fetch('/api/weekend-refresh'+(id&&id!=='new'?'?event='+encodeURIComponent(id):tournament?'?tournament='+encodeURIComponent(tournament):''),{cache:'no-store',signal:controller.signal});if(!response.ok)throw Error();if(active)start(()=>router.refresh());}catch{if(active)setState(navigator.onLine?'failed':'offline');}finally{inFlight=false;}};
+ const tick=window.setInterval(()=>void refresh(),20000);const offline=()=>setState('offline');const focusout=()=>{if(status.current==='editing')queueMicrotask(()=>{if(!editing())void refresh();});};
+ document.addEventListener('visibilitychange',refresh);document.addEventListener('focusout',focusout);window.addEventListener('online',refresh);window.addEventListener('offline',offline);window.addEventListener('proxycon-refresh',refresh);
+ return()=>{active=false;controller.abort();clearInterval(tick);document.removeEventListener('visibilitychange',refresh);document.removeEventListener('focusout',focusout);window.removeEventListener('online',refresh);window.removeEventListener('offline',offline);window.removeEventListener('proxycon-refresh',refresh);};
+ },[path,router]);
+ const stamp=hydrated?new Date(last).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}):'…';const text=state==='offline'?'Offline · showing data from '+stamp:state==='failed'?'Couldn’t refresh · showing data from '+stamp:state==='editing'?'Updates paused while editing · last updated '+stamp:state==='refreshing'||pending?'Refreshing…':'Last updated '+stamp;
+ return <div className="live-refresh-status" data-state={state}><span role="status">{text}</span>{(state==='failed'||state==='offline')&&<button type="button" onClick={()=>window.dispatchEvent(new Event('proxycon-refresh'))}>Retry</button>}</div>;
 }

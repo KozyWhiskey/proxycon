@@ -1,78 +1,20 @@
-import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import Link from 'next/link';import {Button} from '@/components/ui/button';
+import { redirect } from 'next/navigation';
+import { resolvePlayer } from '@/lib/player-session';
 import { joinEvent } from '@/app/events/actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { NamePicker } from '@/components/who/name-picker';
 import { eventDates } from '@/lib/display';
-
-interface PageProps {
-  params: Promise<{ code: string }>;
-}
-
-export default async function InvitePage({ params }: PageProps) {
-  const { code } = await params;
-  const supabase = await createClient();
-
-  const { data: event, error } = await supabase
-    .from('events')
-    .select('id, name, start_date, end_date')
-    .eq('invite_code', code.toUpperCase())
-    .single();
-
-  if (error || !event) {
-    notFound();
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return (
-      <div className="invitation-stage">
-        <Card className="invitation-card">
-          <CardHeader className="text-center">
-            <div className="invite-mark">
-              <Calendar className="w-8 h-8" />
-            </div>
-            <p className="eyebrow">THERE’S A SEAT FOR YOU</p>
-            <CardTitle className="font-heading text-2xl">{event.name}</CardTitle>
-            <p className="subtle">{eventDates(event.start_date,event.end_date)}</p>
-            <CardDescription>
-              Sign in with your account to join.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button asChild className="w-full h-12 font-heading" variant="default">
-              <Link href={`/login?next=/invite/${code}`}>
-                Sign in to join
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-  const result = await joinEvent(code);
-
-  if (!result.success || !result.eventId) {
-    return (
-      <div className="invitation-stage">
-        <Card className="invitation-card">
-          <CardHeader>
-            <CardTitle>Could not join</CardTitle>
-            <CardDescription>{result.message || 'Try the code again from the house group.'}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button asChild variant="secondary" className="w-full">
-              <Link href="/">Return home</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-  redirect(`/events/${result.eventId}`);
+export default async function InvitePage({params}: {params: Promise<{code:string}>}) {
+ const {code}=await params; const ctx=await resolvePlayer();
+ const {data:event}=await ctx.supabase.from('events').select('id,name,start_date,end_date').eq('invite_code',code.toUpperCase()).maybeSingle();
+ if(!event) return <main className="page form-page"><h1>Invitation unavailable</h1><p>Check the code with your playgroup or choose an event.</p><form action="/invite-code"><label htmlFor="invite-code">Invite code</label><input className="input" id="invite-code" name="code" required maxLength={20}/><Button>Try code</Button></form><Link href="/events">Choose an event</Link></main>;
+ if(ctx.mode==='house') redirect('/events/'+event.id+'/room');
+ if(!ctx.playerId) {
+ const {data:roster}=await ctx.supabase.from('profiles').select('id,display_name,color').eq('selectable',true).not('display_name','is',null).order('display_name');
+ return <><p className="page form-page subtle">{event.name} · {eventDates(event.start_date,event.end_date)}</p><NamePicker players={(roster||[]).map(p=>({id:p.id,name:p.display_name||'Player',color:p.color}))} eventName={event.name} next={'/invite/'+encodeURIComponent(code)} houseNext={'/events/'+event.id+'/room'}/></>;
+ }
+ if(ctx.authUser&&!ctx.authUser.is_anonymous){const {data:p}=await ctx.supabase.from('profiles').select('display_name').eq('id',ctx.playerId).maybeSingle();if(!p?.display_name)redirect('/onboarding?next='+encodeURIComponent('/invite/'+code));}
+ const result=await joinEvent(code);
+ if(result.success&&result.eventId) redirect('/events/'+result.eventId);
+ return <main className="page form-page"><h1>Could not join {event.name}</h1><p role="alert">{result.message}</p><Link href={'/invite/'+encodeURIComponent(code)}>Try again</Link><Link href="/events">Choose an event</Link></main>;
 }

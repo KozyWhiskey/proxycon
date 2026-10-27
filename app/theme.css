@@ -42,7 +42,10 @@
   --control-face: linear-gradient(180deg, var(--surface), var(--surface-soft));
   --control-hover: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--action)), var(--surface-soft));
   --control-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 88%, var(--ink)), 0 2px 3px var(--shadow);
-  --action-face: linear-gradient(180deg, var(--action-hover), var(--action) 60%, var(--action-pressed));
+  /* Idle primary: shallow action→pressed only. Reserve bright hover for :hover so the
+     surface inset highlight is never stacked orange-on-orange. */
+  --action-face: linear-gradient(180deg, var(--action), var(--action-pressed));
+  --action-shadow: 0 2px 3px var(--shadow);
   --warm-stage: radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--action) 12%, transparent), transparent 65%), linear-gradient(135deg, var(--surface), var(--surface-soft));
   --warm-feature: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--action) 30%, transparent), transparent 78%), var(--surface);
   --feature-line: color-mix(in srgb, var(--line) 72%, var(--action));

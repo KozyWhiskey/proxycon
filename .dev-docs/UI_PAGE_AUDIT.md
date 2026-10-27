@@ -267,3 +267,55 @@ Contrast at the strongest new shading endpoints: secondary text 4.63:1 dark / 4.
 - List/guild redirects: `app/*/page.tsx` → `/`.
 - Seating/pods/deck → tournament (or `/`); `/play/casual` → event play or `/`.
 - Tracker complete for route-level Ember Folio consistency passes. Open gaps remain on individual pages (light/laptop, live states, validation).
+
+## Limited deck memories — fixture review · 25 October 2026
+
+- Added `/tournament/[id]/deck` and `/decks/limited/[id]` behind the pilot flag. Capture/edit uses the existing compact Manrope task header; shared memory and library destinations retain Fraunces. No alternate tokens or global theme edits.
+- Capture precedes optional deck naming/notes. One editable list receives explicit change proposals; basic lands have direct numeric inputs. Existing active tournament slips remain above the capture link.
+- Fixture browser checks cover explicit model choice, preference storage, no automatic quantity changes on recheck, partial failure, retry selection, autosave, manual counts, unverified names, and no page overflow at 320, 390, 768, and 1366px. Light/dark screenshots at 390 × 844 and 1366 × 768 and 200% CSS zoom are generated under `.next-verify/deck-memory-screenshots/`.
+- Reviewed fixture screenshots in both themes. Reused raised shared controls and opaque surfaces. Fixed an inherited display-font override using PageIntro compact rather than adding page-specific CSS.
+- Remaining: real player/hosted storage integration, native iPhone/Android camera capture, full screen-reader and every-state contrast audit, a representative photo evaluation set, and the one-draft pilot. Fixture checks are not a completed production accessibility or usability audit.
+
+### Limited deck photo review · 26 October 2026
+
+Owner-requested artwork-led layout within Ember Folio. Keep semantic colors, shared controls, task heading and explicit suggestion approval. Changed the inherited 760px cap to a 1600px maximum collection workspace, added responsive artwork tiles/phone review rows, optional compact list, and collapsible capture/reading notes. Fixture route `/dev/deck-memory` reviewed with disposable data; no tournament results modified. Light/dark 390×844 and 1366×768 screenshots in ignored `.next-verify/deck-memory-screenshots/*-review.png`; browser assertions cover reflow at 320/768px and 200% zoom, targeted provider retries, autosave and manual corrections. Actual-phone feedback and screen-reader checks remain pending.
+
+### Approved compact deck workspace implementation
+
+Owner approved the generated desktop/phone concept and requested implementation. Implemented compact candidate art and one Add action, contextual inspector, success states/Undo, type stacks and List view, side-by-side desktop workspace, and phone tabs within Ember Folio. Fixture evidence: `.next-verify/deck-memory-screenshots/*-full-workspace*.png` (22 entries) and `*-complete-deck.png` (40 cards). Both themes at 390×844 and 1366×900 were inspected; automated reflow checks cover 320/768px and 200% zoom. Keyboard tabs, dialog close/focus return, add-once, bulk preview and retry-after-refresh are exercised. Real-player deck/results were not modified. Screen-reader and actual-phone feedback remain pending.
+
+### Natural card refinement and independent UX QA · 26 October 2026
+
+Supersedes the crop treatment above. Review candidates retain full natural portraits, without a duplicate visible name beneath the printed title. Accepted stacks are bounded at 180px, with opaque preceding name/count strips and one full final card; independently flowing columns avoid grid-row voids. Phone saved decks default to grouped List; Stacks remains available. Photos/save status are compact, healthy reader details are secondary, and scoped Undo lives in the sticky toolbar rather than a floating overlay. Reopened completed reviews collapse behind Show reviewed cards; active approvals never trigger automatic collapse.
+
+The owner-requested critical UX QA agent reviewed source and fresh screenshots across three iterations and explicitly approved the final result with no remaining visual blocker. Evidence covers sparse two-land decks, 22-entry reviews, full 40-card decks, both themes, phone/laptop widths and 200% zoom. Browser regressions, focused domain/database/API tests, changed-file lint and the production webpack build passed. QA is visual/code review; actual-device and full screen-reader validation remain open. No release was pushed.
+
+### Actual overlapping images and editable categories · 26 October 2026
+
+Owner explicitly extended scope to custom categories and Sideboard. The MTG agent produced [feature spec](DECK_BUILDER_FEATURE_SPEC.md), the UX agent produced [implementation plan](DECK_BUILDER_UX_PLAN.md), and a developer agent implemented the board. Actual card faces now overlap with 44px exposed printed-title bands and full final cards. Copy badges use a gutter; bounded 200px images pack independently by deterministic height. List remains the phone default, with explicit usable Stacks. Missing and HTTP-failed images retain readable fallbacks. Main and Sideboard are visibly separate, with per-allocation quantities/movement and category management.
+
+Original MTG reviewer explicitly accepted after fixing manual/catalog replacement merging. Independent critical UX reviewer explicitly accepted after fixing desktop column voids, image failure fallbacks, category-form styling, nested-dialog focus and zoom evidence. Fixture evidence under `.next-verify/deck-builder-screenshots/` covers 320/390/768/1366px, light/dark, sparse/organized/stress 60 main +20 sideboard, long categories, inspector/forms, keyboard focus and 200% equivalent zoom. Scoped domain/database/save-API/provider tests, two browser suites, changed-file lint and production build are verification sources. Actual-device and full screen-reader usability remain pilot checks. No application release was pushed; the additive Supabase category migration was applied separately.
+
+### Limited library showcase · 27 October 2026
+
+Reused Commander gallery grid/card frame for Limited memories rather than wide text panels. Matching image height, title hierarchy, opaque surface and open cue; responsive single-column phone grid. Card inspector adds owner-only Use as showcase/reset, saved with card JSON. Main/sideboard counts and privacy remain explicit. Visual checks at390/1366 in both themes include long titles and unavailable artwork; gallery HTTP-failure and pre-hydration fallback, selection/reset and autosave payload tested. Evidence `.next-verify/deck-showcase-screenshots/`. No Commander editing behavior changed.
+
+### Weekend usability release candidate · 27 October 2026
+
+Owner approved the complete weekend plan. Implementation retains Ember Folio/Quiet Frame, mana signature, destination typography, opaque popouts, raised actions and equal themes. Event navigation remains Play → Stats → Players → Room; agenda/history/recap are contextual. Personal assignment precedes event records/discovery on phones. Room focus suppresses personal panels; eight-player 1366×768 view fits four report actions and eight standings rows. Twelve-player Room grows without scaling down. Setup hides empty standings; Map/List gives contained narrow-phone seating.
+
+Local fixture captures: .next-verify/weekend-screenshots/{event,room,quick,stats,recap}-{390,1366}-{light,dark}.jpg. Additional evidence: room-laptop-{light,dark}.jpg, room-12-laptop-light.jpg, event-waiting-phone-{light,dark}.jpg, quick-phone-dark.jpg, agenda-phone-light.jpg, score-dialog-draw-light.jpg, recap-export-page-01.png. The exported PNG was downloaded through the browser and visually inspected. Dialog 0–0 Save is disabled; 1–1 derives Draw with one enabled Save. Escape returns visible focus to the originating report trigger. Record mode selected four players without decks/order; Commander label change retained the group/winner; changing to 1v1 retained the group with a specific selection repair message.
+
+Reflow checked at 320/390/768/1024/1366 for event, Room, quick, statistics and recap; no page overflow. Seat List at320 also stayed contained. Native 200% zoom, physical phone keyboard/safe-area checks, complete screen-reader/contrast review, and screenshots for every real authenticated/utility route remain **Not verified**. These captures are disposable local fixtures, not a deployed acceptance sign-off.
+
+See [all acceptance IDs](WEEKEND_USABILITY_ACCEPTANCE.md) and [release/migration runbook](WEEKEND_USABILITY_RELEASE.md). No new migration was applied to live Supabase. The release gate remains open; do not mark this one-release plan complete from build/screenshots alone.
+
+Focus-mode follow-up: focus styling now follows the server-rendered control state, preventing a transient personal panel before hydration. Exit/re-enter focus was exercised; updated twelve-player dark/light captures show natural page growth. Setup standings were removed after the narrow-phone review exposed the premature zero table.
+
+### Current play before historical results · 27 October 2026
+
+Owner requested remembered event entry and reduced emphasis on past losses/places. PersonalGames now defaults to derived current assignments; finished/dropped records move into the lower, collapsed Results disclosure alongside weekend records and completed tournaments. Waiting headings stay neutral while retaining outcome and remaining-table context. Events always opens /events, and Room focus exposes it directly. The / entry route resumes a profile's remembered event; house memory is device-scoped.
+
+Mixed fixture includes a live Saturday table and a confirmed prior eighth place with a consistent losing record. At390×844, Table1, Scott and Report result appear in the first practical viewport; prior placement is absent until Results is opened. A completed-only event shows new-game actions and keeps prior results collapsed. Both states reflow without page overflow at320/390/768/1024/1366. Evidence: .next-verify/weekend-screenshots/active-before-past-{390,1366}-{light,dark}.jpg, past-results-expanded-390-light.jpg, finished-games-collapsed-390-light.jpg. Keyboard Enter opens/closes the disclosure.
+
+Supabase migrations are now applied; all existing record counts/checksums match. Authenticated fixture and house-browser event-return checks passed; fixtures were removed. See the updated release runbook and acceptance ledger for remaining full-release gates.

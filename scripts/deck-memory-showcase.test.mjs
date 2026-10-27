@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import ts from 'typescript';
+const native=createRequire(import.meta.url);
+async function compile(path,modules={}) {const mod={exports:{}},js=ts.transpileModule(await readFile(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',js)(id=>modules[id]||native(id),mod,mod.exports);return mod.exports;}
+const core=await compile('lib/deck-memory.ts'),builder=await compile('lib/deck-builder.ts',{'./deck-memory':core});
+const {memoryShowcase,chooseMemoryShowcase}=await compile('lib/deck-memory-showcase.ts',{'./deck-memory':core,'./deck-builder':builder});
+const art='https://cards.scryfall.io/normal/front/test.jpg';
+const land={...core.manualCard('Swamp',17),imageUrl:art,typeLine:'Basic Land — Swamp'};
+const creature={...core.manualCard('Gas Guzzler',2),imageUrl:art,typeLine:'Creature'};
+const side={...core.manualCard('Shock'),imageUrl:art,allocations:[{categoryId:'sideboard',count:1}]};
+const cards=[land,side,creature];
+assert.equal(memoryShowcase(cards).name,'Gas Guzzler','Automatic cover prefers a main nonland');
+let selected=chooseMemoryShowcase(cards,core.cardKey(side));
+assert.equal(memoryShowcase(selected).name,'Shock');assert.equal(selected.filter(c=>c.showcase).length,1);
+selected=chooseMemoryShowcase(selected,core.cardKey(creature));assert.equal(selected.filter(c=>c.showcase).length,1);
+assert.equal(memoryShowcase(selected.filter(c=>c.name!==creature.name)).name,'Swamp','Removed showcase falls back safely');
+assert.equal(memoryShowcase(chooseMemoryShowcase(cards,null)).name,'Gas Guzzler');
+assert.deepEqual(selected.map(({showcase:_flag,...card})=>card),cards,'Artwork choice never changes deck contents');
+assert.equal(memoryShowcase([]),null);
+assert.throws(()=>chooseMemoryShowcase(cards,'missing'));
+assert.throws(()=>chooseMemoryShowcase([core.manualCard('Custom card')],'custom card'));
+const {deckSaveSchema}=await compile('lib/deck-memory-save-schema.ts');
+const payload={revision:0,title:'Deck',note:'',cards:selected,categories:[],decisions:{},confirm:false,incomplete:false,acknowledged:true};
+assert.equal(deckSaveSchema.parse(payload).cards.find(c=>c.showcase).name,'Gas Guzzler');
+assert.equal(deckSaveSchema.safeParse({...payload,cards:selected.map(c=>({...c,showcase:true}))}).success,false);
+console.log('Showcase tests passed: selection/reset/fallback, main/sideboard choice, copy conservation and API validation.');

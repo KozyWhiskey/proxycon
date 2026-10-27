@@ -46,6 +46,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   // Form State
   const [name, setName] = useState(initialData?.name || '');
   const [format, setFormat] = useState(initialData?.format || 'Commander');
+  const [manualColors,setManualColors]=useState(false);
   const [colors, setColors] = useState<string[]>(initialData?.colors || []);
   const [commanderName, setCommanderName] = useState(initialData?.commander_name || '');
   const [partnerName, setPartnerName] = useState(initialData?.partner_name || '');
@@ -69,6 +70,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   const [isFullArtOpen, setIsFullArtOpen] = useState(false);
 
   const handleColorChange = (color: string, checked: boolean) => {
+    setManualColors(true);
     setColors((prev) =>
       checked ? [...prev, color].sort() : prev.filter((c) => c !== color)
     );
@@ -120,7 +122,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
 
   const handleSelectCard = (card: ScryfallCard) => {
     setCommanderName(card.name);
-    setColors(card.color_identity);
+    if(!manualColors)setColors(card.color_identity);
     
     const art = card.image_uris?.art_crop || card.image_uris?.normal || '';
     setImageUrl(art);
@@ -133,7 +135,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
 
     // Format description (Legacy fallback)
     const desc = `${card.mana_cost || ''} — ${card.type_line || ''}\n\n${card.oracle_text || ''}`;
-    setDescription(desc);
+    if(!description)setDescription(desc);
 
     setIsResultsOpen(false);
   };
@@ -246,6 +248,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                 />
               </div>
 
+              {initialData&&<>
               <div className="space-y-2">
                 <Label htmlFor="format">Format</Label>
                 <Select value={format} onValueChange={setFormat}>
@@ -261,6 +264,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                   </SelectContent>
                 </Select>
               </div>
+              </>}
             </div>
 
              {/* Commander Search */}
@@ -269,6 +273,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                 <div className="flex gap-2">
                   <Input
                     id="commanderName"
+                    required={format==='Commander'}
                     value={commanderName}
                     onChange={(e) => setCommanderName(e.target.value)}
                     placeholder="Kenrith, the Returned King"
@@ -293,6 +298,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                 </div>
             </div>
 
+            <details className="disclosure"><summary>Partner, artwork, colors & notes (optional)</summary>
             <div className="space-y-2">
               <Label htmlFor="partnerName">Partner (optional)</Label>
               <Input
@@ -365,7 +371,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
 
             <div className="space-y-4">
               <div className="flex justify-between items-start">
-                  <Label htmlFor="description" className="font-medium">Card text / stats</Label>
+                  <Label htmlFor="description" className="font-medium">Notes</Label>
                   {manaCost && <ManaCost manaCost={manaCost} size={18} />}
               </div>
               
@@ -385,6 +391,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               )}
             </div>
 
+            </details>
             <div className="pt-4">
               <Button type="submit" className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/10" variant="default" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}

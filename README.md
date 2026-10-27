@@ -12,7 +12,7 @@ The product end state is [`.dev-docs/PROJECT_SUMMARY.md`](.dev-docs/PROJECT_SUMM
 - Leave a tournament in setup before it starts. More than one game can be live.
 - See the room: live games, pairings, running match points, and a dashboard anyone in the event can correct.
 
-Guilds, a public player directory, badges, and a career record are not the product. Deck photos and budget-deck links come later.
+Guilds, a public player directory, badges, and a career record are not the product. Limited deck photos and reviewed decklists are available behind a pilot feature flag, including overlapping card stacks and editable main/sideboard categories; budget-deck links come later. See [deck memory setup and evaluation](.dev-docs/DECK_MEMORIES.md). Apply `scripts/sql/deck_memory_categories.sql` after `scripts/sql/deck_memories.sql` for category-aware atomic saves.
 
 ## Tech
 
@@ -27,6 +27,10 @@ Guilds, a public player directory, badges, and a career record are not the produ
 2. Create `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 3. Start the app with `npm run dev`.
 4. Open http://localhost:3000. Use the network address on the dev-server log when a phone in the house needs to reach it.
+
+## Deployment
+
+Production runs on Vercel at [upkeep.vercel.app](https://upkeep.vercel.app). Pushing a new release automatically triggers deployment. Configure production secrets in Vercel separately from local `.env.local`; see the deck memory setup guide for recognition settings.
 
 ## Docs
 

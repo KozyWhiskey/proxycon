@@ -1,7 +1,14 @@
+import { safeNext } from '@/lib/continuation'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Disposable visual fixtures must not create Supabase anonymous users or depend
+  // on auth quotas. The page independently returns 404 outside this dev flag.
+  if (process.env.NODE_ENV==='development'&&process.env.WEEKEND_UX_PREVIEW==='true'&&request.nextUrl.pathname==='/dev/weekend') {const previewHeaders=new Headers(request.headers);previewHeaders.set('x-proxycon-preview','weekend');return NextResponse.next({request:{headers:previewHeaders}})}
+  if (process.env.NODE_ENV === 'development' && process.env.DECK_MEMORY_PREVIEW === 'true' && request.nextUrl.pathname === '/dev/deck-memory') {
+    return NextResponse.next({ request: { headers: request.headers } })
+  }
   const response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -66,11 +73,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   // If user is logged in and tries to access login page, continue to the invite they opened
-  if (user && !user.is_anonymous && request.nextUrl.pathname.startsWith('/login')) {
+  if (user && !user.is_anonymous && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
     const next = request.nextUrl.searchParams.get('next')
     if (next && next.startsWith('/') && !next.startsWith('//')) {
-      return NextResponse.redirect(new URL(next, request.url))
+      return NextResponse.redirect(new URL(safeNext(next), request.url))
     }
     url.pathname = '/'
     url.search = ''

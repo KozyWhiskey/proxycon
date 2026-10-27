@@ -12,12 +12,14 @@ export function ActButton({
   variant = 'default',
   pendingLabel,
   returnTo,
+  disabled=false,
 }: {
   label: string;
   action: () => Promise<ActionResult>;
   variant?: 'default' | 'outline' | 'secondary' | 'ghost';
   pendingLabel?: string;
   returnTo?: string;
+  disabled?:boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -26,7 +28,7 @@ export function ActButton({
     <Button
       type="button"
       variant={variant}
-      disabled={pending}
+      disabled={pending||disabled}
       className="font-heading"
       onClick={() => {
         start(async () => {

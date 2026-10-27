@@ -2,15 +2,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { matchOutcome, validTournamentScore } from '@/lib/match-outcome';
-import { reportMatch } from '@/app/weekend/actions';
+import { reportMatch, currentMatchResult } from '@/app/weekend/actions';
 import { Button } from '@/components/ui/button';
 import { useAction } from '@/components/weekend/act-button';
 import { Check } from 'lucide-react';
 
-interface Player { id: string; name: string; team?: number | null; result?: string | null; gamesWon?: number | null }
+interface Player { id: string; name: string; team?: number | null; result?: string | null; gamesWon?: number | null; finishOrder?:number|null }
 
-export function MatchReporter({ matchId, players, teams = false, returnTo, showGamesWon = false, decks, tournament = false }: {
-  matchId: string; players: Player[]; teams?: boolean; returnTo?: string; showGamesWon?: boolean; decks?: Record<string, string>; tournament?: boolean;
+export function MatchReporter({ matchId, players, teams = false, returnTo, showGamesWon = false, decks, consequence, finishingOrder=false, tournament = false }: {
+  matchId: string; players: Player[]; teams?: boolean; returnTo?: string; showGamesWon?: boolean; decks?: Record<string, string>; tournament?: boolean; consequence?:string; finishingOrder?:boolean;
 }) {
   const router = useRouter();
   const { pending, run } = useAction();
@@ -24,7 +24,12 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   const [expected, setExpected] = useState(source);
   const [choice, setChoice] = useState<string | null>(named.every((player) => player.result === 'draw') ? 'draw' : initialWinners.join(',') || null);
   const [games, setGames] = useState<Record<string, number>>(() => Object.fromEntries(named.map((player) => [player.id, player.gamesWon || 0])));
+  const [positions,setPositions]=useState<Record<string,string>>(()=>Object.fromEntries(named.map(p=>[p.id,p.finishOrder?String(p.finishOrder):''])));
+  const [positionsDirty,setPositionsDirty]=useState(false);
+  const supplied=Object.values(positions).filter(Boolean);
+  const positionsValid=supplied.every(v=>Number.isInteger(Number(v))&&Number(v)>=1&&Number(v)<=named.length)&&new Set(supplied.map(Number)).size===supplied.length;
   const [error, setError] = useState('');
+  const [conflict,setConflict]=useState<typeof source|null>(null);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -57,6 +62,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   const previous = named.every((player) => player.result === 'draw')
     ? 'Draw'
     : `${named.filter((player) => player.result === 'win').map((player) => player.name).join(' & ')} won`;
+  const changed=tournament?named.some(p=>(games[p.id]||0)!==(expected.find(e=>e.profileId===p.id)?.gamesWon||0)):effective!==initialChoice||positionsDirty;
   const canSave = Boolean(effective) && (!tournament || validTournamentScore(named.map((player) => player.id), games));
 
   function select(value: string) {
@@ -140,26 +146,29 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
         </>
       )}
 
+      {finishingOrder&&!tournament&&<details className="disclosure"><summary>Add finishing order (optional)</summary><div className="space-y-3">{named.map(p=><label key={p.id} className="grid gap-1"><span>{p.name} · finishing position</span><input type="number" min={1} max={named.length} value={positions[p.id]||''} onChange={e=>{setPositions(v=>({...v,[p.id]:e.target.value}));setPositionsDirty(true);setDirty(true);}} /></label>)}{!positionsValid&&<p role="alert">Use distinct whole-number positions from 1 to {named.length}, or leave a position blank.</p>}</div></details>}
       {effective && canSave && (!correcting || dirty) && (
         <div className="result-review">
-          <span>{correcting ? 'Save this correction' : 'Ready to record'}</span>
+          <span>{correcting ? 'Recorded: '+previous+' → Proposed:' : 'Ready to record'}</span>
           <strong>{summary}{hasScore ? ` · ${scoreLabel}` : ''}</strong>
           {hasScore && !tournament && <p>{named.map((player) => `${player.name} ${games[player.id] || 0}`).join(' · ')}</p>}
           {correcting && (tournament || showGamesWon) && (
-            <p className="subtle">Standings update now. Unstarted next-round pairings may change. After Finish, lock places again.</p>
+            <p className="subtle">{consequence||"Standings update immediately. Unstarted next-round pairings may change; started pairings stay fixed. Confirm places again after a finished-tournament correction."}</p>
           )}
         </div>
       )}
       {error && (
         <div>
           <p role="alert" className="text-destructive text-sm">{error}</p>
-          <Button type="button" variant="ghost" onClick={() => { setExpected(source); setSourceVersion(version); setChoice(initialChoice); setGames(Object.fromEntries(named.map((player) => [player.id, player.gamesWon || 0]))); setDirty(false); setError(''); setSaved(false); router.refresh(); }}>Load current result</Button>
+          <Button type="button" variant="ghost" onClick={async()=>{const current=await currentMatchResult(matchId);if(current)setConflict(current);else setError('Could not load the current result. Your proposed score is still here.');}}>Review current result</Button>
+          {conflict&&<section className="panel"><h3>Current saved result</h3><p>{conflict.map(s=>(named.find(p=>p.id===s.profileId)?.name||'Player')+' '+(s.gamesWon??s.result??'Not reported')).join(' · ')}</p><p>Your proposal: {summary} {scoreLabel}</p><Button type="button" variant="outline" onClick={()=>{setExpected(conflict);setConflict(null);setError('');}}>Use this saved result as the correction baseline</Button></section>}
+
         </div>
       )}
       <Button
         type="button"
         className="save-result"
-        disabled={pending || !canSave || saved || (correcting && !dirty)}
+        disabled={pending || !canSave || !positionsValid || saved || (correcting && (!dirty||!changed))}
         onClick={async () => {
           setError('');
           const result = await run(() => reportMatch({
@@ -168,6 +177,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
             winnerIds: effective === 'draw' ? [] : effective?.split(',') || [],
             games: hasScore ? Object.fromEntries(named.map((player) => [player.id, games[player.id] || 0])) : undefined,
             decks: decks ? Object.fromEntries(named.map((player) => [player.id, decks[player.id] || null])) : undefined,
+            finishOrder:positionsDirty?Array.from({length:named.length},(_,i)=>named.find(p=>Number(positions[p.id])===i+1)?.id||''):undefined,
             expected,
           }));
           if (!result.success) {
@@ -176,6 +186,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
           }
           setSaved(true);
           setDirty(false);
+          if(returnTo&&!tournament){const id=returnTo.match(/^\/events\/([^/?]+)/)?.[1];if(id)sessionStorage.setItem('proxycon-result:'+id,matchId);}
           if (returnTo) router.push(returnTo);
         }}
       >

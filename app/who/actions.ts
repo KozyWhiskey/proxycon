@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { safeNext } from '@/lib/continuation';
 import { createClient } from '@/utils/supabase/server';
 
 export interface PlayerActionResult {
@@ -19,15 +20,15 @@ export async function chooseProfile(formData: FormData) {
   const { error } = await supabase.rpc('assume_profile', { p_profile_id: profileId });
   if (error) return { success: false, message: error.message };
   revalidatePath('/', 'layout');
-  redirect('/');
+  redirect(safeNext(formData.get('next')));
 }
 
-export async function chooseHouse() {
+export async function chooseHouse(next?: string) {
   const supabase = await createClient();
   const { error } = await supabase.rpc('assume_house');
   if (error) return { success: false, message: error.message };
   revalidatePath('/', 'layout');
-  redirect('/');
+  redirect(safeNext(next));
 }
 
 export async function createPlaygroupProfile(formData: FormData): Promise<PlayerActionResult> {
@@ -50,7 +51,7 @@ export async function createPlaygroupProfile(formData: FormData): Promise<Player
   revalidatePath('/', 'layout');
   revalidatePath('/admin');
   revalidatePath('/players');
-  if (bind && user.is_anonymous) redirect('/');
+  if (bind && user.is_anonymous) redirect(safeNext(formData.get('next')));
   if (!created) return { success: true, message: `${name} is already on the list.` };
   return { success: true, message: `${name} is on the list.` };
 }

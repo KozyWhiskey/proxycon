@@ -148,7 +148,7 @@ export function NewTournamentForm({ eventId, house = false }: { eventId: string;
       )}
 
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? 'Creating tournament…' : 'Create tournament'}
+        {pending ? 'Creating tournament…' : 'Create tournament setup'}
       </Button>
 
       <details className="disclosure">

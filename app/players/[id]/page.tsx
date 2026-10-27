@@ -1,3 +1,4 @@
+import {loadEventBoard} from '@/lib/event-board';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ import { type Deck } from '@/lib/types';
 import { ManaIdentity, ManaDivider } from '@/components/ui/mana-identity';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 
-export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PlayerPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<{event?:string}> }) {
   const current = await requirePlaygroup();
   const meId = current.profile?.id;
   const { id } = await params;
@@ -23,12 +24,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   ]);
   if (error || deckError) throw new Error('Could not load this player. Try again.');
   if (!player) notFound();
+  const eventId=(await searchParams).event;
+  const context=eventId&&z.uuid().safeParse(eventId).success?await loadEventBoard(eventId):null;
   const name = player.display_name?.trim() || player.username || 'Player';
   return (
     <main className="page collection-page player-profile">
-      <Link href="/players" className="subtle">
-        ← All players
-      </Link>
+      <Link href={context?'/events/'+context.event.id:'/players'} className="subtle">← {context?context.event.name:'All players'}</Link>{context&&<Link className="text-link" href={'/events/'+context.event.id+'/stats?view=players&player='+id}>View weekend results</Link>}
       <header className="page-heading player-profile-banner">
         <div className="flex items-center gap-5">
           <Avatar className="h-20 w-20">
@@ -85,7 +86,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           </div>
         )}
       </section>
-      <Link className="utility-link" href="/">
+      <Link className="utility-link" href="/events">
         <CalendarDays size={23} />
         <span>
           <strong>Events</strong>

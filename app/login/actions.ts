@@ -1,5 +1,6 @@
 "use server";
 
+import { safeNext } from '@/lib/continuation';
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -13,12 +14,6 @@ async function callbackUrl(nextPath?: string) {
   const origin = host ? `${proto}://${host}` : "http://localhost:3000";
   if (nextPath) return `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
   return `${origin}/auth/callback`;
-}
-
-function safeNext(value: FormDataEntryValue | null): string {
-  if (typeof value !== "string") return "/";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
 }
 
 export async function login(formData: FormData) {
@@ -47,7 +42,7 @@ export async function login(formData: FormData) {
       email,
       options: {
         // This ensures the link sent to email points to the correct domain
-        emailRedirectTo: await callbackUrl(),
+        emailRedirectTo: await callbackUrl(safeNext(formData.get("next"))),
       },
     });
 
@@ -55,7 +50,7 @@ export async function login(formData: FormData) {
       return { message: error.message };
     }
 
-    return redirect("/login?message=Check email to continue sign in process");
+    return redirect("/login?message=Check email to continue sign in process&next="+encodeURIComponent(safeNext(formData.get("next"))));
   }
 }
 
@@ -70,7 +65,7 @@ export async function signup(formData: FormData) {
     password,
     options: {
       // This ensures the confirmation link points to the correct domain
-      emailRedirectTo: await callbackUrl(),
+      emailRedirectTo: await callbackUrl(safeNext(formData.get("next"))),
     },
   };
 
@@ -81,7 +76,7 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/login?message=Check email to continue sign in process");
+  redirect("/login?message=Check email to continue sign in process&next="+encodeURIComponent(safeNext(formData.get("next"))));
 }
 
 export async function signInWithGoogle(formData?: FormData) {

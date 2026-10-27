@@ -1,8 +1,9 @@
+import {safeNext} from '@/lib/continuation';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { loadEventBoard, matchPlayers } from '@/lib/event-board';
-import { commanderKey } from '@/lib/weekend';
+import { commanderKey, isCommanderFormat } from '@/lib/weekend';
 import { deleteQuickMatch } from '@/app/weekend/actions';
 import { ActButton } from '@/components/weekend/act-button';
 import { QuickMatchTable } from '@/components/weekend/quick-match-table';
@@ -11,9 +12,10 @@ import { GameStatus } from '@/components/events/arena-ui';
 import { Trophy } from 'lucide-react';
 
 export default async function QuickMatchPage({
-  params,
+  params,searchParams,
 }: {
   params: Promise<{ id: string; matchId: string }>;
+  searchParams:Promise<{from?:string}>;
 }) {
   const { id, matchId } = await params;
   if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(matchId).success) notFound();
@@ -31,6 +33,7 @@ export default async function QuickMatchPage({
   const canDelete = board.canManage && !finished;
   const title = match.table_label || match.format_label || 'Quick match';
   const eventHref = `/events/${id}`;
+  const from=safeNext((await searchParams).from);const back=from.startsWith(eventHref+'/history')?from:null;
   const draw = finished && players.every((player) => player.result === 'draw');
   const winners = players.filter((player) => player.result === 'win').map((player) => player.name);
   const resultLine = draw
@@ -41,7 +44,7 @@ export default async function QuickMatchPage({
 
   return (
     <main className={`page form-page arena-match-detail task-page${finished ? ' is-complete' : ' is-playing'}`}>
-      <Link href={eventHref} className="subtle">← {board.event.name}</Link>
+      <Link href={back||eventHref} className="subtle">← {back?'Game history':board.event.name}</Link>
       <header className="match-page-head">
         <p className="eyebrow">{finished ? 'Result' : 'Live table'}</p>
         <h1>{title}</h1>
@@ -66,6 +69,7 @@ export default async function QuickMatchPage({
         <QuickMatchTable
           matchId={match.id}
           teams={teams}
+          commander={isCommanderFormat(match.game_type)}
           finished={finished}
           canReport={canReport}
           returnTo={eventHref}
@@ -85,6 +89,7 @@ export default async function QuickMatchPage({
             team: player.team,
             result: player.result,
             gamesWon: player.games_won,
+            finishOrder:player.finish_order,
             deckId: player.deck_id,
             color: board.members.find((member) => member.id === player.profile_id)?.color || null,
           }))}
@@ -94,10 +99,10 @@ export default async function QuickMatchPage({
           <p className="subtle">Join the event to report a result for this table.</p>
         )}
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">{finished && <Link className="text-link" href={eventHref}>Back to event</Link>}
           {finished && (
             <Button asChild>
-              <Link href={eventHref}>Back to event</Link>
+              <Link href={`/events/${id}/play?again=${match.id}`}>Play again with this group</Link>
             </Button>
           )}
           {canDelete && <ActButton label="Delete game" variant="outline" returnTo={eventHref} action={deleteQuickMatch.bind(null, match.id)} />}

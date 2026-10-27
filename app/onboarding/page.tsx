@@ -1,9 +1,11 @@
+import {safeNext} from '@/lib/continuation'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import OnboardingForm from '@/components/onboarding/onboarding-form'
 import { Brand } from '@/components/layout/brand'
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({searchParams}:{searchParams:Promise<{next?:string}>}) {
+ const next=safeNext((await searchParams).next)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -16,7 +18,7 @@ export default async function OnboardingPage() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.display_name) redirect('/')
+  if (profile?.display_name) redirect(next)
 
   const meta = user.user_metadata || {}
   const suggestion = String(meta.full_name || meta.name || '').trim()
@@ -28,7 +30,7 @@ export default async function OnboardingPage() {
         <p className="eyebrow">WELCOME</p>
         <h1 className="font-sans text-3xl font-semibold tracking-tight">Choose a play name</h1>
       </div>
-      <OnboardingForm suggestion={suggestion} />
+      <OnboardingForm suggestion={suggestion} next={next} />
     </div>
   )
 }

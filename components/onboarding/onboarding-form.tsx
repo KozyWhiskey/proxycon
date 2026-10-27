@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function OnboardingForm({ suggestion }: { suggestion: string }) {
+export default function OnboardingForm({ suggestion, next="/" }: { suggestion: string; next?:string }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [playName, setPlayName] = useState(suggestion)
@@ -21,7 +21,7 @@ export default function OnboardingForm({ suggestion }: { suggestion: string }) {
     const result = await completeOnboarding({ displayName: playName })
     if (result.success) {
       toast.success('Play name saved.')
-      router.push('/')
+      router.push(next)
       router.refresh()
     } else {
       toast.error(result.message || 'Could not save the play name.')

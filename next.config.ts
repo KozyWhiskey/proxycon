@@ -14,6 +14,7 @@ function houseHosts() {
 const nextConfig: NextConfig = {
   distDir: process.env.PROXYCON_DIST_DIR || '.next',
   reactCompiler: true,
+  serverExternalPackages: ['sharp', 'heic-convert', 'heic-decode', 'libheif-js'],
   allowedDevOrigins: houseHosts(),
   logging: {
     fetches: {

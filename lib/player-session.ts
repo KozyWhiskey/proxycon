@@ -35,7 +35,7 @@ export async function resolvePlayer(): Promise<PlayerContext> {
   return {
     supabase,
     authUser: user,
-    playerId: context.profileId || null,
+    playerId: mode === 'house' ? null : context.profileId || null,
     mode,
     isAdmin: Boolean(context.isAdmin),
   };

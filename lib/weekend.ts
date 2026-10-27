@@ -213,7 +213,7 @@ export function tournamentRoundPhase(input: {
         remainingSeconds: input.remainingSeconds,
       }, input.nowMs ?? Date.now());
       if (left === 0) {
-        return { key: 'elapsed', label: 'Time elapsed', short: 'Elapsed', status: 'attention' };
+        return { key: 'elapsed', label: 'Time called', short: 'Time called', status: 'attention' };
       }
     }
     return {

@@ -17,6 +17,10 @@
 /.next/
 /.next-preview/
 /.next-verify/
+/.next-weekend/
+/.next-weekend-host/
+/.next-weekend-build/
+/.next-weekend-release/
 /supabase/.temp/
 /out/
 

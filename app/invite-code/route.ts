@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from 'next/server';
+export function GET(request:NextRequest){const code=request.nextUrl.searchParams.get('code')?.trim()||'';return NextResponse.redirect(new URL('/invite/'+encodeURIComponent(code||'invalid'),request.url));}

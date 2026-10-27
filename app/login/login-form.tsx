@@ -24,6 +24,7 @@ function SubmitButton({ text }: { text: string }) {
 
 export default function LoginForm({ nextPath }: { nextPath?: string }) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [showPassword,setShowPassword]=useState(false)
 
   async function handleLogin(formData: FormData) {
     const res = await login(formData)
@@ -120,19 +121,19 @@ export default function LoginForm({ nextPath }: { nextPath?: string }) {
               <Input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 required
                 className="bg-card border-border focus-visible:ring-primary/20 focus-visible:border-primary/50"
               />
             </div>
-            <SubmitButton text="Sign in" />
+            <div className="action-row"><button type="button" className="text-link min-h-11" aria-pressed={showPassword} onClick={()=>setShowPassword(!showPassword)}>{showPassword?"Hide password":"Show password"}</button><Link href={`/login/forgot-password?next=${encodeURIComponent(nextPath||"/")}`}>Forgot password?</Link></div><SubmitButton text="Sign in" />
           </form>
         </div>
       </CardContent>
       <CardFooter className="flex justify-center">
         <Button asChild variant="link" className="text-muted-foreground hover:text-foreground">
-          <Link href="/">Back to the name list</Link>
+          <Link href={`/?next=${encodeURIComponent(nextPath||"/")}`}>Back to the name list</Link>
         </Button>
       </CardFooter>
     </Card>

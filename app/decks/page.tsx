@@ -5,6 +5,7 @@ import DeckCard from '@/components/decks/deck-card';
 import CreateDeckDialog from '@/components/decks/create-deck-dialog';
 import { PageIntro } from '@/components/layout/page-intro';
 import { Layers } from 'lucide-react';
+import { LimitedMemoryList } from '@/components/decks/limited-memory-list';
 
 export default async function DecksPage() {
   const current = await getCurrentUser();
@@ -53,6 +54,7 @@ export default async function DecksPage() {
           )}
         </>
       )}
+      <LimitedMemoryList />
     </main>
   );
 }

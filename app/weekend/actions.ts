@@ -895,6 +895,7 @@ export async function reportMatch(input: {
     }
   }
 
+  if(input.finishOrder){const positions=input.finishOrder.filter(Boolean);if(input.finishOrder.length>seatedIds.length||new Set(positions).size!==positions.length||positions.some(id=>!seatedIds.includes(id)))return {success:false,message:'Use distinct finishing positions for selected players.'};}
   const decision = matchOutcome(rows, input.games, Boolean(input.draw), input.winnerIds || []);
   if (!decision.draw && decision.winners.size === 0) return { success: false, message: 'Pick a winner, or mark a draw.' };
 
@@ -914,11 +915,8 @@ export async function reportMatch(input: {
     }
     return patch;
   });
-  // One database statement records all sides of the match together.
-  const { data: savedSeats, error: resultError } = await supabase.from('match_participants').upsert(patches, { onConflict: 'id' }).select('id');
-  if (resultError || savedSeats?.length !== rows.length) return { success: false, message: 'Could not save this result. Your selection is still here; try again.' };
-  const { data: completed, error: completedError } = await supabase.from('matches').update({ completed_at: new Date().toISOString() }).eq('id', match.id).select('id');
-  if (completedError || completed?.length !== 1) return { success: false, message: 'The player results were recorded, but the table could not be marked complete. Reload the match and save again.' };
+  const {data:savedCount,error:resultError}=await supabase.rpc('commit_weekend_result',{p_match:match.id,p_expected:input.expected||rows.map(s=>({profileId:s.profile_id,result:s.result,gamesWon:s.games_won})),p_rows:patches});
+  if(resultError||savedCount!==rows.length)return {success:false,message:resultError?.message||'Result not saved. Your selection is still here; try again.'};
 
   let extra: string | null = null;
   if (match.tournament_id) {
@@ -1175,7 +1173,7 @@ export async function finishTournament(input: {
     if (error || data?.length !== 1) return { success: false, message: 'Could not save all places. Review them and finish again.' };
   }
 
-  const { data: finished, error: finishError } = await supabase.from('tournaments').update({ status: 'completed' }).eq('id', input.tournamentId).select('id');
+  const { data: finished, error: finishError } = await supabase.from('tournaments').update({ status: 'completed', finished_at: new Date().toISOString() }).eq('id', input.tournamentId).select('id');
   if (finishError || finished?.length !== 1) return { success: false, message: 'Could not finish the tournament. Try again.' };
   refresh(tournament.event_id, input.tournamentId);
   return { success: true, message: 'Finished. 1st, 2nd, and 3rd are labeled.' };
@@ -1203,6 +1201,7 @@ export async function deleteQuickMatch(matchId: string): Promise<ActionResult> {
 export async function saveQuickMatch(input: {
   eventId: string;
   matchId?: string;
+  requestId?: string;
   format: string;
   customName?: string;
   profileIds: string[];
@@ -1228,12 +1227,18 @@ export async function saveQuickMatch(input: {
 
   const hasResult = Boolean(input.draw) || (input.winnerIds || []).length > 0;
   const day = input.playedOn || chicagoToday();
+  if (!input.matchId && input.requestId) {
+    const {data,error}=await gate.supabase.rpc('create_weekend_quick',{p_event:input.eventId,p_request:input.requestId,p_values:{...input,format:format.id,label:input.customName?.trim()||format.label,playedOn:day}});
+    if(error||!data)return {success:false,message:error?.message||'Could not save the game.'};
+    refresh(input.eventId,null,data);return {success:true,matchId:data,message:hasResult?'Result saved.':'Game started.'};
+  }
   let matchId = input.matchId;
 
   if (matchId) {
     const { data: existing } = await gate.supabase
       .from('matches')
       .select('id, tournament_id, completed_at')
+      .eq('event_id', input.eventId)
       .eq('id', matchId)
       .maybeSingle();
     if (!existing || existing.tournament_id) return { success: false, message: 'Game not found.' };
@@ -1301,3 +1306,5 @@ export async function setPlayName(playName: string): Promise<ActionResult> {
   revalidatePath('/', 'layout');
   return { success: true, message: 'Play name saved.' };
 }
+
+export async function currentMatchResult(matchId:string){const ctx=await resolvePlayer();const {data:m}=await ctx.supabase.from('matches').select('event_id').eq('id',matchId).maybeSingle();if(!m?.event_id)return null;const gate=await requireMember(m.event_id);if(gate.error)return null;const {data,error}=await ctx.supabase.from('match_participants').select('profile_id,result,games_won').eq('match_id',matchId);if(error)return null;return (data||[]).map(s=>({profileId:String(s.profile_id),result:s.result as string|null,gamesWon:s.games_won as number|null}));}

@@ -45,15 +45,15 @@ export function RoundClock({
         <p className="font-mono text-5xl tabular-nums" suppressHydrationWarning>{left == null ? '—' : formatClock(left)}</p>
       </div>
       <p className="text-xs text-muted-foreground">
-        {pausedAt ? 'Paused' : left === 0 ? 'Time elapsed · report results when ready' : 'Remaining this round'}
+        {left===0?'Time called · Matches remain open until results are recorded.':pausedAt?'Paused':'Remaining this round'}
       </p>
       {canControl && (
         <div className="flex flex-wrap items-center gap-2">
-          {pausedAt ? (
+          {left!==0 && (pausedAt ? (
             <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => resumeRoundClock(tournamentId))}>Resume</Button>
           ) : (
             <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => pauseRoundClock(tournamentId))}>Pause</Button>
-          )}
+          ))}
           <details><summary>Change length</summary><div className="flex flex-wrap gap-2"><p className="w-full text-xs text-muted-foreground">Changing the length resets the countdown. Time never enters a result.</p><Input
             aria-label="Round length in minutes"
             type="number"
@@ -69,7 +69,7 @@ export function RoundClock({
             disabled={pending}
             onClick={() => run(() => setTournamentSetup({ tournamentId, roundDuration: minutes }))}
           >
-            Reset clock
+            Reset clock to {formatClock(minutes*60)}
           </Button>
           </div></details>
         </div>

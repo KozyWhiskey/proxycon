@@ -20,11 +20,11 @@ export function AddPlayers({ players, action, kind, inline = false, memberIds = 
   const [message, setMessage] = useState('');
   const inRoster = new Set(memberIds);
   const available = inline ? players : players.filter(player => !inRoster.has(player.id));
-  const shown = available.filter(player => `${player.name} ${player.username || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const shown = [...available].sort((a,b)=>Number(inRoster.has(a.id))-Number(inRoster.has(b.id))).filter(player => `${player.name} ${player.username || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const picker = <div className="space-y-4">
       <p className="subtle">{kind === 'event' ? 'Search the playgroup and add anyone. They don’t need to join themselves.' : 'Choose players from this event before round one starts.'}</p>
       <Input aria-label={`Search players for ${kind}`} placeholder="Search by name" value={query} onChange={event => setQuery(event.target.value)} />
-      {inline && <p className="subtle text-sm">{shown.length} of {players.length} platform accounts</p>}
+      {inline && <p className="subtle text-sm">{shown.length} of {players.length} playgroup players</p>}
       <div className="max-h-80 overflow-y-auto">
         {shown.map(player => <div className="game-row gap-3" key={player.id}>
           <div className="min-w-0"><strong className="block break-words">{player.name}</strong>{player.username && <span className="subtle text-sm">@{player.username.replace(/^@+/, '')}</span>}</div>
@@ -41,6 +41,6 @@ export function AddPlayers({ players, action, kind, inline = false, memberIds = 
       </div>
       <p role="status" className="text-sm">{pending ? 'Adding player…' : message}</p>
     </div>;
-  if (inline) return <section aria-label="Add platform players" className="panel"><h2 className="text-2xl mb-4">Add players</h2>{picker}</section>;
-  return <details className="disclosure"><summary>Add players to {kind}</summary>{picker}</details>;
+  if (inline) return <section aria-label="Add playgroup players" className="panel"><h2 className="text-2xl mb-4">Add players</h2>{picker}</section>;
+  return <details className="disclosure" open={kind==='tournament'}><summary>Add players to {kind}</summary>{picker}</details>;
 }

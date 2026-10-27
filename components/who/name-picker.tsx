@@ -21,7 +21,7 @@ function ContinueButton({ name, color }: { name: string; color: string | null })
   return <Button type="submit" variant="outline" className="w-full justify-start min-h-12 text-base" disabled={pending}><ManaIdentity color={color} /><span>{pending ? 'Opening…' : name}</span></Button>;
 }
 
-export function NamePicker({ players }: { players: PickerPlayer[] }) {
+export function NamePicker({ players, next = "/", houseNext = "/", eventName }: { players: PickerPlayer[]; next?: string; houseNext?: string; eventName?: string }) {
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
   const shown = players.filter((player) => player.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
@@ -31,17 +31,17 @@ export function NamePicker({ players }: { players: PickerPlayer[] }) {
       <Brand />
       <header>
         <p className="eyebrow mt-6">Your playgroup</p>
-        <h1 className="font-sans text-3xl font-semibold tracking-tight">Who are you?</h1>
+        <h1 className="font-sans text-3xl font-semibold tracking-tight">{eventName ? `Choose your name to join ${eventName}` : "Who are you?"}</h1>
         <p className="subtle mt-4">Pick your name. Decks and results stay with that player.</p>
       </header>
-      <form action={async () => { const result = await chooseHouse(); if (result?.message) setMessage(result.message); }}><Button type="submit" variant="outline" className="w-full">Use the house screen</Button></form>
+      <form action={async () => { const result = await chooseHouse(houseNext); if (result?.message) setMessage(result.message); }}><Button type="submit" variant="outline" className="w-full">Use the house screen</Button></form>
       <section className="panel space-y-4">
         <Label htmlFor="player-search">Find your name</Label>
         <Input id="player-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Scott, Chris…" autoComplete="off" />
         <div className="name-choices">
           {shown.map((player) => (
-            <form key={player.id} action={async (formData) => { await chooseProfile(formData); }} className="flex items-center gap-3">
-              <input type="hidden" name="profileId" value={player.id} />
+            <form key={player.id} action={async (formData) => { const result=await chooseProfile(formData);if(result?.message)setMessage(result.message); }} className="flex items-center gap-3">
+              <input type="hidden" name="next" value={next} /><input type="hidden" name="profileId" value={player.id} />
               <ContinueButton name={player.name} color={player.color} />
             </form>
           ))}
@@ -54,14 +54,14 @@ export function NamePicker({ players }: { players: PickerPlayer[] }) {
           const result = await createPlaygroupProfile(formData);
           if (result?.message) setMessage(result.message);
         }} className="space-y-3">
-          <input type="hidden" name="bind" value="1" />
+          <input type="hidden" name="next" value={next} /><input type="hidden" name="bind" value="1" />
           <Label htmlFor="new-player">Play name</Label>
           <Input id="new-player" name="name" required maxLength={60} placeholder="Your name" autoComplete="nickname" />
           <Button type="submit" className="w-full">Add me and continue</Button>
           {message && <p role="status" className="text-sm">{message}</p>}
         </form>
       </section>
-      <Link className="text-link text-sm" href="/login">Sign in with an existing account →</Link>
+      <Link className="text-link text-sm" href={`/login?next=${encodeURIComponent(next)}`}>Sign in with an existing account →</Link>
     </main>
   );
 }

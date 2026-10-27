@@ -1,7 +1,6 @@
 import { resolvePlayer } from '@/lib/player-session';
 import { cache } from 'react';
 import { eventCapabilities } from '@/lib/event-capabilities';
-import { chicagoToday, needsSeats, rankPlayers, type HistoryMatch, type Result } from '@/lib/weekend';
 
 export function personName(profile?: { display_name?: string | null; username?: string | null } | null) {
   return profile?.display_name || profile?.username || 'Player';
@@ -18,10 +17,10 @@ export const loadEventBoard = cache(async (eventId: string) => {
   if (!event) return null;
 
   const [
-    { data: memberRows },
-    { data: tournaments },
-    { data: matches },
-    { data: prizes },
+    { data: memberRows, error:memberError },
+    { data: tournaments, error:tournamentError },
+    { data: matches, error:matchError },
+    { data: prizes, error:prizeError },
   ] = await Promise.all([
     supabase
       .from('event_members')
@@ -45,6 +44,10 @@ export const loadEventBoard = cache(async (eventId: string) => {
       .order('created_at', { ascending: true }),
   ]);
 
+  if(memberError||tournamentError||matchError||prizeError)throw new Error('Could not refresh the event. Try again.');
+  // Optional additive metadata must not hide existing tournaments before deployment.
+  const {data:extras,error:metadataError}=await supabase.from('tournaments').select('id,pod_orientations,finished_at').eq('event_id',eventId);
+  const metadata=new Map((extras||[]).map(t=>[t.id,t]));
   const members = (memberRows || []).map((row) => {
     const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
     return {
@@ -60,41 +63,44 @@ export const loadEventBoard = cache(async (eventId: string) => {
   const profileIds = [...new Set(members.map((member) => member.id))];
 
   const [
-    { data: roster },
-    { data: seats },
-    { data: decks },
+    { data: roster,error:rosterError },
+    { data: seats,error:seatError },
+    { data: decks,error:deckError },
   ] = await Promise.all([
     tournamentIds.length
       ? supabase
         .from('tournament_participants')
         .select('id, tournament_id, profile_id, draft_seat, pod, dropped, place')
         .in('tournament_id', tournamentIds)
-      : Promise.resolve({ data: [] as RosterRow[] }),
+      : Promise.resolve({ data: [] as RosterRow[],error:null }),
     matchIds.length
       ? supabase
         .from('match_participants')
         .select('id, match_id, profile_id, participant_id, result, games_won, deck_id, team, seat_number, finish_order')
         .in('match_id', matchIds)
-      : Promise.resolve({ data: [] as SeatRow[] }),
+      : Promise.resolve({ data: [] as SeatRow[],error:null }),
     profileIds.length
       ? supabase
         .from('decks')
         .select('id, owner_id, name, commander_name, partner_name, image_url')
         .in('owner_id', profileIds)
-      : Promise.resolve({ data: [] as DeckRow[] }),
+      : Promise.resolve({ data: [] as DeckRow[],error:null }),
   ]);
 
+  if(rosterError||seatError||deckError)throw new Error('Could not refresh players or results. Try again.');
   const names = new Map(members.map((member) => [member.id, member.name]));
   for (const seat of seats || []) {
     if (seat.profile_id && !names.has(seat.profile_id)) names.set(seat.profile_id, 'Player');
   }
 
   return {
+    fetchedAt: new Date().toISOString(),
     userId: ctx.playerId,
     event,
     members,
     names,
-    tournaments: tournaments || [],
+    upgradeRequired:Boolean(metadataError),
+    tournaments: (tournaments||[]).map(t=>({...t,pod_orientations:metadata.get(t.id)?.pod_orientations||{},finished_at:metadata.get(t.id)?.finished_at||null})),
     roster: (roster || []) as RosterRow[],
     matches: matches || [],
     seats: (seats || []) as SeatRow[],
@@ -138,83 +144,4 @@ interface DeckRow {
 
 export type EventBoard = NonNullable<Awaited<ReturnType<typeof loadEventBoard>>>;
 
-export function nameOf(board: EventBoard, profileId: string | null | undefined) {
-  if (!profileId) return 'Open seat';
-  return board.names.get(profileId) || 'Player';
-}
-
-export function matchPlayers(board: EventBoard, matchId: string) {
-  return board.seats
-    .filter((seat) => seat.match_id === matchId)
-    .map((seat) => ({
-      ...seat,
-      name: nameOf(board, seat.profile_id),
-      result: (seat.result as Result | null) || null,
-    }));
-}
-
-export function currentRound(board: EventBoard, tournamentId: string) {
-  const rounds = board.matches.filter((match) => match.tournament_id === tournamentId && !match.is_final);
-  const round = rounds.reduce((max, match) => Math.max(max, match.round_number || 0), 0);
-  return { round, matches: rounds.filter((match) => (match.round_number || 0) === round && round > 0) };
-}
-
-export function standingsFor(board: EventBoard, tournamentId: string) {
-  const roster = board.roster.filter((person) => person.tournament_id === tournamentId && person.profile_id);
-  const history: HistoryMatch[] = [];
-  for (const match of board.matches.filter((row) => row.tournament_id === tournamentId && !row.is_final)) {
-    const seats = matchPlayers(board, match.id).filter((seat) => seat.participant_id && seat.result);
-    if (seats.length === 1) {
-      history.push({ player1: seats[0].participant_id!, player2: null, result1: 'win', result2: null });
-    } else if (seats.length >= 2) {
-      history.push({
-        player1: seats[0].participant_id!,
-        player2: seats[1].participant_id!,
-        result1: seats[0].result || 'draw',
-        result2: seats[1].result,
-      });
-    }
-  }
-  const ranked = rankPlayers(roster.map((person) => person.id), history);
-  const standings = ranked.map((row) => {
-    const person = roster.find((seat) => seat.id === row.id);
-    return {
-      ...row,
-      profileId: person?.profile_id || '',
-      name: nameOf(board, person?.profile_id),
-      place: person?.place || null,
-      dropped: Boolean(person?.dropped),
-      seat: person?.draft_seat || null,
-    };
-  });
-  if (board.tournaments.find(tournament => tournament.id === tournamentId)?.status === 'completed') {
-    standings.sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity));
-  }
-  return standings;
-}
-
-export function myOpenMatches(board: EventBoard) {
-  if (!board.userId) return [];
-  return board.matches.filter((match) => {
-    const seats = matchPlayers(board, match.id);
-    const mine = seats.some((seat) => seat.profile_id === board.userId && !seat.result);
-    if (!mine) return false;
-    if (!match.tournament_id) return true;
-    return Boolean(match.started_at) || seats.length > 0;
-  });
-}
-
-export function liveOrSetup(board: EventBoard) {
-  return board.matches.filter((match) => {
-    const seats = matchPlayers(board, match.id);
-    const open = seats.length === 0 || seats.some((seat) => !seat.result);
-    return open;
-  });
-}
-
-export { chicagoToday, needsSeats };
-
-export function gamesWonFor(board: EventBoard, tournamentId: string, participantId: string) {
-  const matchIds = new Set(board.matches.filter(match => match.tournament_id === tournamentId && !match.is_final && board.seats.filter(seat => seat.match_id === match.id).length > 1).map(match => match.id));
-  return board.seats.filter(seat => seat.participant_id === participantId && matchIds.has(seat.match_id)).reduce((sum, seat) => sum + (seat.games_won || 0), 0);
-}
+export {nameOf,matchPlayers,currentRound,standingsFor,myOpenMatches,liveOrSetup,gamesWonFor,chicagoToday,needsSeats} from './event-board-view';

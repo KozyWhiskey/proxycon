@@ -1,3 +1,5 @@
+import {safeNext} from '@/lib/continuation';
+import {resultText,tableName} from '@/lib/weekend-view';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
@@ -15,7 +17,7 @@ function gamesWonLabel(count: number) {
 }
 
 /** Modern event-scoped match page, including matches from previous rounds. */
-export default async function TournamentMatchPage({ params }: { params: Promise<{ id: string; matchId: string }> }) {
+export default async function TournamentMatchPage({ params,searchParams }: { params: Promise<{ id: string; matchId: string }>;searchParams:Promise<{from?:string}> }) {
   const { id, matchId } = await params;
   if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(matchId).success) notFound();
   const db = await createClient();
@@ -23,6 +25,7 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
   if (!tournament?.event_id) notFound();
   const board = await loadEventBoard(tournament.event_id);
   if (!board) notFound();
+  const from=safeNext((await searchParams).from);const back=from.startsWith('/events/'+board.event.id+'/history')?from:null;
   const game = board.tournaments.find((row) => row.id === id);
   const match = board.matches.find((row) => row.id === matchId && row.tournament_id === id);
   if (!game || !match) notFound();
@@ -37,7 +40,7 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
   const matchup = bye
     ? `${players[0]?.name || 'Player'} has the bye`
     : players.map((player) => player.name).join(' vs ');
-  const table = match.table_label || `Table ${match.table_number}`;
+  const table=tableName(match);
   const state = recorded
     ? 'Result recorded'
     : playing
@@ -59,45 +62,12 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
     />
   ) : null;
 
-  const playerCards = (
-    <div className="match-detail-players">
-      {players.map((player) => {
-        const standing = standings.find((row) => row.profileId === player.profile_id);
-        const gamesWon = player.games_won || 0;
-        const hasScore = players.some((seat) => (seat.games_won || 0) > 0);
-        return (
-          <div
-            key={player.id}
-            className={`match-contender${player.result === 'win' ? ' is-winner' : ''}${player.result === 'loss' ? ' is-loss' : ''}`}
-          >
-            <PlayerAvatar name={player.name} color={board.members.find((member) => member.id === player.profile_id)?.color} />
-            {player.profile_id === board.userId && <span className="subtle">You</span>}
-            <h2>{player.name}</h2>
-            {standing && (
-              <p className="subtle">
-                {standing.points} points · {standing.wins}–{standing.losses}–{standing.draws}
-              </p>
-            )}
-            {recorded && (
-              <p className="recorded-outcome">
-                {bye
-                  ? 'Bye · 3 match points'
-                  : `${player.result === 'win' ? 'Won' : player.result === 'loss' ? 'Lost' : 'Draw'}${
-                      hasScore ? ` · ${gamesWonLabel(gamesWon)}` : ''
-                    }`}
-              </p>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <>
       <EventNav id={board.event.id} house={board.house} name={board.event.name} />
       <main className={`page form-page match-page arena-match-detail task-page${recorded ? ' is-complete' : ' is-playing'}`}>
-        <Link href={`/tournament/${id}`} className="subtle">← {game.name}</Link>
+        <Link href={back||`/tournament/${id}`} className="subtle">← {back?'Game history':game.name}</Link>
         <header className="match-page-head">
           <p className="eyebrow">
             {match.is_final ? 'Final' : `Round ${match.round_number} of ${game.max_rounds}`}
@@ -130,7 +100,7 @@ export default async function TournamentMatchPage({ params }: { params: Promise<
           {/* Score entry first while playing — identity cards stay secondary. */}
           {!recorded && reporter}
 
-          {playerCards}
+          {recorded&&<p className="subtle">{resultText(players)}</p>}
 
           {recorded && reporter && (
             <details className="disclosure">

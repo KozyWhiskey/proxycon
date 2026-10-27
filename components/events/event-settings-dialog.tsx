@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Settings, Archive, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -110,7 +109,7 @@ export default function EventSettingsDialog({
               {isActive && (
                 <p className="text-[10px] text-muted-foreground mt-2 flex items-center justify-center">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  This will hide it from the "Active Events" list.
+                  This will hide it from the &quot;Active Events&quot; list.
                 </p>
               )}
             </div>

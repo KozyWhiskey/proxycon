@@ -13,6 +13,7 @@ interface Seat {
   gamesWon: number | null;
   deckId: string | null;
   color: string | null;
+  finishOrder?:number|null;
 }
 
 interface DeckOption {
@@ -31,6 +32,7 @@ export function QuickMatchTable({
   finished,
   canReport,
   returnTo,
+  commander=false,
 }: {
   matchId: string;
   players: Seat[];
@@ -39,6 +41,7 @@ export function QuickMatchTable({
   finished: boolean;
   canReport: boolean;
   returnTo: string;
+  commander?:boolean;
 }) {
   const [deckIds, setDeckIds] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -53,6 +56,7 @@ export function QuickMatchTable({
   const reporter = canReport ? (
     <MatchReporter
       matchId={matchId}
+      finishingOrder={commander}
       teams={teams}
       returnTo={returnTo}
       decks={deckIds}
@@ -62,6 +66,7 @@ export function QuickMatchTable({
         team: player.team,
         result: player.result,
         gamesWon: player.gamesWon,
+        finishOrder:player.finishOrder,
       }))}
     />
   ) : null;
@@ -110,7 +115,7 @@ export function QuickMatchTable({
                   </div>
                 </div>
               ) : finished ? (
-                <p className="subtle text-sm mt-3">No deck recorded</p>
+                <p className="subtle text-sm mt-3">Deck not recorded</p>
               ) : null}
 
               {canReport && profileId && !finished && (

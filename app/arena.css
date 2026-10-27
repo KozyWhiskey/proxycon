@@ -274,14 +274,14 @@
 .arena-room .room-places { margin-top:12px; padding:16px; }
 .arena-room .room-places p { font-size:12px; padding:6px 0; }
 .arena-room .room-places h3 { font-size:24px; }
-.room-focus:has(.arena-room) .side-nav,.room-focus:has(.arena-room) .session-header { display:none; }
+:root:has(.arena-room [data-room-focus="true"]) .side-nav,:root:has(.arena-room [data-room-focus="true"]) .session-header { display:none; }
 .app-shell:has(.arena-room) > .side-nav { display:none; }
 .app-shell:has(.arena-room) .session-footer { display:none; }
 .app-shell:has(.arena-room) .session-header.is-house { min-height:45px; padding-block:3px; }
 .app-shell:has(.arena-room) .event-nav { min-height:44px; }
 .app-shell:has(.arena-room) .event-nav > a { min-height:44px; border:0; border-radius:8px; }
 .app-shell:has(.arena-room) .event-nav .event-context-name { line-height:42px; }
-.room-focus:has(.arena-room) .event-nav { display:none; }
+:root:has(.arena-room [data-room-focus="true"]) .event-nav { display:none; }
 
 @media(min-width:1001px) and (max-height:850px) { .arena-room { padding-top:14px; gap:10px; } .arena-room .room-mast { padding:12px 20px; } .arena-room .room-clock .text-5xl { font-size:62px; } .arena-room .room-clock .round-clock { gap:4px; } .arena-room .round-clock > * + * { margin-block-start:0; } .arena-room .room-table { min-height:132px; padding:12px; } .arena-room .room-table-top { margin-bottom:8px; } .arena-room .room-standings td { padding:6px 4px; } .arena-room .room-recent { padding:2px 0; } }
 @media(min-width:1600px) and (min-height:851px) { .arena-room .room-table { min-height:190px; } .arena-room .room-side { font-size:30px; } .arena-room .room-standings td { padding:12px 6px; } .arena-room .room-standings .room-who { font-size:16px; } }

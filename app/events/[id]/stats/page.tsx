@@ -1,3 +1,4 @@
+import {Suspense} from 'react';
 import { notFound } from 'next/navigation';
 import { loadEventBoard, matchPlayers } from '@/lib/event-board';
 import { commanderKey, type Result, type StatGame } from '@/lib/weekend';
@@ -66,7 +67,8 @@ export default async function EventStatsPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <EventStatistics
+    <Suspense fallback={<p>Loading statistics…</p>}><EventStatistics
+      userId={board.userId}
       event={board.event}
       members={board.members.map((member) => ({ id: member.id, name: member.name, color: member.color }))}
       games={games}
@@ -74,7 +76,7 @@ export default async function EventStatsPage({ params }: { params: Promise<{ id:
       tournaments={board.tournaments.map((tournament) => ({ id: tournament.id, name: tournament.name, status: tournament.status }))}
       decks={[...commanderArt.values()]}
       matchTournaments={Object.fromEntries(board.matches.flatMap((match) => (match.tournament_id ? [[match.id, match.tournament_id]] : [])))}
-    />
+    /></Suspense>
   );
 }
 

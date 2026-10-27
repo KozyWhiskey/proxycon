@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Trash2, Copy } from 'lucide-react';
@@ -47,7 +46,7 @@ export default function ManageMembersDialog({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const handleAddMember = async (profile: any) => {
+  const handleAddMember = async (profile: Pick<Member, 'id' | 'username' | 'display_name' | 'avatar_url'>) => {
     startTransition(async () => {
       const result = await addEventMember(eventId, profile.id);
       if (result.success) {

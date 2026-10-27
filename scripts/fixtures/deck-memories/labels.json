@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "notes": "Human transcriptions of visible titles in the two supplied examples. Hidden stack quantities are excluded. Owner review and 20–30 further real layouts are required before release claims.",
+  "photos": [
+    {
+      "id": "cube-overlap",
+      "file": "cube-overlap.webp",
+      "status": "provisional",
+      "excluded": ["Dark Maelstrom pile at left", "unreadable covered cards", "Swamp stack quantities"],
+      "cards": [
+        ["Forsaken Miner", 1], ["Skullclamp", 1], ["Golgari Signet", 1], ["Bone Shards", 1],
+        ["Entomb", 1], ["Endurance", 1], ["Recurring Nightmare", 1], ["Lord Skitter, Sewer King", 1],
+        ["Mox Diamond", 1], ["Chrome Mox", 1], ["Ulamog, the Ceaseless Hunger", 1],
+        ["Emrakul, the Aeons Torn", 1], ["Emrakul, the Promised End", 1], ["Utopia Sprawl", 1],
+        ["Zagoth Triome", 1], ["Yavimaya, Cradle of Growth", 1], ["Channel", 1],
+        ["Dark Ritual", 1], ["Ramunap Excavator", 1], ["Reanimate", 1], ["Bitter Triumph", 1],
+        ["Bloodghast", 1], ["Cabal Ritual", 1], ["Lotus Cobra", 1], ["Exhume", 1]
+      ]
+    },
+    {
+      "id": "draft-duplicates",
+      "file": "draft-duplicates.webp",
+      "status": "provisional",
+      "excluded": ["Mountain and Swamp stack quantities"],
+      "cards": [
+        ["Night Market", 1], ["Gas Guzzler", 1], ["Burnout Bashtronaut", 1], ["Endrider Catalyzer", 1],
+        ["Tyrox, Saurid Tyrant", 1], ["Gastal Thrillseeker", 2], ["Gastal Blockbuster", 1],
+        ["Grim Javelineer", 1], ["Pacesetter Paragon", 1], ["Pactdoll Terror", 2],
+        ["Streaking Oilgorger", 1], ["Thunderhead Gunner", 1], ["The Speed Demon", 1],
+        ["Coalstoke Gearhulk", 1], ["Chitin Gravestalker", 1], ["Grim Bauble", 2],
+        ["Hellish Sideswipe", 1], ["Spin Out", 2], ["Cursecloth Wrappings", 1], ["Chandra, Spark Hunter", 1]
+      ]
+    }
+  ]
+}

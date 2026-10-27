@@ -205,3 +205,9 @@ Use approximately 120–180ms for hover/focus feedback and 180–240ms for a mea
 | Superseded | Green/brass exploration, half-arch navigation, optional tournament score disclosure, winner-choice tournament save |
 
 Further refinement stays within this direction unless the owner explicitly changes it.
+
+## Weekend usability extension · 27 October 2026
+
+The approved weekend release extends the existing component/token system. Play → Stats → Players → Room stays the event navigation. Contextual Agenda/History/Recap links follow the personal task and live activity. Personal states are readable words with table/opponent/action; do not rely on colored status alone. Focus Room suppresses the personal feature panel, keeps numbered tables and standings at usable sizes, and lets twelve-player content grow. Compact result dialogs retain named +/− game-win counters and one derived preview. Seat Map/List provide equivalent assignment actions with optional top-edge labels.
+
+Print recap is intentionally light, with numbered pages shared by PNG exports; application chrome and controls are excluded. This does not introduce another app palette. Agenda and history retain destination typography, compact form/control typography, neutral navigation and the existing depth tokens. See [weekend acceptance evidence](WEEKEND_USABILITY_ACCEPTANCE.md) and the page audit; remaining device and deployed integration checks are release gates.

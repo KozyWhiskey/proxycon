@@ -13,7 +13,7 @@ function isLocalHost(hostname: string) {
 }
 
 /** Pure origin resolution for invites; exported for tests. */
-export function resolveHouseOrigin(env: NodeJS.ProcessEnv = process.env, port = env.PORT || '3000'): string {
+export function resolveHouseOrigin(env: Partial<NodeJS.ProcessEnv> = process.env, port = env.PORT || '3000'): string {
   const fromEnv = env.PROXYCON_HOUSE_URL?.trim();
   if (fromEnv) return strip(fromEnv);
 

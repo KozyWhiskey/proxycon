@@ -1,3 +1,4 @@
+import { safeNext } from '@/lib/continuation';
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = safeNext(searchParams.get("next"));
 
   if (token_hash && type) {
     const supabase = await createClient();
@@ -20,7 +21,9 @@ export async function GET(request: NextRequest) {
     if (!error) {
       // redirect user to specified redirect URL or root of app
       // We explicitly construct the URL relative to the request URL to handle environments correctly
-      return NextResponse.redirect(new URL(next, request.url));
+      const response=NextResponse.redirect(new URL(next,request.url));
+      if(type==='recovery') response.cookies.set('proxycon-recovery','1',{httpOnly:true,sameSite:'lax',secure:request.nextUrl.protocol==='https:',maxAge:900,path:'/auth'});
+      return response;
     }
   }
 
@@ -28,12 +31,16 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
+      const response=NextResponse.redirect(new URL(next,request.url));
+      if(next.startsWith('/auth/reset-password')) response.cookies.set('proxycon-recovery','1',{httpOnly:true,sameSite:'lax',secure:request.nextUrl.protocol==='https:',maxAge:900,path:'/auth'});
+      return response;
     }
   }
 
   // return the user to an error page with some instructions
 
   // return the user to an error page with some instructions
-  return NextResponse.redirect(new URL("/auth/auth-code-error", request.url));
+  const errorUrl=new URL('/auth/auth-code-error',request.url);
+  errorUrl.searchParams.set('next',next);
+  return NextResponse.redirect(errorUrl);
 }

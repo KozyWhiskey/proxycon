@@ -9,7 +9,7 @@ import { LogoutButton } from '@/components/auth/logout-button';
 export function SideNav({ userRole = 'user', name = 'Player', isGuest = false }: { userRole?: 'user' | 'admin'; name?: string; isGuest?: boolean }) {
   const path = usePathname();
   const items = [
-    { href: '/', label: 'Events', icon: CalendarDays, active: path === '/' || path.startsWith('/events') || path.startsWith('/tournament') },
+    { href: '/events', label: 'Events', icon: CalendarDays, active: path === '/' || path.startsWith('/events') || path.startsWith('/tournament') },
     { href: '/decks', label: 'My decks', icon: Layers, active: path.startsWith('/decks') },
     { href: '/players', label: 'Players', icon: Users, active: path.startsWith('/players') },
     { href: '/profile', label: 'My profile', icon: UserRound, active: path.startsWith('/profile') },

@@ -1,0 +1,1 @@
+import {spawn} from 'node:child_process';const p=spawn(process.execPath,['node_modules/next/dist/bin/next','build','--webpack'],{env:{...process.env,PROXYCON_DIST_DIR:'.next-weekend-release'},stdio:'inherit',windowsHide:true});p.on('exit',c=>process.exitCode=c||0);

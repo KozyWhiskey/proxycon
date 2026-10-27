@@ -315,7 +315,7 @@ h2,h3,h4 { font-family:var(--font-body),sans-serif;
 }
 .pc-button { min-height:44px; font-family:var(--font-body),sans-serif; font-size:14px; font-weight:600; border-radius:8px; white-space:normal; text-align:center; line-height:1.3; transition:background-color 150ms, color 150ms, border-color 150ms, box-shadow 150ms; box-shadow:none;
 }
-.pc-button[data-variant=default] { background:var(--action-face); color:var(--action-ink); border-color:var(--action); box-shadow:var(--control-shadow);
+.pc-button[data-variant=default] { background:var(--action-face); color:var(--action-ink); border-color:var(--action); box-shadow:var(--action-shadow);
 }
 .pc-button[data-variant=default]:hover:not(:disabled) { background:linear-gradient(180deg, var(--action-hover), var(--action)); border-color:var(--action-hover);
 }

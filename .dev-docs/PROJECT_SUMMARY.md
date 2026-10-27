@@ -1,6 +1,6 @@
 # ProxyCon product spec
 
-Product end state, updated 24 October 2026. This file is the product.
+Product end state, updated 27 October 2026. This file is the product.
 
 Preserve existing accounts, profiles, and decks. A player profile does not require a login. A phone picks a name from the home screen.
 
@@ -22,7 +22,7 @@ Inside an event, quick matches and tournaments run at the same time. There is no
 
 - One claimed profile per person. A profile can exist before anyone signs in, and it keeps that person's decks, seats, and results.
 - **Unbound browser:** the first screen is the playgroup name list. A phone picks a name, or adds a name that is not there, and that browser stays on that player until they switch. No email, password, or Google account is required for that.
-- **Bound browser:** after a name is chosen (or an existing account is signed in), the app opens on the list of events. Anyone with a session can read and join any event without invitation or approval. Joining is what puts them into that event's games.
+- **Bound browser:** after a name is chosen (or an existing account is signed in), the app resumes the last event selected by that profile. The preference follows the profile across devices. With no usable saved event it shows the event chooser. Explicit invitation/continuation destinations take precedence. Events always opens the chooser at /events. Anyone with a session can read and join any event without invitation or approval. Joining is what puts them into that event's games.
 - Google and email sign-in remain for existing accounts and for the permanent admin. A picked name never becomes an administrator.
 - The house laptop can open the room without becoming a player. Results are still stored on the players in the game.
 - A signed-in playgroup directory shows player profiles and their decks. A player can read another profile, but only edit their own profile and decks. This is not a public directory or an all-time ranking.
@@ -49,16 +49,34 @@ One table, one result, no rounds. Commander is always a quick match.
 | Winston or pack wars | Two or three people, one result. |
 | Custom name | Any other table. Players and a reported winner. |
 
-Game two with the same pod keeps the players and the commanders. Someone can be swapped before it starts.
+Start a game and Record a finished game are separate entry modes. Opening either creates only a draft. Commander is a family with an optional None/$15/$30/cEDH/Planechase/Archenemy label; stored identifiers and winner rules stay compatible. Recording needs only a valid group and winner/side or draw. Decks and partial nonduplicated finishing positions are optional. The winner is independent of finishing order.
 
-A deck is stored on the account: a name plus one commander, or two for partners. It remains for the next event. Photos and budget-deck links are later. A result can be saved and the deck filled in with it.
+Game two with the same group keeps format/label, players, sides and valid deck selections. It resets outcome, finishing order and day. Players/decks can be swapped before saving; missing identities require explicit repair. One stable request identifier per new draft makes retry return the same game. A successful result returns to the event with View result and Play again.
+
+A Commander deck is stored on the profile: a name plus one commander, or two for partners. It remains for the next event. Budget-deck links are later. A result can be saved and the deck filled in with it.
+
+## Limited deck memories
+
+Behind `DECK_MEMORIES_ENABLED`, a tournament participant can save one current deck memory for a draft, chaos draft, cube, or sealed, with a main deck and optional manually organized sideboard. Take a photo, review suggestions, keep an autosaved draft, and explicitly confirm the list with retained photos and an optional note. Manual entry and main-deck basic-land counters always work. Memories never change tournament rules, results, or pairings.
+
+- Choose Google Gemini, OpenAI, or Both · compare for each analysis. Both is the initial default; the browser remembers the last explicit selection. There is no silent provider fallback. Both reads independently and disagreements remain visible.
+- A follow-up photo checks the corrected list by default. An explicit Additional cards choice proposes new copies. Rechecks never silently sum quantities, remove cards missing from a crop, or overwrite corrections. Suggestions require acceptance.
+- Compact photo candidates show full natural card faces with explicit Add/Review actions, a shared card/evidence inspector, and toolbar Undo. Accepted stacks overlap actual card faces with printed title bands exposed and a full final card. Phones default to grouped List with selectable Stacks. Desktop shows review and deck together; phones use Review/Your deck tabs. Reopening prioritizes pending entries or collapses completed review history; accepting a card keeps its position during the current review.
+- Owners can create, rename, reorder and delete custom main/sideboard categories, rename the built-in Sideboard label, and move selected copies between categories. Category identity and section are separate from names. Each canonical card remains one row; explicit copy allocations and an implicit automatic main-type remainder prevent doublecounting. Category deletion preserves cards in the same section. Main-only totals, confirmation, basic-land inputs, photo comparison and separate Sideboard text export preserve split copies. See [feature spec](DECK_BUILDER_FEATURE_SPEC.md) and [UX plan](DECK_BUILDER_UX_PLAN.md).
+- Up to four private photos are retained. Hidden stack quantities remain manual. Draft autosave does not imply confirmation. Lists below 40 cards require the incomplete acknowledgement when confirming; unverified entries require acknowledgement. Editing a confirmed memory creates changes awaiting confirmation. A retained sharing choice never publishes an unconfirmed revision.
+- Only the owner edits, reads private memories, or runs recognition. Picked-name sessions use the same profile ownership as accounts; house mode has no personal deck. Privacy follows the existing picked-name identity model.
+- Owners may share confirmed lists and photos with the signed-in playgroup after tournament Finish. Unsharing stops new access grants; already-issued photo links expire shortly. A result correction does not silently revoke an existing sharing choice.
+- Saved memories appear in My decks and tournament history. Commander decks stay separate. Copy/download, edit, share/unshare, and delete are supported. Unfinished drafts expire after 30 days without edits; confirmed memories stay until deleted.
+- Limited memories use the same artwork-led gallery cards as Commander decks. Owners choose Use as showcase from a card inspector; one selection saves with the canonical card rows. Automatic artwork prefers a main-deck nonland and falls back safely when the chosen card is removed. Artwork selection changes no quantities, categories, privacy, or tournament data.
+- Automatic sideboard/unused-pool scanning, Commander scanning, standalone imports, and live camera recognition remain out of scope. Manual sideboard organization is supported. See [DECK_MEMORIES.md](DECK_MEMORIES.md) for migration, configuration, evaluation, and pilot requirements.
 
 ## Tournaments
 
 A tournament is a set draft, a chaos draft, a cube, or a sealed. Commander, Two-Headed Giant, and a one-off constructed game are not tournaments.
 
 - The round count is chosen in setup. Six to eight players suggests three rounds. Nine to sixteen suggests four. It can be changed until Start round 1, then it stays fixed.
-- People join the tournament before they have a seat. A draft or cube uses numbered seats. Sealed does not.
+- Create tournament setup retains format/rounds/clock, with optional supplies and prizes. Creation does not post pairings or start play. Assemble the group, inspect readiness, explicitly apply the recommendation if desired, then Post pairings and Start round.
+- People join the tournament before they have a seat. A draft or cube uses numbered seats. Sealed does not. Map/List are equivalent seat-assignment presentations. Each pod may have a descriptive top-edge orientation label; it never changes numbering or pairing rules.
 - The seating screen draws those seats clockwise. The low numbers sit across the top from left to right, and the rest continue around the bottom. Tapping a seat assigns any player who joined.
 - Each player claims a seat, or anyone hits Randomize. Randomize asks: fill empty seats, or reshuffle everyone who joined. Fill empty keeps existing claims, seats the unseated players, and adds seats if needed. Reshuffle gives every joined player a new seat and drops extra empty seats. The first claim on a seat keeps it. Anyone operating the room or tournament setup can move someone. A seat can be added.
 - A large draft can be two pods with one leaderboard. Setup shows the split. Round 1 stays inside the pod. Later rounds may cross.
@@ -91,12 +109,12 @@ A tournament is a set draft, a chaos draft, a cube, or a sealed. Commander, Two-
 
 Stats are for the event that is open. They never roll into an all-time total.
 
-The event has a dedicated statistics page so the group can see how everyone is doing across the weekend. Results from different kinds of games remain distinguishable.
+The event has a dedicated statistics page with Overview, Players, Head to head, and Tournaments sections. Section/day/format/player persist in the URL. Overview defaults to Commander and Whole weekend; day choices include additional recorded dates. Tournaments always uses Whole event and confirmed places; Head to head shows both columns with day/player filters. Casual win bars show counts on a shared scale, with alphabetical tie ordering and no official ordinal ranks. Results from different kinds of games remain distinguishable.
 
 - Commander wins and losses, by commander, including partner pairs. A draw is neither.
 - Team-game wins and losses. Both players on a team share the result.
 - Each tournament: match points and match record while it is played. Place at Finish.
-- Head to head for the event, with Commander games and tournament matches in separate columns.
+- Head to head for the event, with Commander games and tournament matches in separate columns. Commander means wins in completed shared pods: both losing or drawing awards neither a win. Shared pod/draw/neither context remains visible. Tournament encounters count actual matches and exclude byes.
 - The event uses America/Chicago. Each game has a day, defaulting to today in that zone. Anyone can change the day until the game is finished. Thursday and Sunday are visible on their own and in the event total.
 - Most wins and streaks are separate for Commander and for tournament matches. A streak is consecutive wins in that column. A draw ends it. A tournament bye counts as a win. A loss ends it. The page shows the current streak and the best streak.
 - The page also shows tournament titles, each player's match-win rate, and who played the most games.
@@ -142,4 +160,50 @@ On a phone, a returning player's table, opponent, round state, and result action
 
 ## Later
 
-Photographing a drafted deck, and attaching a budget-deck link, are capabilities to add after match tracking is solid. They are not part of the current build.
+Budget-deck links remain later scope. Limited deck memories are implemented behind a pilot feature flag; live recognition accuracy and playgroup usability must be measured before wider release.
+
+## Approved weekend usability additions · 27 October 2026
+
+These additions were explicitly approved as one release. The [acceptance ledger](WEEKEND_USABILITY_ACCEPTANCE.md) records local evidence and remaining release gates; this behavior specification does not assert production deployment.
+
+### Arrival and continuity
+
+Invitation arrival resolves selected-player context, not authentication alone. Unbound browsers choose an existing name, add a name, use an account, or open the house screen. The event name and dates appear before joining. A missing identity is never an invalid invitation. A validated internal continuation travels through name creation, login/callback, onboarding and recovery; external or protocol-relative continuations are rejected. House arrival opens Room without joining. Recovery uses the existing auth provider at /login/forgot-password and /auth/reset-password, with neutral sent confirmation and expired-link retry.
+
+### Returning players and the house
+
+Personal status is derived from membership, seats, matches/results, final state and confirmed places, with no independently editable status column. Show seat/seating before pairings; table/opponent and Not started after posting; Report result once started; explicit bye/dropped states; saved outcome and remaining-table count while waiting; new assignment when posted; Review places and finish once all results arrive; confirmed place after Finish; Places need confirming again after a correction. Tournament assignments precede simultaneous casual games. Current tasks precede records and discovery on phones.
+
+Home event date badges use America/Chicago inclusive dates: Upcoming, Happening now, Past dates; explicitly closed events say Closed. Past dates do not finish open games. House mode uses Choose an event/Open room language and never presents itself as a player. Events is a visible destination. Event navigation remains Play → Stats → Players → Room. Agenda, history and recap are contextual links from Play.
+
+Tournament detail keeps one featured assignment and compact ascending table rows whose Report result opens a score editor. Named +/− counters are always visible for tournament reporting; reject 0–0 and derive the outcome. Corrections retain the expected-result snapshot and show a conflicting saved result beside the proposal before an explicit baseline adoption. Historical missing scores say Score not recorded. Completed detail leads with official confirmed places/prizes, then optional final, Swiss standings, round history and secondary memories. A final changes official first/second, never Swiss points.
+
+Room focus removes personal feature panels, even in a player browser. Eight-player operation targets all four result controls and eight standings rows at 1366×768; twelve players grow naturally. Explicit selection persists. Finished tournaments are secondary. A table name always retains its number; custom labels affect that match only. Zero clock says Time called and leaves matches open. Changing length explicitly resets the clock.
+
+### Contextual supporting destinations
+
+/events/[id]/history includes completed casual games, tournament matches, finals and byes, sorted newest first with stable twenty-row pagination. URL filters cover day/player/format family/tournament/search, with canonical result links and return context. Event Players shows truthful assignments or No current assignment, Weekend results and Player profile. Profiles opened with an authorized event context offer Back to event and its weekend results. Global directories stay compact; deck/profile collections keep artwork-led cards. Profile settings lead with Play name/Player colors; appearance stays a browser preference. Optional avatar details never require an upload.
+
+### Loose agenda
+
+/events/[id]/agenda stores independent event plans: required day/title; optional literal timing, roster supplies owner, note and same-event tournament link; explicit within-day position, timestamps and revision. Existing event managers including house mode edit; other authorized readers read. Move up/down is accessible. Revision conflicts retain the proposed text and require review. Remove confirms and deletes only the plan. New dates must be in the event range; plans displaced by later event-date changes remain visible for rescheduling. There are no RSVPs, attendance, reminders, countdowns or automatic starts. Legacy sittings/signups/check-ins remain retired.
+
+### Recap and freshness
+
+/events/[id]/recap builds an authorized event-only snapshot using the same completed-result calculations and confirmed places as Stats. Unfinished play says Weekend so far/Places pending. Formats, player records, Commander highlights and prizes remain distinct. Private Limited lists/photos, emails, invitations and management controls never enter the export. Print/Save as PDF uses the browser with light pages; numbered PNG downloads use the same wrapped/paginated snapshot and generated timestamp. More data never rewrites an already downloaded file. Newer data prompts Refresh recap. There is no public share URL or upload.
+
+Visible-tab live views retain the twenty-second cadence and refresh on return. Last updated means successful server retrieval. Offline/failed refresh retains the prior snapshot with time and Retry; reconnect remains Refreshing until retrieval succeeds. Editing pauses refresh without discarding drafts. A committed result and a later failed board refresh have separate feedback. This is in-tab resilience, not offline writes or installation.
+
+### Additive storage and release requirements
+
+- Apply scripts/sql/weekend_usability.sql: tournament pod_orientations/finished_at, unique match creation_request_id, event_agenda_items and capability/revision/atomic result/creation RPCs. finished_at preserves knowledge that places need confirming again; it is not a second status authority.
+- Apply scripts/sql/weekend_memory_confirmation.sql after the existing deck_memories.sql and deck_memory_categories.sql: confirmed_revision, explicit confirmation semantics and confirmed-only sharing. No recognition expansion; the existing pilot flag and ownership boundaries remain.
+- Existing identities, formats, seats/results/prizes/places remain intact. No agenda/orientation backfill is required and no standings/outcomes are rewritten. Apply migrations before serving the updated write workflows. Validate using disposable events, never real playgroup outcomes.
+
+### Selected event and current-play priority · approved 27 October 2026
+
+The entry route / resumes the selected player's remembered event after sign-in or name selection. /events is the explicit chooser and always stays accessible, including from Room focus. A valid explicit continuation/invitation wins over the remembered preference. Preferences belong to existing profiles; switching players never inherits another player's preference. House remembers its event against its anonymous device identity and resumes Room. Visiting an event destination records selection after navigation, never during link prefetch. Deleted/unavailable events fall back to the chooser.
+
+The top personal area contains in-flight tasks only: seating, posted/live matches, byes, waiting for an ongoing tournament and required Finish. Finished tournaments and dropped-player records are historical. On Play they appear under a collapsed Past games & weekend results disclosure in the lower Results section, alongside personal weekend records, recent completed matches and completed tournaments. No last-place/loss panel leads a later visit. A just-saved result in an ongoing tournament uses a neutral waiting heading, with the outcome as secondary metadata and an explanation of what remains. The same derived current/past classification drives home and player roster status. Results/Statistics/History remain accessible when deliberately opened.
+
+Additive storage: scripts/sql/weekend_event_preferences.sql creates weekend_event_preferences with an exclusive profile_id or device_user_id owner, event_id and updated_at, plus remember_weekend_event / remembered_weekend_event RPCs. Ownership follows the existing player-context resolver; direct authenticated writes are revoked. These preferences grant no event membership or management capability.

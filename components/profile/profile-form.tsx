@@ -57,15 +57,6 @@ export default function ProfileForm({
 
   return (
     <form onSubmit={handleSaveProfile} className="space-y-6">
-      <div className="space-y-2">
-        <Label className="text-foreground" htmlFor="account-name">Account name</Label>
-        <Input
-          id="account-name"
-          value={userName || ''}
-          disabled
-          className="h-12 bg-muted border-border text-muted-foreground"
-        />
-      </div>
 
       <div className="space-y-2">
         <Label className="text-foreground" htmlFor="play-name">Play name</Label>
@@ -136,7 +127,7 @@ export default function ProfileForm({
         </Select>
       </div>
 
-      <div className="space-y-2">
+      <details className="disclosure"><summary>Optional profile details</summary><p className="subtle">Account: {userName||'Picked name'}</p>      <div className="space-y-2">
         <Label className="text-foreground" htmlFor="avatar-url">Avatar URL</Label>
         <Input
           id="avatar-url"
@@ -145,7 +136,7 @@ export default function ProfileForm({
           placeholder="https://example.com/avatar.jpg"
           className="h-12 bg-muted border-border text-foreground"
         />
-      </div>
+      </div></details>
 
       <Button
         type="submit"

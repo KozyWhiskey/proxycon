@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { createEvent } from '@/app/events/actions';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,10 +14,15 @@ import { chicagoToday } from '@/lib/weekend';
 export default function NewEventForm() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
+  const [error,setError]=useState('');
   const [startDay, setStartDay] = useState(chicagoToday());
   const [endDay, setEndDay] = useState(chicagoToday());
 
   async function handleCreate(formData: FormData) {
+    setError('');
+    const draftName=String(formData.get('name')||'').trim();
+    if(!draftName || draftName.length>100){setError('Use an event name from 1 to 100 characters.');return;}
+    if(!startDay || !endDay || endDay<startDay){setError('End date must be on or after the start date.');return;}
     setIsCreating(true);
     try {
       const name = formData.get('name') as string;
@@ -29,18 +34,15 @@ export default function NewEventForm() {
         toast.success('Event created successfully!');
         router.push(`/events/${res.eventId}`);
       } else {
-        toast.error(res.message || 'Failed to create event');
+        setError(res.message || 'Could not create event.');
         setIsCreating(false);
       }
-    } catch { toast.error('Could not create the event. Check your connection and try again.'); }
+    } catch { setError('Could not create the event. Check your connection and try again.'); }
     finally { setIsCreating(false); }
   }
 
   return (
     <Card className="glass-panel border-border">
-      <CardHeader>
-        <CardTitle className="text-xl font-heading">Event details</CardTitle>
-      </CardHeader>
       <CardContent>
         <form action={handleCreate} className="space-y-6">
           <div className="space-y-2">
@@ -50,6 +52,7 @@ export default function NewEventForm() {
               name="name"
               placeholder="e.g. Wisconsin Weekend"
               required
+              maxLength={100}
               className="bg-card border-border"
             />
           </div>
@@ -82,6 +85,7 @@ export default function NewEventForm() {
             </div>
           </div>
 
+          {error&&<p role="alert" className="text-destructive">{error}</p>}
           <Button type="submit" className="w-full font-heading" disabled={isCreating}>
             {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Create event

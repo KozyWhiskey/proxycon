@@ -38,7 +38,8 @@
   --pc-action-hover: #FF9D61;
   --pc-action-pressed: #F47A30;
   --pc-on-action: #21170F;
-  --pc-action-face: linear-gradient(180deg, var(--pc-action-hover), var(--pc-action) 60%, var(--pc-action-pressed));
+  --pc-action-face: linear-gradient(180deg, var(--pc-action), var(--pc-action-pressed));
+  --pc-action-shadow: 0 2px 3px var(--pc-depth-shadow);
   --pc-control-face: linear-gradient(180deg, var(--pc-surface), var(--pc-soft));
   --pc-control-hover: linear-gradient(180deg, color-mix(in srgb, var(--pc-surface) 92%, var(--pc-action)), var(--pc-soft));
   --pc-feature-line: color-mix(in srgb, var(--pc-border) 72%, var(--pc-action));
@@ -122,7 +123,7 @@
   border: 1px solid var(--pc-action);
   border-radius: var(--pc-radius-control);
   background: var(--pc-action-face);
-  box-shadow: var(--pc-control-shadow);
+  box-shadow: var(--pc-action-shadow);
   color: var(--pc-on-action);
   font: 600 var(--pc-font-control-size) / 1.3 var(--pc-font-body);
 }
