@@ -36,7 +36,7 @@ Same hosted Supabase backend, twelve disposable players, 36 games / 120 particip
 
 All eighteen direct-load medians and four navigation paths are in [implemented measurements](qa/2026-10-30/performance/implemented/measurements.json). Profile remained approximately unchanged (406→404 ms); Playgroup and player detail improved modestly. The 400 ms navigation target was not achieved on every path. The remaining delay is chiefly authenticated network/database work, rather than standings CPU. Further work should use deployed traces before adding broader caching.
 
-Final application source fingerprint: `8685823029db04d6c59bdc9896768960bf5f8e88bf63e2e5bf607773daad8590`. Production build completed with the same fingerprint before and after. The optional SQL function was not installed in the hosted database during these local measurements, so History uses the compatibility fallback. Earlier loading-boundary experiments regressed reveal timing and were removed; those measurements are excluded.
+Application source fingerprint for the full local benchmark: `8685823029db04d6c59bdc9896768960bf5f8e88bf63e2e5bf607773daad8590`. Production build completed with the same fingerprint before and after. The optional SQL function was not installed in the hosted database during these local measurements, so History uses the compatibility fallback. Earlier loading-boundary experiments regressed reveal timing and were removed; those measurements are excluded.
 
 ## Deployed verification
 
@@ -53,6 +53,8 @@ Vercel served application commit `f1813cdb3c5d077e67bf8782817a4fe6c4106504`, ver
 Initial result entry was approximately unchanged (1,809→1,805 ms, one sample each). Direct Agenda and Recap loads improved43% and35%. Direct Players was unchanged. Playgroup (+6%), Profile (+1%), player detail (+10%) and History (+10%) did not show improvement in this small deployed sample. Cold starts and network variation remain visible; the old deployed baseline did not expose a source revision and this release also includes approved UX changes. All raw ranges and limitations are retained in the aggregate report.
 
 The History result identified avoidable rollout overhead: the missing RPC probe was followed by the full compatibility load. A follow-up now selects the existing loader directly unless `WEEKEND_HISTORY_PAGINATION=true`; after installing the SQL function, enable that flag to use database pagination. Tests verify no context/RPC preflight when disabled, equivalent fallback when enabled but unavailable, and retained failure semantics. This preserves existing history behavior while deployment access is pending.
+
+The follow-up application commit `a535c7433c1277f7a2cb4948f043827f2fc81d95` was verified live. Its production build passed with stable source fingerprint `d9f305a04a1722877bd937f5fb5400bca09f36955bd3d42dcc6261b55571bcc1`; TypeScript, focused lint and performance correctness tests passed again. A further four deployed History reads returned successfully with a760 ms median (599–1,437 ms), versus729 ms at baseline: no demonstrated baseline speedup. [Follow-up evidence](qa/2026-10-30/performance/implemented/history-rollout-check.json). All fixtures were removed. Future history optimization should be measured after installing/enabling database pagination, without attributing cold-start variation to a proven code effect.
 
 ## Validation
 
