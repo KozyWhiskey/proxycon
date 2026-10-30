@@ -1,10 +1,11 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import { requirePlaygroup } from '@/lib/get-current-user';
 import { createClient } from '@/utils/supabase/server';
 import { PlayerDirectory } from '@/components/players/player-directory';
 import { AddPlayerForm } from '@/components/who/add-player-form';
 import { ManaDivider } from '@/components/ui/mana-identity';
 
-export default async function PlayersPage() {
+async function PlayersPage() {
   const current = await requirePlaygroup();
   const db = await createClient();
   const [{ data: players, error }, { data: decks, error: deckError }] = await Promise.all([
@@ -43,3 +44,5 @@ export default async function PlayersPage() {
     </main>
   );
 }
+
+export default withLiveSnapshot(PlayersPage);

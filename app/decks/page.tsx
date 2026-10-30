@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import { withLiveSnapshot } from '@/lib/live-page';
 import { getCurrentUser } from '@/lib/get-current-user';
 import { getUsersDecks } from './actions';
 import { redirect } from 'next/navigation';
@@ -7,7 +9,7 @@ import { PageIntro } from '@/components/layout/page-intro';
 import { Layers } from 'lucide-react';
 import { LimitedMemoryList } from '@/components/decks/limited-memory-list';
 
-export default async function DecksPage() {
+async function DecksPage() {
   const current = await getCurrentUser();
   if (!current?.profile) redirect('/');
   const { decks, error } = await getUsersDecks();
@@ -23,7 +25,7 @@ export default async function DecksPage() {
           </>
         }
         description="The commanders you know. The next one you’re brewing. Ready for any table."
-        actions={<CreateDeckDialog />}
+        actions={<div className="deck-library-actions"><span className="subtle">{decks?.length || 0} saved decks</span><CreateDeckDialog /></div>}
       />
       {error ? (
         <section className="panel">
@@ -32,12 +34,6 @@ export default async function DecksPage() {
         </section>
       ) : (
         <>
-          <div className="collection-summary">
-            <span>
-              <Layers size={16} />
-              <strong>{decks?.length || 0}</strong> saved decks
-            </span>
-          </div>
           {decks?.length ? (
             <div className="deck-library-grid">
               {decks.map((deck) => (
@@ -54,7 +50,9 @@ export default async function DecksPage() {
           )}
         </>
       )}
-      <LimitedMemoryList />
+      <Suspense fallback={<p className="subtle" role="status">Loading deck memories…</p>}><LimitedMemoryList /></Suspense>
     </main>
   );
 }
+
+export default withLiveSnapshot(DecksPage);

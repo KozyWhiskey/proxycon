@@ -18,7 +18,7 @@ export interface PickerPlayer {
 
 function ContinueButton({ name, color }: { name: string; color: string | null }) {
   const { pending } = useFormStatus();
-  return <Button type="submit" variant="outline" className="w-full justify-start min-h-12 text-base" disabled={pending}><ManaIdentity color={color} /><span>{pending ? 'Opening…' : name}</span></Button>;
+  return <Button type="submit" variant="outline" className="w-full justify-start min-h-12 text-base" disabled={pending}><ManaIdentity color={color} /><span className="min-w-0 break-words">{pending ? 'Opening…' : name}</span></Button>;
 }
 
 export function NamePicker({ players, next = "/", houseNext = "/", eventName }: { players: PickerPlayer[]; next?: string; houseNext?: string; eventName?: string }) {
@@ -27,11 +27,11 @@ export function NamePicker({ players, next = "/", houseNext = "/", eventName }: 
   const shown = players.filter((player) => player.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
 
   return (
-    <main className="page form-page">
+    <main className="page form-page name-picker task-page">
       <Brand />
       <header>
         <p className="eyebrow mt-6">Your playgroup</p>
-        <h1 className="font-sans text-3xl font-semibold tracking-tight">{eventName ? `Choose your name to join ${eventName}` : "Who are you?"}</h1>
+        <h1 className="font-sans text-3xl font-semibold tracking-tight">{eventName ? <>Choose your name<span className="invite-event-context">to join {eventName}</span></> : "Who are you?"}</h1>
         <p className="subtle mt-4">Pick your name. Decks and results stay with that player.</p>
       </header>
       <form action={async () => { const result = await chooseHouse(houseNext); if (result?.message) setMessage(result.message); }}><Button type="submit" variant="outline" className="w-full">Use the house screen</Button></form>

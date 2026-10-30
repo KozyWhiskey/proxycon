@@ -37,7 +37,7 @@ export function ActButton({
             if (!result.success) toast.error(result.message || 'That did not save.');
             else if (result.message) toast.success(result.message);
             if (result.success && returnTo) router.push(returnTo);
-            else router.refresh();
+            else if (result.success) router.refresh();
           } catch { toast.error('Could not save. Check your connection and try again.'); }
         });
       }}
@@ -47,7 +47,7 @@ export function ActButton({
   );
 }
 
-export function useAction() {
+export function useAction({ refreshOnSuccess = true }: { refreshOnSuccess?: boolean } = {}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -57,7 +57,7 @@ export function useAction() {
       const result = await action();
       if (!result.success) toast.error(result.message || 'That did not save.');
       else if (result.message) toast.success(result.message);
-      router.refresh();
+      if (result.success && refreshOnSuccess) router.refresh();
       return result;
     } catch {
       const result = { success: false, message: 'Could not save. Check your connection and try again.' };

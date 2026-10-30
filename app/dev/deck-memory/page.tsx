@@ -14,6 +14,8 @@ export default async function DeckMemoryPreviewPage({ searchParams }: { searchPa
   const bytes = await readFile(join(process.cwd(),'scripts/fixtures/deck-memories/draft-duplicates.webp'));
   const payload = deckMemoryPreview(`data:image/webp;base64,${bytes.toString('base64')}`);
   const options = await searchParams;
+  if(options.layout==='manual-empty'){payload.memory.cards=[];payload.memory.decisions={};payload.attempts=[];payload.photos=[];}
+  if(options.layout==='confirmed'){payload.memory.status='confirmed';payload.memory.confirmed_revision=payload.memory.revision;payload.memory.incomplete=true;payload.memory.decisions={};payload.attempts=[];}
   if(options.layout==='library') return <main className="page collection-page deck-library"><PageIntro title="Your decks." description="Limited deck showcase preview"/><section className="space-y-4"><h2 className="font-heading text-2xl">Limited decks</h2><ul className="deck-library-grid">{[
     {id:'preview-one',title:'First Test Deck',showcaseName:'Night Market',artUrl:'https://cards.scryfall.io/art_crop/front/a/8/a8c1dce3-6136-4294-9d2b-5ef8527d733b.jpg?1783907841'},
     {id:'preview-two',title:'Sunday draft · A deck worth remembering',showcaseName:'Night Market',artUrl:'https://cards.scryfall.io/art_crop/front/a/8/a8c1dce3-6136-4294-9d2b-5ef8527d733b.jpg?1783907841'},

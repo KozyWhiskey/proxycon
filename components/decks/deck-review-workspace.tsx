@@ -35,7 +35,8 @@ function compactSnapshot() { return window.matchMedia(compactQuery).matches; }
 
 export function DeckReviewWorkspace(props: Props) {
   const { cards, reviews, photos, owner, busy, onDecide } = props;
-  const [tab, setTab] = useState<'review' | 'deck'>(owner && (reviews.some(r => !r.decision) || !cards.length) ? 'review' : 'deck');
+  const [tab, setTab] = useState<'review' | 'deck'>(owner && (reviews.some(r => !r.decision)) ? 'review' : 'deck');
+  const [manualOpen,setManualOpen]=useState(!cards.length);
   const [initialOrder] = useState(() => [...reviews].sort((a,b) => Number(!!a.decision)-Number(!!b.decision)).map(r => r.suggestion.id));
   const [filter, setFilter] = useState<'all' | 'pending' | 'attention' | 'reviewed'>('all');
   const [hideReviewed, setHideReviewed] = useState(() => reviews.length > 0 && reviews.every(r => !!r.decision));
@@ -88,8 +89,8 @@ export function DeckReviewWorkspace(props: Props) {
       <section id="memory-decklist" className={`review-deck${tab === 'deck' ? ' is-phone-active' : ''}`} aria-label="Your decklist">
         <header className="review-section-heading"><h2>Your deck · {total} cards</h2><label className="text-sm"><span className="sr-only">Deck view</span><select aria-label="Deck view" value={view} onChange={e => setViewChoice(e.target.value as 'stacks' | 'list')}><option value="stacks">Stacks</option><option value="list">List</option></select></label></header>
         {!cards.length && <p className="review-section-hint">Your list is empty. Add cards from the photo or by name.</p>}
-        <DeckBuilderBoard cards={cards} categories={props.categories} owner={owner} busy={busy} view={view} onChange={props.onBuilderChange} onReplace={props.onBuilderReplace} />
-        {owner && <details className="review-manual-controls" open={!cards.length}><summary>Add cards & basic lands</summary>{props.manualControls}</details>}
+        {owner && <details className="review-manual-controls" open={manualOpen} onToggle={event=>setManualOpen(event.currentTarget.open)}><summary>Add cards & basic lands</summary>{props.manualControls}</details>}
+        {cards.length>0&&<DeckBuilderBoard cards={cards} categories={props.categories} owner={owner} busy={busy} view={view} onChange={props.onBuilderChange} onReplace={props.onBuilderReplace} />}
       </section>
     </div>
 

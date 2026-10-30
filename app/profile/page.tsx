@@ -1,3 +1,4 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import { createClient } from '@/utils/supabase/server';
 import { requireProfile } from '@/lib/get-current-user';
 import ProfileForm from '@/components/profile/profile-form';
@@ -7,7 +8,7 @@ import { LogoutButton } from '@/components/auth/logout-button';
 import { PageIntro } from '@/components/layout/page-intro';
 import { ArrowUpRight, Layers } from 'lucide-react';
 
-export default async function ProfilePage() {
+async function ProfilePage() {
   const supabase = await createClient();
   const { user, profile } = await requireProfile();
   const { count: deckCount } = await supabase
@@ -65,3 +66,5 @@ export default async function ProfilePage() {
     </main>
   );
 }
+
+export default withLiveSnapshot(ProfilePage);

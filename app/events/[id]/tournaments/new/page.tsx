@@ -1,3 +1,4 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { loadEventBoard } from '@/lib/event-board';
@@ -6,7 +7,7 @@ import { joinEventById } from '@/app/weekend/actions';
 import { ActButton } from '@/components/weekend/act-button';
 import { PageIntro } from '@/components/layout/page-intro';
 
-export default async function NewTournamentPage({ params }: { params: Promise<{ id: string }> }) {
+async function NewTournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const board = await loadEventBoard(id);
   if (!board) notFound();
@@ -35,3 +36,5 @@ export default async function NewTournamentPage({ params }: { params: Promise<{ 
     </main>
   );
 }
+
+export default withLiveSnapshot(NewTournamentPage);

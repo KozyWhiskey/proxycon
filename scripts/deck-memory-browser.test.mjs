@@ -80,7 +80,7 @@ try {
  await page.getByText('Add cards & basic lands',{exact:true}).click();
  await page.getByLabel('Swamp basic lands',{exact:true}).fill('10');
  await page.getByRole('tab',{name:'Your deck · 22',exact:true}).waitFor();
- await page.getByLabel('Add a missed card',{exact:true}).fill('My custom cube card');
+ await page.getByLabel('Add a card by name',{exact:true}).fill('My custom cube card');
  await page.getByRole('button',{name:'Use “My custom cube card” as an unverified name',exact:true}).click();
  await page.getByRole('region',{name:'Other',exact:true}).waitFor();
  await page.waitForTimeout(1500);

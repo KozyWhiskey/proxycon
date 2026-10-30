@@ -1,29 +1,26 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import {safeNext} from '@/lib/continuation';
 import {resultText,tableName} from '@/lib/weekend-view';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
-import { loadEventBoard, matchPlayers, standingsFor } from '@/lib/event-board';
+import { loadMatchBoard, matchPlayers } from '@/lib/event-board';
 import { EventNav } from '@/components/events/event-nav';
 import { MatchReporter } from '@/components/weekend/match-reporter';
 import { ActButton } from '@/components/weekend/act-button';
 import { startRound } from '@/app/weekend/actions';
 import { Button } from '@/components/ui/button';
-import { PlayerAvatar, GameStatus } from '@/components/events/arena-ui';
-
-function gamesWonLabel(count: number) {
-  return `${count} game${count === 1 ? '' : 's'} won`;
-}
+import { GameStatus } from '@/components/events/arena-ui';
 
 /** Modern event-scoped match page, including matches from previous rounds. */
-export default async function TournamentMatchPage({ params,searchParams }: { params: Promise<{ id: string; matchId: string }>;searchParams:Promise<{from?:string}> }) {
+async function TournamentMatchPage({ params,searchParams }: { params: Promise<{ id: string; matchId: string }>;searchParams:Promise<{from?:string}> }) {
   const { id, matchId } = await params;
   if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(matchId).success) notFound();
   const db = await createClient();
   const { data: tournament } = await db.from('tournaments').select('event_id').eq('id', id).maybeSingle();
   if (!tournament?.event_id) notFound();
-  const board = await loadEventBoard(tournament.event_id);
+  const board = await loadMatchBoard(tournament.event_id,matchId);
   if (!board) notFound();
   const from=safeNext((await searchParams).from);const back=from.startsWith('/events/'+board.event.id+'/history')?from:null;
   const game = board.tournaments.find((row) => row.id === id);
@@ -33,7 +30,6 @@ export default async function TournamentMatchPage({ params,searchParams }: { par
   const players = matchPlayers(board, match.id);
   const bye = players.length === 1;
   const recorded = players.length > 0 && players.every((player) => player.result);
-  const standings = standingsFor(board, id);
   const canOperate = board.canManage || board.joined;
   const waiting = !match.started_at && !recorded;
   const playing = Boolean(match.started_at) && !recorded;
@@ -69,9 +65,10 @@ export default async function TournamentMatchPage({ params,searchParams }: { par
       <main className={`page form-page match-page arena-match-detail task-page${recorded ? ' is-complete' : ' is-playing'}`}>
         <Link href={back||`/tournament/${id}`} className="subtle">← {back?'Game history':game.name}</Link>
         <header className="match-page-head">
+          <p className="subtle match-context">{game.name}</p>
           <p className="eyebrow">
-            {match.is_final ? 'Final' : `Round ${match.round_number} of ${game.max_rounds}`}
-            {!bye ? ` · ${table}` : ''}
+            {match.is_final ? table : `Round ${match.round_number} of ${game.max_rounds}`}
+            {!bye && !match.is_final ? ` · ${table}` : ''}
           </p>
           <h1>{matchup}</h1>
           <div className="match-state">
@@ -89,7 +86,7 @@ export default async function TournamentMatchPage({ params,searchParams }: { par
               <p className="text-sm text-muted-foreground">
                 Starts Round {match.round_number} for every table, then scores open here.
               </p>
-              <ActButton label="Start round" action={startRound.bind(null, id)} />
+              <ActButton label={`Start round ${match.round_number}`} action={startRound.bind(null, id)} />
             </div>
           )}
 
@@ -128,3 +125,5 @@ export default async function TournamentMatchPage({ params,searchParams }: { par
     </>
   );
 }
+
+export default withLiveSnapshot(TournamentMatchPage);

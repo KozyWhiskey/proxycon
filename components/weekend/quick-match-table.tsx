@@ -80,7 +80,7 @@ export function QuickMatchTable({
         </div>
       )}
 
-      <div className="quick-seat-grid">
+      <div className={`quick-seat-grid${finished?' is-complete':''}`}>
         {players.map((player) => {
           const profileId = player.profileId;
           const mine = profileId ? decks.filter((deck) => deck.ownerId === profileId) : [];
@@ -95,7 +95,7 @@ export function QuickMatchTable({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <PlayerAvatar name={player.name} color={player.color} small />
-                  <strong className="truncate">{player.name}</strong>
+                  <strong className="break-words">{player.name}</strong>
                   {player.team ? <span className="subtle">Team {player.team}</span> : null}
                 </div>
                 {finished && (
@@ -106,6 +106,7 @@ export function QuickMatchTable({
                 )}
               </div>
 
+              {finished&&player.finishOrder&&<p className="subtle text-sm">Finishing position {player.finishOrder}</p>}
               {hasDeck ? (
                 <div className="seat-commander">
                   <DeckArt src={deck?.image} name={deck?.commanders || deck?.name || 'Deck'} />

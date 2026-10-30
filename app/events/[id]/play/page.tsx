@@ -1,3 +1,4 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { loadEventBoard, matchPlayers } from '@/lib/event-board';
@@ -5,7 +6,7 @@ import { commanderKey } from '@/lib/weekend';
 import { QuickMatchForm } from '@/components/weekend/quick-match-form';
 import { PageIntro } from '@/components/layout/page-intro';
 
-export default async function PlayPage({
+async function PlayPage({
   params,
   searchParams,
 }: {
@@ -84,3 +85,5 @@ function matchPlayersHaveResult(board: NonNullable<Awaited<ReturnType<typeof loa
   const seats = board.seats.filter((seat) => seat.match_id === matchId);
   return seats.length > 0 && seats.every((seat) => seat.result);
 }
+
+export default withLiveSnapshot(PlayPage);

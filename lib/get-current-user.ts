@@ -2,6 +2,7 @@ import { User } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 import { Profile } from './types';
 import { PlayerMode, resolvePlayer } from './player-session';
+import { cache } from 'react';
 
 export interface CurrentUser {
   user: User;
@@ -14,18 +15,19 @@ export interface CurrentUser {
  * The signed-in browser and the player it is acting as.
  * A phone session can point at a profile that has no login of its own.
  */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const ctx = await resolvePlayer();
   if (!ctx.authUser) return null;
 
   let profile: Profile | null = null;
   if (ctx.playerId) {
-    const { data } = await ctx.supabase.from('profiles').select('*').eq('id', ctx.playerId).maybeSingle();
+    const { data, error } = await ctx.supabase.from('profiles').select('*').eq('id', ctx.playerId).maybeSingle();
+    if (error) throw new Error('Could not retrieve your player profile. Try again.');
     profile = data;
   }
 
   return { user: ctx.authUser, profile, mode: ctx.mode, isAdmin: ctx.isAdmin };
-}
+});
 
 /**
  * Pages that belong to one player. A phone that has not picked a name goes back to the list.

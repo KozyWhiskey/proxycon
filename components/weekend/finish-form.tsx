@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { finishTournament } from '@/app/weekend/actions';
+import { finalPlaces } from '@/lib/tournament-placement';
+import { addFinal, finishTournament } from '@/app/weekend/actions';
 import { Button } from '@/components/ui/button';
 import { useAction } from '@/components/weekend/act-button';
 
@@ -40,14 +41,7 @@ function orderStandings(
 
   const finalWinner = finalResult.find((player) => player.result === 'win');
   const finalLoser = finalResult.find((player) => player.result === 'loss');
-  if (finalWinner && finalLoser) {
-    const winnerIndex = ordered.findIndex((player) => player.id === finalWinner.id);
-    const loserIndex = ordered.findIndex((player) => player.id === finalLoser.id);
-    if (winnerIndex > loserIndex && loserIndex >= 0) {
-      const [winner] = ordered.splice(winnerIndex, 1);
-      ordered.splice(loserIndex, 0, winner);
-    }
-  }
+  if (finalWinner && finalLoser) return finalPlaces(ordered,finalWinner.id,finalLoser.id);
   return ordered;
 }
 
@@ -57,6 +51,7 @@ export function FinishForm({
   tieGroups,
   prizes = [],
   early = false,
+  allowFinal = false,
   finalResult = [],
 }: {
   tournamentId: string;
@@ -64,21 +59,25 @@ export function FinishForm({
   tieGroups: string[][];
   prizes?: (string | null)[];
   early?: boolean;
+  allowFinal?: boolean;
   finalResult?: { id: string; result: string | null }[];
 }) {
   const { pending, run } = useAction();
-  const [groups, setGroups] = useState(() => tieGroups.map((group) => [...group]));
+  const finalDecided=finalResult.some(p=>p.result==='win')&&finalResult.some(p=>p.result==='loss');
+  const finalists=finalDecided?finalResult.map(p=>p.id):[];
+  const reviewTies=tieGroups.map(group=>group.filter(id=>!finalists.includes(id))).filter(group=>group.length>1);
+  const [groups, setGroups] = useState(() => reviewTies.map((group) => [...group]));
   const [error, setError] = useState('');
   const version = JSON.stringify({ ranked, tieGroups, prizes, finalResult });
   const [reviewedVersion, setReviewedVersion] = useState(version);
 
   if (version !== reviewedVersion) {
     setReviewedVersion(version);
-    setGroups(tieGroups.map((group) => [...group]));
+    setGroups(reviewTies.map((group) => [...group]));
     setError('Standings changed. Check the places again before finishing.');
   }
 
-  const currentGroups = version === reviewedVersion ? groups : tieGroups;
+  const currentGroups = version === reviewedVersion ? groups : reviewTies;
   const ordered = orderStandings(ranked, currentGroups, finalResult);
   const podium = ordered.slice(0, 3);
   const rest = ordered.slice(3);
@@ -104,6 +103,7 @@ export function FinishForm({
           : 'Places lock when you finish. Match results stay. A later correction clears places and needs Finish again.'}
       </p>
 
+      {finalDecided && <p className="subtle text-sm">The final fixes first and second place. Any ordering below only resolves the remaining places.</p>}
       {hasTies &&
         currentGroups.map((group, groupIndex) => (
           <fieldset key={groupIndex} className="tie-order">
@@ -163,7 +163,8 @@ export function FinishForm({
         </p>
       )}
 
-      <Button
+      {hasTies && <p className="subtle text-sm">The order above will be confirmed with your next action.</p>}
+      <div className="action-row"><Button
         type="button"
         disabled={pending}
         onClick={async () => {
@@ -176,6 +177,11 @@ export function FinishForm({
       >
         {pending ? 'Finishing…' : early ? 'End tournament with these places' : 'Finish tournament'}
       </Button>
+      {allowFinal && <Button type="button" variant="outline" disabled={pending} onClick={async () => {
+        setError('');
+        const result = await run(() => addFinal(tournamentId, ordered.map(player => player.id)));
+        if (!result.success) setError(result.message || 'Could not add the final. Your order is still here.');
+      }}>{pending ? 'Working…' : hasTies ? 'Confirm order and add top-two final' : 'Add top-two final instead'}</Button>}</div>
     </div>
   );
 }

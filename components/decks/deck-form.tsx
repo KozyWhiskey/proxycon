@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,6 @@ import { Loader2, Search, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Deck } from '@/lib/types';
 import { searchCards, getCardPrints, ScryfallCard } from '@/lib/scryfall';
-import { deleteDeck } from '@/app/decks/actions'; // This seems unused here, but keeping imports consistent
 import { Textarea } from '@/components/ui/textarea';
 import { ManaCost } from '@/components/ui/mana-symbol';
 import { RichTextDisplay } from './rich-text-display';
@@ -49,6 +48,18 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   const [manualColors,setManualColors]=useState(false);
   const [colors, setColors] = useState<string[]>(initialData?.colors || []);
   const [commanderName, setCommanderName] = useState(initialData?.commander_name || '');
+  const [selectedName, setSelectedName] = useState(initialData?.commander_name || '');
+  const searchRevision = useRef(0);
+  function changeCommander(value: string) {
+    searchRevision.current++;
+    setCommanderName(value);
+    if (value !== selectedName) {
+      setIsResultsOpen(false);setIsPrintsOpen(false);setSearchResults([]);setPrintResults([]);
+      setSelectedName(''); setManaCost(''); setTypeLine(''); setOracleText('');
+      setImageUrl(''); setImageUris(undefined); setExpansionCode(''); setExpansionName('');
+      if (!manualColors) setColors([]);
+    }
+  }
   const [partnerName, setPartnerName] = useState(initialData?.partner_name || '');
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
   const [description, setDescription] = useState(initialData?.description || '');
@@ -72,17 +83,19 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   const handleColorChange = (color: string, checked: boolean) => {
     setManualColors(true);
     setColors((prev) =>
-      checked ? [...prev, color].sort() : prev.filter((c) => c !== color)
+      checked ? [...prev, color].sort((a,b)=>MTG_COLORS.indexOf(a)-MTG_COLORS.indexOf(b)) : prev.filter((c) => c !== color)
     );
   };
 
   const handleSearch = async () => {
     if (!commanderName) return;
+    const revision = ++searchRevision.current;
     setIsSearching(true);
     setSearchResults([]);
     
     try {
       const cards = await searchCards(commanderName);
+      if (revision !== searchRevision.current) return;
       
       if (cards.length === 0) {
         toast.error('No cards found');
@@ -93,7 +106,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
         setSearchResults(cards);
         setIsResultsOpen(true);
       }
-    } catch (error) {
+    } catch {
       toast.error('Error searching for card');
     } finally {
       setIsSearching(false);
@@ -102,18 +115,20 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
 
   const handleChangeArt = async () => {
     if (!commanderName) return;
+    const revision=searchRevision.current;
     setIsLoadingPrints(true);
     setPrintResults([]);
 
     try {
       const prints = await getCardPrints(commanderName);
+      if(revision!==searchRevision.current)return;
       if (prints.length === 0) {
         toast.error('No other prints found');
       } else {
         setPrintResults(prints);
         setIsPrintsOpen(true);
       }
-    } catch (error) {
+    } catch {
       toast.error('Error fetching prints');
     } finally {
       setIsLoadingPrints(false);
@@ -121,7 +136,9 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
   };
 
   const handleSelectCard = (card: ScryfallCard) => {
+    searchRevision.current++;
     setCommanderName(card.name);
+    setSelectedName(card.name);
     if(!manualColors)setColors(card.color_identity);
     
     const art = card.image_uris?.art_crop || card.image_uris?.normal || '';
@@ -133,9 +150,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
     setExpansionCode(card.set || '');
     setExpansionName(card.set_name || '');
 
-    // Format description (Legacy fallback)
-    const desc = `${card.mana_cost || ''} — ${card.type_line || ''}\n\n${card.oracle_text || ''}`;
-    if(!description)setDescription(desc);
+    // Card rules are independent of the owner’s optional notes.
 
     setIsResultsOpen(false);
   };
@@ -275,7 +290,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                     id="commanderName"
                     required={format==='Commander'}
                     value={commanderName}
-                    onChange={(e) => setCommanderName(e.target.value)}
+                    onChange={(e) => changeCommander(e.target.value)}
                     placeholder="Kenrith, the Returned King"
                     className="flex-1"
                     onKeyDown={(e) => {
@@ -298,6 +313,7 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
                 </div>
             </div>
 
+            {selectedName && <section className="selected-commander" aria-label="Selected commander"><div>{imageUrl && <Image src={imageUrl} alt="" width={72} height={72} unoptimized />}</div><div><strong>{selectedName}</strong>{manaCost && <ManaCost manaCost={manaCost} size={18} />}<p className="subtle">{typeLine}{expansionName ? ' · ' + expansionName : ''}</p><span className="text-sm">Color identity: {colors.length ? colors.join(' · ') : 'Colorless'}</span></div></section>}
             <details className="disclosure"><summary>Partner, artwork, colors & notes (optional)</summary>
             <div className="space-y-2">
               <Label htmlFor="partnerName">Partner (optional)</Label>
@@ -369,27 +385,8 @@ export default function DeckForm({ initialData, onSuccess }: DeckFormProps) {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                  <Label htmlFor="description" className="font-medium">Notes</Label>
-                  {manaCost && <ManaCost manaCost={manaCost} size={18} />}
-              </div>
-              
-              {oracleText ? (
-                 <div className="bg-card border border-border rounded-md p-4 min-h-[150px]">
-                    {typeLine && <p className="font-bold text-sm mb-2 border-b border-border pb-2">{typeLine}</p>}
-                    <RichTextDisplay text={oracleText} />
-                 </div>
-              ) : (
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Card text, stats, or notes..."
-                  className="bg-card border-border text-muted-foreground min-h-[150px] font-mono text-sm focus-visible:ring-primary/20"
-                />
-              )}
-            </div>
+            {oracleText && <details className="disclosure"><summary>Card details</summary><div><p className="font-medium">{typeLine}</p>{manaCost && <ManaCost manaCost={manaCost} size={18} />}<RichTextDisplay text={oracleText} /></div></details>}
+            <div className="space-y-2"><Label htmlFor="description">Notes (optional)</Label><Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="How this deck plays, reminders, or changes to try…" className="min-h-28" /></div>
 
             </details>
             <div className="pt-4">

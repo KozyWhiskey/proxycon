@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { matchOutcome, validTournamentScore } from '@/lib/match-outcome';
 import { reportMatch, currentMatchResult } from '@/app/weekend/actions';
@@ -7,13 +7,16 @@ import { Button } from '@/components/ui/button';
 import { useAction } from '@/components/weekend/act-button';
 import { Check } from 'lucide-react';
 
+import { ReportDialogContext } from './report-dialog-context';
+
 interface Player { id: string; name: string; team?: number | null; result?: string | null; gamesWon?: number | null; finishOrder?:number|null }
 
 export function MatchReporter({ matchId, players, teams = false, returnTo, showGamesWon = false, decks, consequence, finishingOrder=false, tournament = false }: {
   matchId: string; players: Player[]; teams?: boolean; returnTo?: string; showGamesWon?: boolean; decks?: Record<string, string>; tournament?: boolean; consequence?:string; finishingOrder?:boolean;
 }) {
   const router = useRouter();
-  const { pending, run } = useAction();
+  const dialog = useContext(ReportDialogContext);
+  const { pending, run } = useAction({ refreshOnSuccess: !returnTo });
   const named = players.filter((player) => player.id);
   const correcting = named.some((player) => player.result);
   const initialWinners = named.filter((player) => player.result === 'win').map((player) => player.id);
@@ -58,7 +61,8 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   const effective = decision.draw ? 'draw' : [...decision.winners].join(',') || null;
   const winner = options.find((option) => option.value === effective)?.label;
   const summary = effective === 'draw' ? 'Draw — no winner' : winner ? `${winner} ${teams ? 'win' : 'wins'}` : '';
-  const scoreLabel = named.map((player) => `${games[player.id] || 0}`).join('–');
+  const scoreOrder = tournament && decision.winners.size === 1 && named.length === 2 ? [...named].sort((a, b) => Number(decision.winners.has(b.id)) - Number(decision.winners.has(a.id))) : named;
+  const scoreLabel = scoreOrder.map((player) => `${games[player.id] || 0}`).join('–');
   const previous = named.every((player) => player.result === 'draw')
     ? 'Draw'
     : `${named.filter((player) => player.result === 'win').map((player) => player.name).join(' & ')} won`;
@@ -66,6 +70,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   const canSave = Boolean(effective) && (!tournament || validTournamentScore(named.map((player) => player.id), games));
 
   function select(value: string) {
+    dialog?.editing();
     setChoice(value);
     setError('');
     setSaved(false);
@@ -76,6 +81,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
   }
 
   function bump(playerId: string, delta: number) {
+    dialog?.editing();
     setGames((current) => ({
       ...current,
       [playerId]: Math.max(0, (current[playerId] || 0) + delta),
@@ -185,6 +191,7 @@ export function MatchReporter({ matchId, players, teams = false, returnTo, showG
             return;
           }
           setSaved(true);
+          dialog?.saved();
           setDirty(false);
           if(returnTo&&!tournament){const id=returnTo.match(/^\/events\/([^/?]+)/)?.[1];if(id)sessionStorage.setItem('proxycon-result:'+id,matchId);}
           if (returnTo) router.push(returnTo);

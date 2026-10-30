@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Successful probe plus failed board retrieval preserves the actual prior snapshot and timestamp",
+    "Repeated failed retrievals acknowledge failure without advancing the timestamp",
+    "Retry advances freshness only after successful page retrieval",
+    "0–0 remains disabled; editing pauses refresh and keeps score counters",
+    "Committed save returns to tournament with no old-page RSC refresh",
+    "Offline/reconnect retains the current screen and waits for successful retrieval",
+    "Room layouts retain light/dark surfaces and phone/laptop reflow"
+  ],
+  "errors": []
+}

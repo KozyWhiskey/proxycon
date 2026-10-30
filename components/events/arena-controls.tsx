@@ -2,11 +2,14 @@
 
 import { useState, type ReactNode } from 'react';
 import { Maximize, Minimize, ClipboardPenLine, Pencil } from 'lucide-react';
+import { ReportDialogContext } from '@/components/weekend/report-dialog-context';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 
-export function RoomDialog({ title, label, children, kind }: { title: string; label: string; children: ReactNode; kind?: 'report' | 'correct' }) {
-  return <Dialog><DialogTrigger asChild><Button variant="outline" className={`room-dialog-trigger${kind ? ` room-result-trigger is-${kind}` : ''}`}>{kind === 'report' && <ClipboardPenLine size={17} aria-hidden="true" />}{kind === 'correct' && <Pencil size={16} aria-hidden="true" />}{label}</Button></DialogTrigger><DialogContent className="arena-dialog"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription className="sr-only">{label}. Close this window to return to the tournament room.</DialogDescription></DialogHeader>{children}</DialogContent></Dialog>;
+export function RoomDialog({ title, label, children, kind, triggerId, nextReportId }: { title: string; label: string; children: ReactNode; kind?: 'report' | 'correct'; triggerId?:string; nextReportId?:string }) {
+  const [open,setOpen]=useState(false);
+  const [saved,setSaved]=useState(false);
+  return <Dialog open={open} onOpenChange={value=>{setOpen(value);if(value)setSaved(false);}}><DialogTrigger asChild><Button id={triggerId} variant="outline" className={`room-dialog-trigger${kind ? ` room-result-trigger is-${kind}` : ''}`}>{kind === 'report' && <ClipboardPenLine size={17} aria-hidden="true" />}{kind === 'correct' && <Pencil size={16} aria-hidden="true" />}{label}</Button></DialogTrigger><DialogContent className="arena-dialog"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription className="sr-only">{label}. Close this window to return to the previous view.</DialogDescription></DialogHeader><ReportDialogContext.Provider value={{saved:()=>setSaved(true),editing:()=>setSaved(false)}}>{children}</ReportDialogContext.Provider>{saved&&<div className="action-row"><Button onClick={()=>setOpen(false)}>Done · return to board</Button>{nextReportId&&<Button variant="outline" onClick={()=>{setOpen(false);setTimeout(()=>document.getElementById(nextReportId)?.click(),150);}}>Next open table →</Button>}</div>}</DialogContent></Dialog>;
 }
 
 /** Server-rendered match cards stay on the server; only their paging is interactive. */

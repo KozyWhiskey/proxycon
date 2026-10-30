@@ -1,8 +1,13 @@
-import {RememberEvent} from '@/components/events/remember-event';
-import { EventNav } from '@/components/events/event-nav';
-import { loadEventBoard } from '@/lib/event-board';
+import { EventFrame } from '@/components/events/event-frame';
+import { loadEventShell } from '@/lib/event-shell';
+import { unstable_rethrow } from 'next/navigation';
 export default async function EventLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const board = await loadEventBoard(id);
-  return <>{board&&(board.userId||board.house)&&<RememberEvent eventId={id} identity={board.house?'house':board.userId||'unbound'}/>}<EventNav id={id} house={board?.house} name={board?.event.name} />{children}</>;
+  let board = null;
+  try {
+    board = await loadEventShell(id);
+  } catch (error) {
+    unstable_rethrow(error);
+  }
+  return <EventFrame eventId={id} context={board && { fetchedAt: board.fetchedAt, userId: board.userId, house: board.house, event: board.event }}>{children}</EventFrame>;
 }

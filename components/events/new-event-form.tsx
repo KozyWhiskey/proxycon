@@ -15,6 +15,7 @@ export default function NewEventForm() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [error,setError]=useState('');
+  const [eventName,setEventName]=useState('');
   const [startDay, setStartDay] = useState(chicagoToday());
   const [endDay, setEndDay] = useState(chicagoToday());
 
@@ -22,7 +23,7 @@ export default function NewEventForm() {
     setError('');
     const draftName=String(formData.get('name')||'').trim();
     if(!draftName || draftName.length>100){setError('Use an event name from 1 to 100 characters.');return;}
-    if(!startDay || !endDay || endDay<startDay){setError('End date must be on or after the start date.');return;}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(startDay) || !/^\d{4}-\d{2}-\d{2}$/.test(endDay) || endDay<startDay){setError('End date must be on or after the start date.');return;}
     setIsCreating(true);
     try {
       const name = formData.get('name') as string;
@@ -43,13 +44,15 @@ export default function NewEventForm() {
 
   return (
     <Card className="glass-panel border-border">
-      <CardContent>
-        <form action={handleCreate} className="space-y-6">
+      <CardContent className="pt-6">
+        <form action={handleCreate} noValidate className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Event name</Label>
             <Input
               id="name"
               name="name"
+              value={eventName}
+              onChange={event=>setEventName(event.target.value)}
               placeholder="e.g. Wisconsin Weekend"
               required
               maxLength={100}
@@ -57,7 +60,7 @@ export default function NewEventForm() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start date</Label>
               <Input

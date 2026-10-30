@@ -1,8 +1,10 @@
+import { withLiveSnapshot } from '@/lib/live-page';
+import {displayDay} from '@/lib/display-day';
 import {safeNext} from '@/lib/continuation';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
-import { loadEventBoard, matchPlayers } from '@/lib/event-board';
+import { loadMatchBoard, matchPlayers } from '@/lib/event-board';
 import { commanderKey, isCommanderFormat } from '@/lib/weekend';
 import { deleteQuickMatch } from '@/app/weekend/actions';
 import { ActButton } from '@/components/weekend/act-button';
@@ -11,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { GameStatus } from '@/components/events/arena-ui';
 import { Trophy } from 'lucide-react';
 
-export default async function QuickMatchPage({
+async function QuickMatchPage({
   params,searchParams,
 }: {
   params: Promise<{ id: string; matchId: string }>;
@@ -20,7 +22,7 @@ export default async function QuickMatchPage({
   const { id, matchId } = await params;
   if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(matchId).success) notFound();
 
-  const board = await loadEventBoard(id);
+  const board = await loadMatchBoard(id,matchId);
   if (!board) notFound();
 
   const match = board.matches.find((row) => row.id === matchId);
@@ -48,9 +50,9 @@ export default async function QuickMatchPage({
       <header className="match-page-head">
         <p className="eyebrow">{finished ? 'Result' : 'Live table'}</p>
         <h1>{title}</h1>
-        <p className="subtle mt-2">
+        {!finished&&<p className="subtle mt-2">
           {players.map((player) => player.name).join(' · ') || 'Waiting on seats'}
-        </p>
+        </p>}
         <div className="match-state">
           <GameStatus state={finished ? 'complete' : 'live'}>{finished ? 'Result recorded' : 'In progress'}</GameStatus>
         </div>
@@ -60,10 +62,16 @@ export default async function QuickMatchPage({
         <section className="match-victory" aria-label="Result">
           <Trophy size={22} aria-hidden="true" />
           <div>
-            <h2>{resultLine}</h2>
+            <h2>{resultLine}</h2><p className="subtle">{displayDay(match.played_on || match.created_at.slice(0,10))} · {board.event.name}</p>
           </div>
         </section>
       )}
+
+          {finished && (
+            <Button asChild>
+              <Link href={`/events/${id}/play?again=${match.id}`}>Play again with this group</Link>
+            </Button>
+          )}
 
       <section className="panel space-y-6">
         <QuickMatchTable
@@ -100,11 +108,6 @@ export default async function QuickMatchPage({
         )}
 
         <div className="flex flex-wrap gap-3">{finished && <Link className="text-link" href={eventHref}>Back to event</Link>}
-          {finished && (
-            <Button asChild>
-              <Link href={`/events/${id}/play?again=${match.id}`}>Play again with this group</Link>
-            </Button>
-          )}
           {canDelete && <ActButton label="Delete game" variant="outline" returnTo={eventHref} action={deleteQuickMatch.bind(null, match.id)} />}
           {!finished && (
             <Button asChild variant="ghost">
@@ -116,3 +119,5 @@ export default async function QuickMatchPage({
     </main>
   );
 }
+
+export default withLiveSnapshot(QuickMatchPage);

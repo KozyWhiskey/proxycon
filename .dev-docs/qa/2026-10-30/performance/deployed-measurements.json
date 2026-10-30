@@ -1,0 +1,832 @@
+{
+  "at": "2026-10-30T15:39:40.337Z",
+  "origin": "https://upkeep.vercel.app",
+  "authorization": "User explicitly approved measuring this exact deployed origin with the disposable session.",
+  "fixture": {
+    "players": 12,
+    "tournaments": 1,
+    "decks": 24,
+    "navigationMatches": 36,
+    "navigationParticipantRows": 120,
+    "actionMatches": 236,
+    "actionParticipantRows": 920
+  },
+  "screens": [
+    {
+      "name": "document Events",
+      "n": 4,
+      "firstMs": 1610,
+      "medianMs": 1154,
+      "warmMedianMs": 1148,
+      "minMs": 940,
+      "maxMs": 1610,
+      "ttfbMedianMs": 46,
+      "streamDownloadMedianMs": 1063
+    },
+    {
+      "name": "document Play",
+      "n": 4,
+      "firstMs": 1360,
+      "medianMs": 954,
+      "warmMedianMs": 899,
+      "minMs": 873,
+      "maxMs": 1360,
+      "ttfbMedianMs": 21,
+      "streamDownloadMedianMs": 863
+    },
+    {
+      "name": "document Room",
+      "n": 4,
+      "firstMs": 1272,
+      "medianMs": 747,
+      "warmMedianMs": 725,
+      "minMs": 660,
+      "maxMs": 1272,
+      "ttfbMedianMs": 35,
+      "streamDownloadMedianMs": 655
+    },
+    {
+      "name": "document Tournament",
+      "n": 4,
+      "firstMs": 1103,
+      "medianMs": 782,
+      "warmMedianMs": 716,
+      "minMs": 629,
+      "maxMs": 1103,
+      "ttfbMedianMs": 30,
+      "streamDownloadMedianMs": 695
+    },
+    {
+      "name": "document Tournament match",
+      "n": 4,
+      "firstMs": 1137,
+      "medianMs": 801,
+      "warmMedianMs": 733,
+      "minMs": 655,
+      "maxMs": 1137,
+      "ttfbMedianMs": 22,
+      "streamDownloadMedianMs": 724
+    },
+    {
+      "name": "document Quick match",
+      "n": 4,
+      "firstMs": 764,
+      "medianMs": 709,
+      "warmMedianMs": 708,
+      "minMs": 699,
+      "maxMs": 764,
+      "ttfbMedianMs": 27,
+      "streamDownloadMedianMs": 623
+    },
+    {
+      "name": "document Start game",
+      "n": 4,
+      "firstMs": 892,
+      "medianMs": 714,
+      "warmMedianMs": 698,
+      "minMs": 622,
+      "maxMs": 892,
+      "ttfbMedianMs": 22,
+      "streamDownloadMedianMs": 623
+    },
+    {
+      "name": "document Record game",
+      "n": 4,
+      "firstMs": 868,
+      "medianMs": 679,
+      "warmMedianMs": 666,
+      "minMs": 603,
+      "maxMs": 868,
+      "ttfbMedianMs": 26,
+      "streamDownloadMedianMs": 587
+    },
+    {
+      "name": "document Stats",
+      "n": 4,
+      "firstMs": 872,
+      "medianMs": 708,
+      "warmMedianMs": 686,
+      "minMs": 657,
+      "maxMs": 872,
+      "ttfbMedianMs": 29,
+      "streamDownloadMedianMs": 596
+    },
+    {
+      "name": "document Event players",
+      "n": 4,
+      "firstMs": 744,
+      "medianMs": 585,
+      "warmMedianMs": 581,
+      "minMs": 575,
+      "maxMs": 744,
+      "ttfbMedianMs": 32,
+      "streamDownloadMedianMs": 494
+    },
+    {
+      "name": "document History",
+      "n": 4,
+      "firstMs": 1064,
+      "medianMs": 729,
+      "warmMedianMs": 709,
+      "minMs": 645,
+      "maxMs": 1064,
+      "ttfbMedianMs": 36,
+      "streamDownloadMedianMs": 609
+    },
+    {
+      "name": "document Agenda",
+      "n": 4,
+      "firstMs": 922,
+      "medianMs": 922,
+      "warmMedianMs": 922,
+      "minMs": 798,
+      "maxMs": 1081,
+      "ttfbMedianMs": 30,
+      "streamDownloadMedianMs": 830
+    },
+    {
+      "name": "document Recap",
+      "n": 4,
+      "firstMs": 918,
+      "medianMs": 864,
+      "warmMedianMs": 809,
+      "minMs": 614,
+      "maxMs": 967,
+      "ttfbMedianMs": 20,
+      "streamDownloadMedianMs": 792
+    },
+    {
+      "name": "document Event tools",
+      "n": 4,
+      "firstMs": 963,
+      "medianMs": 783,
+      "warmMedianMs": 755,
+      "minMs": 687,
+      "maxMs": 963,
+      "ttfbMedianMs": 21,
+      "streamDownloadMedianMs": 699
+    },
+    {
+      "name": "document My decks",
+      "n": 4,
+      "firstMs": 766,
+      "medianMs": 774,
+      "warmMedianMs": 783,
+      "minMs": 604,
+      "maxMs": 967,
+      "ttfbMedianMs": 31,
+      "streamDownloadMedianMs": 673
+    },
+    {
+      "name": "document Playgroup",
+      "n": 4,
+      "firstMs": 664,
+      "medianMs": 536,
+      "warmMedianMs": 508,
+      "minMs": 490,
+      "maxMs": 664,
+      "ttfbMedianMs": 34,
+      "streamDownloadMedianMs": 446
+    },
+    {
+      "name": "document Profile",
+      "n": 4,
+      "firstMs": 527,
+      "medianMs": 516,
+      "warmMedianMs": 504,
+      "minMs": 430,
+      "maxMs": 569,
+      "ttfbMedianMs": 27,
+      "streamDownloadMedianMs": 427
+    },
+    {
+      "name": "document Player detail",
+      "n": 4,
+      "firstMs": 633,
+      "medianMs": 571,
+      "warmMedianMs": 565,
+      "minMs": 529,
+      "maxMs": 633,
+      "ttfbMedianMs": 24,
+      "streamDownloadMedianMs": 484
+    },
+    {
+      "name": "click Stats",
+      "n": 4,
+      "firstMs": 690,
+      "medianMs": 639,
+      "warmMedianMs": 596,
+      "minMs": 508,
+      "maxMs": 690,
+      "ttfbMedianMs": null,
+      "streamDownloadMedianMs": null
+    },
+    {
+      "name": "click Event players",
+      "n": 4,
+      "firstMs": 655,
+      "medianMs": 655,
+      "warmMedianMs": 655,
+      "minMs": 604,
+      "maxMs": 655,
+      "ttfbMedianMs": null,
+      "streamDownloadMedianMs": null
+    },
+    {
+      "name": "click Play",
+      "n": 4,
+      "firstMs": 890,
+      "medianMs": 797,
+      "warmMedianMs": 705,
+      "minMs": 689,
+      "maxMs": 1023,
+      "ttfbMedianMs": null,
+      "streamDownloadMedianMs": null
+    },
+    {
+      "name": "click Room",
+      "n": 4,
+      "firstMs": 687,
+      "medianMs": 588,
+      "warmMedianMs": 555,
+      "minMs": 538,
+      "maxMs": 687,
+      "ttfbMedianMs": null,
+      "streamDownloadMedianMs": null
+    }
+  ],
+  "actions": [
+    {
+      "name": "Tournament initial result save",
+      "n": 1,
+      "medianMs": 1809,
+      "minMs": 1809,
+      "maxMs": 1809,
+      "responseHeadersMedianMs": 951,
+      "samples": [
+        {
+          "totalMs": 1809,
+          "responseHeadersMs": 951,
+          "status": 200,
+          "actionPosts": 1,
+          "rscGets": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "responseHeadersMs": 127,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 156,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/room",
+              "responseHeadersMs": 146,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/stats",
+              "responseHeadersMs": 147,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/players",
+              "responseHeadersMs": 147,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 176,
+              "status": 200
+            },
+            {
+              "path": "/events/:id",
+              "responseHeadersMs": 172,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/room",
+              "responseHeadersMs": 172,
+              "status": 200
+            },
+            {
+              "path": "/events",
+              "responseHeadersMs": 195,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 167,
+              "status": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tournament result correction",
+      "n": 5,
+      "medianMs": 1710,
+      "minMs": 1494,
+      "maxMs": 2343,
+      "responseHeadersMedianMs": 895,
+      "samples": [
+        {
+          "totalMs": 1710,
+          "responseHeadersMs": 1022,
+          "status": 200,
+          "actionPosts": 1,
+          "rscGets": [
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 161,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id/match/:id",
+              "responseHeadersMs": 184,
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 1494,
+          "responseHeadersMs": 895,
+          "status": 200,
+          "actionPosts": 1,
+          "rscGets": [
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 130,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id/match/:id",
+              "responseHeadersMs": 198,
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 2044,
+          "responseHeadersMs": 823,
+          "status": 200,
+          "actionPosts": 1,
+          "rscGets": [
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 140,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id/match/:id",
+              "responseHeadersMs": 162,
+              "status": 200
+            },
+            {
+              "path": "/events",
+              "responseHeadersMs": 174,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/room",
+              "responseHeadersMs": 175,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 175,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/players",
+              "responseHeadersMs": 175,
+              "status": 200
+            },
+            {
+              "path": "/events/:id",
+              "responseHeadersMs": 159,
+              "status": 200
+            },
+            {
+              "path": "/events",
+              "responseHeadersMs": 138,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 159,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/stats",
+              "responseHeadersMs": 177,
+              "status": 200
+            },
+            {
+              "path": "/events/:id",
+              "responseHeadersMs": 134,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/players",
+              "responseHeadersMs": 135,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/room",
+              "responseHeadersMs": 139,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/stats",
+              "responseHeadersMs": 153,
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 1527,
+          "responseHeadersMs": 789,
+          "status": 200,
+          "actionPosts": 1,
+          "rscGets": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "responseHeadersMs": 135,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 161,
+              "status": 200
+            },
+            {
+              "path": "/events",
+              "responseHeadersMs": 111,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/room",
+              "responseHeadersMs": 146,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 147,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/players",
+              "responseHeadersMs": 233,
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 2343,
+          "responseHeadersMs": 1301,
+          "status": 200,
+          "actionPosts": 1,
+          "rscGets": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "responseHeadersMs": 197,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 271,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 191,
+              "status": 200
+            },
+            {
+              "path": "/events",
+              "responseHeadersMs": 191,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/players",
+              "responseHeadersMs": 191,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/room",
+              "responseHeadersMs": 204,
+              "status": 200
+            },
+            {
+              "path": "/events",
+              "responseHeadersMs": 212,
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "responseHeadersMs": 224,
+              "status": 200
+            },
+            {
+              "path": "/events/:id",
+              "responseHeadersMs": 224,
+              "status": 200
+            },
+            {
+              "path": "/events/:id/stats",
+              "responseHeadersMs": 225,
+              "status": 200
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "foregroundActionTrace": [
+    {
+      "path": "/tournament/:id/match/:id",
+      "method": "POST",
+      "status": 200,
+      "responseHeadersMs": 1268,
+      "rsc": false,
+      "action": true,
+      "prefetch": false
+    },
+    {
+      "path": "/tournament/:id/match/:id",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 197,
+      "rsc": true,
+      "action": false,
+      "prefetch": false
+    },
+    {
+      "path": "/tournament/:id",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 271,
+      "rsc": true,
+      "action": false,
+      "prefetch": false
+    }
+  ],
+  "refreshApi": {
+    "n": 6,
+    "medianMs": 602,
+    "warmMedianMs": 562,
+    "minMs": 539,
+    "maxMs": 1706,
+    "statuses": [
+      200
+    ]
+  },
+  "assets": [
+    {
+      "path": "/mana/W.svg",
+      "n": 6,
+      "warmMedianMs": 155,
+      "statuses": [
+        200
+      ],
+      "cache": [
+        "HIT"
+      ]
+    },
+    {
+      "path": "/mana/U.svg",
+      "n": 6,
+      "warmMedianMs": 126,
+      "statuses": [
+        200
+      ],
+      "cache": [
+        "HIT"
+      ]
+    },
+    {
+      "path": "/fonts/manrope.woff2",
+      "n": 6,
+      "warmMedianMs": 125,
+      "statuses": [
+        200
+      ],
+      "cache": [
+        "HIT"
+      ]
+    },
+    {
+      "path": "/_next/static/media/ibm_plex_mono_400-s.p.e1d6b3bf.woff2",
+      "n": 6,
+      "warmMedianMs": 42,
+      "statuses": [
+        200
+      ],
+      "cache": [
+        "HIT"
+      ]
+    },
+    {
+      "path": "/favicon.ico",
+      "n": 6,
+      "warmMedianMs": 29,
+      "statuses": [
+        200
+      ],
+      "cache": [
+        "HIT"
+      ]
+    }
+  ],
+  "routingSequences": [
+    "cle1 → iad1",
+    "cle1"
+  ],
+  "documentCaches": [
+    "MISS"
+  ],
+  "serverTimingAvailable": false,
+  "idleRefresh": [
+    {
+      "path": "/api/weekend-refresh",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 1584,
+      "rsc": false
+    },
+    {
+      "path": "/events/:event",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 179,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/match/:match",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 167,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/play",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 232,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/play",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 233,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/tournaments/new",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 288,
+      "rsc": true
+    },
+    {
+      "path": "/tournament/:tournament/match/:match",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 194,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/players",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 161,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/room",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 236,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 153,
+      "rsc": true
+    },
+    {
+      "path": "/events",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 154,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/stats",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 264,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/tournaments/new",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 197,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/play",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 147,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/play",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 193,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/match/:match",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 224,
+      "rsc": true
+    },
+    {
+      "path": "/tournament/:tournament/match/:match",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 157,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/room",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 185,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/players",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 172,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 186,
+      "rsc": true
+    },
+    {
+      "path": "/events",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 182,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/play",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 154,
+      "rsc": true
+    },
+    {
+      "path": "/events/:event/stats",
+      "method": "GET",
+      "status": 200,
+      "responseHeadersMs": 485,
+      "rsc": true
+    }
+  ],
+  "errors": {
+    "browser": [],
+    "failedSamples": []
+  },
+  "limitations": [
+    "Deployed source revision and build flags are not established from response headers. Local/deployed differences cannot be attributed solely to hosting.",
+    "No deployment, production code instrumentation, Vercel execution logs, or database SQL-plan access was used. Production function/SQL durations are unavailable; local function spans remain separately labeled.",
+    "Mobile viewport on desktop Chromium, no CPU/network throttling; not real-phone or house-Wi-Fi timings.",
+    "Four screen samples and five correction samples support prioritization, not production p95 or a controlled cold-start claim."
+  ],
+  "cleanup": {
+    "at": "2026-10-30T15:43:58.535Z",
+    "eventsRemoved": 1,
+    "profilesRemoved": 12,
+    "authUsersRemoved": 1,
+    "productionDeploymentChanged": false
+  }
+}

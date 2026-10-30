@@ -1,0 +1,213 @@
+{
+  "at": "2026-10-30T17:17:09.410Z",
+  "buildFingerprint": "8685823029db04d6c59bdc9896768960bf5f8e88bf63e2e5bf607773daad8590",
+  "environment": "Local production server, live Supabase, unthrottled mobile viewport",
+  "measurement": "Visible main heading plus two animation frames; no CPU/network throttling. Four document samples and twenty navigation samples per path; baseline four samples per path.",
+  "comparisons": [
+    {
+      "name": "document Events",
+      "n": 4,
+      "beforeMs": 919,
+      "afterMs": 652,
+      "improvementPercent": 29
+    },
+    {
+      "name": "document Play",
+      "n": 4,
+      "beforeMs": 802,
+      "afterMs": 538,
+      "improvementPercent": 33
+    },
+    {
+      "name": "document Room",
+      "n": 4,
+      "beforeMs": 599,
+      "afterMs": 446,
+      "improvementPercent": 26
+    },
+    {
+      "name": "document Tournament",
+      "n": 4,
+      "beforeMs": 886,
+      "afterMs": 448,
+      "improvementPercent": 49
+    },
+    {
+      "name": "document Tournament match",
+      "n": 4,
+      "beforeMs": 555,
+      "afterMs": 396,
+      "improvementPercent": 29
+    },
+    {
+      "name": "document Quick match",
+      "n": 4,
+      "beforeMs": 639,
+      "afterMs": 428,
+      "improvementPercent": 33
+    },
+    {
+      "name": "document Start game",
+      "n": 4,
+      "beforeMs": 589,
+      "afterMs": 411,
+      "improvementPercent": 30
+    },
+    {
+      "name": "document Record game",
+      "n": 4,
+      "beforeMs": 606,
+      "afterMs": 444,
+      "improvementPercent": 27
+    },
+    {
+      "name": "document Stats",
+      "n": 4,
+      "beforeMs": 591,
+      "afterMs": 408,
+      "improvementPercent": 31
+    },
+    {
+      "name": "document Event players",
+      "n": 4,
+      "beforeMs": 690,
+      "afterMs": 387,
+      "improvementPercent": 44
+    },
+    {
+      "name": "document History",
+      "n": 4,
+      "beforeMs": 662,
+      "afterMs": 496,
+      "improvementPercent": 25
+    },
+    {
+      "name": "document Agenda",
+      "n": 4,
+      "beforeMs": 752,
+      "afterMs": 369,
+      "improvementPercent": 51
+    },
+    {
+      "name": "document Recap",
+      "n": 4,
+      "beforeMs": 600,
+      "afterMs": 412,
+      "improvementPercent": 31
+    },
+    {
+      "name": "document Event tools",
+      "n": 4,
+      "beforeMs": 751,
+      "afterMs": 380,
+      "improvementPercent": 49
+    },
+    {
+      "name": "document My decks",
+      "n": 4,
+      "beforeMs": 562,
+      "afterMs": 400,
+      "improvementPercent": 29
+    },
+    {
+      "name": "document Playgroup",
+      "n": 4,
+      "beforeMs": 493,
+      "afterMs": 449,
+      "improvementPercent": 9
+    },
+    {
+      "name": "document Profile",
+      "n": 4,
+      "beforeMs": 406,
+      "afterMs": 404,
+      "improvementPercent": 0
+    },
+    {
+      "name": "document Player detail",
+      "n": 4,
+      "beforeMs": 437,
+      "afterMs": 406,
+      "improvementPercent": 7
+    },
+    {
+      "name": "click Stats",
+      "n": 20,
+      "beforeMs": 554,
+      "afterMs": 421,
+      "improvementPercent": 24
+    },
+    {
+      "name": "click Event players",
+      "n": 20,
+      "beforeMs": 566,
+      "afterMs": 396,
+      "improvementPercent": 30
+    },
+    {
+      "name": "click Play",
+      "n": 20,
+      "beforeMs": 709,
+      "afterMs": 437,
+      "improvementPercent": 38
+    },
+    {
+      "name": "click Room",
+      "n": 20,
+      "beforeMs": 510,
+      "afterMs": 386,
+      "improvementPercent": 24
+    }
+  ],
+  "results": {
+    "initialSaveMs": 1658,
+    "corrections": {
+      "n": 4,
+      "beforeMedianMs": 2603,
+      "afterMedianMs": 1318,
+      "minMs": 1260,
+      "maxMs": 1359
+    }
+  },
+  "diagnosticSpans": [
+    {
+      "name": "resolvePlayer",
+      "n": 282,
+      "medianMs": 116
+    },
+    {
+      "name": "board.event",
+      "n": 115,
+      "medianMs": 280
+    },
+    {
+      "name": "board.match",
+      "n": 20,
+      "medianMs": 244
+    },
+    {
+      "name": "board.tournament",
+      "n": 10,
+      "medianMs": 267
+    },
+    {
+      "name": "board.room",
+      "n": 28,
+      "medianMs": 266
+    },
+    {
+      "name": "board.current",
+      "n": 4,
+      "medianMs": 229
+    },
+    {
+      "name": "board.context",
+      "n": 8,
+      "medianMs": 124
+    }
+  ],
+  "errors": [],
+  "fixtureCleanup": "completed",
+  "historyRpc": "Not applied to hosted database; measurements exercise compatibility fallback.",
+  "diagnosticNote": "Function spans include the validation server workload and fault/retry tests; wall-clock SDK timings include network overhead."
+}

@@ -1,0 +1,15 @@
+{
+  "checks": [
+    "Name picker and long invitation reflow at 320/390 in both themes",
+    "Event name/date validation stays inline and retains draft",
+    "Tie review updates podium and exposes explicit confirm-order final action",
+    "Selected card stays separate from Notes, manual colors survive search, late search cannot replace a newer typed name",
+    "Four report controls/eight standings fit focus Room in both themes, first round has no previous-results disclosure",
+    "Room reflow at 320/768/1024",
+    "Head-to-head uses readable format columns and shared encounter counts",
+    "Same recap snapshot exports numbered PNG and browser print PDF",
+    "Entering lands keeps manual search expanded, query retained, failed autosave retains edits",
+    "Confirmed memory disables duplicate confirmation and View confirmation focuses its section"
+  ],
+  "errors": []
+}

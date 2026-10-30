@@ -1,4 +1,5 @@
 'use client';
+import { PendingNavigation } from '@/components/navigation/pending-navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CalendarDays, Layers, UserRound, Users } from 'lucide-react';
@@ -10,5 +11,5 @@ export default function BottomNav({ house = false }: { house?: boolean }) {
     { href: '/decks', label: 'My decks', icon: Layers, active: path.startsWith('/decks') },
     { href: '/players', label: 'Players', icon: Users, active: path.startsWith('/players') },
     { href: '/profile', label: 'Profile', icon: UserRound, active: path.startsWith('/profile') },
-  ].map(item => <Link key={item.href} href={item.href} aria-current={item.active ? 'page' : undefined}><item.icon size={21} /><span>{item.label}</span></Link>)}</nav>;
+  ].map(item => <Link className="relative" key={item.href} href={item.href} aria-current={item.active ? 'page' : undefined}><item.icon size={21} /><span>{item.label}</span><PendingNavigation /></Link>)}</nav>;
 }

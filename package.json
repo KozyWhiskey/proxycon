@@ -22,11 +22,16 @@
     "test:deck-memory-save": "node scripts/deck-memory-save.test.mjs && node scripts/deck-memory-save-api.test.mjs",
     "test:deck-memory-catalog": "node scripts/deck-memory-catalog.test.mjs",
     "test:weekend-usability": "node scripts/weekend-usability.test.mjs && node scripts/weekend-usability-db.test.mjs",
+    "test:weekend-review": "node scripts/weekend-usability.test.mjs && node scripts/weekend-final-action.test.mjs",
+    "test:weekend-review-browser": "node scripts/weekend-review-browser.test.mjs",
     "test:weekend-rules": "node --experimental-strip-types scripts/weekend-rules.test.ts",
     "dev:weekend-preview": "node scripts/weekend-preview-server.mjs",
     "build:weekend": "node scripts/weekend-build.mjs",
     "test:event-preferences": "node scripts/weekend-event-preferences.test.mjs && node scripts/player-context-house.test.mjs",
-    "test:weekend-live": "node scripts/weekend-live-integration.mjs"
+    "test:weekend-live": "node scripts/weekend-live-integration.mjs",
+    "test:performance": "node scripts/performance-loaders.test.mjs && node scripts/performance-history.test.mjs && node scripts/player-context-house.test.mjs",
+    "test:performance-browser": "node scripts/performance-browser.test.mjs",
+    "benchmark:performance": "node scripts/performance-benchmark.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.43",

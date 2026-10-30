@@ -1,6 +1,7 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
-import {loadEventBoard} from '@/lib/event-board';
+import {loadCurrentBoard} from '@/lib/event-board';
 import {PersonalGames} from '@/components/weekend/personal-games';
 import {eventDateState,personalAssignments} from '@/lib/weekend-view';
 import { safeNext } from '@/lib/continuation';
@@ -15,7 +16,7 @@ import { NamePicker } from '@/components/who/name-picker';
 import { PageIntro } from '@/components/layout/page-intro';
 import { GameStatus } from '@/components/events/arena-ui';
 
-export default async function HomePage({ searchParams, eventListOnly=false }: { searchParams: Promise<{ next?: string }>;eventListOnly?:boolean }) {
+async function HomePage({ searchParams, eventListOnly=false }: { searchParams: Promise<{ next?: string }>;eventListOnly?:boolean }) {
   const query = await searchParams;
   const current = await getCurrentUser();
   const supabase = await createClient();
@@ -36,19 +37,19 @@ export default async function HomePage({ searchParams, eventListOnly=false }: { 
   const profile = current.profile;
   const playerId = profile?.id || '';
 
-  const { data: events } = await supabase
+  const [{ data: events }, { data: memberships }] = await Promise.all([supabase
     .from('events')
     .select('id, name, start_date, end_date, is_active')
-    .order('start_date', { ascending: false });
+    .order('start_date', { ascending: false }),
 
-  const { data: memberships } = await supabase
+  supabase
     .from('event_members')
     .select('event_id')
-    .eq('profile_id', playerId || '00000000-0000-0000-0000-000000000000');
+    .eq('profile_id', playerId || '00000000-0000-0000-0000-000000000000')]);
   const joined = new Set((memberships || []).map((row) => row.event_id));
 
   const eventList = events || [];
-  const boards=(await Promise.all(eventList.filter(e=>(joined.has(e.id)||current.mode==='house')&&e.is_active!==false).map(e=>loadEventBoard(e.id)))).filter(b=>b!==null);
+  const boards=(await Promise.all(eventList.filter(e=>(joined.has(e.id)||current.mode==='house')&&e.is_active!==false).map(e=>loadCurrentBoard(e.id)))).filter(b=>b!==null);
   const slips=boards.flatMap(b=>personalAssignments(b)).filter(a=>a.inFlight);
   const houseMode=current.mode==='house';
   const hasEvents = eventList.length > 0;
@@ -136,3 +137,5 @@ export default async function HomePage({ searchParams, eventListOnly=false }: { 
     </main>
   );
 }
+
+export default withLiveSnapshot(HomePage);

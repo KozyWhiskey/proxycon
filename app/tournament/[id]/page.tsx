@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import { withLiveSnapshot } from '@/lib/live-page';
 import {PersonalGames} from '@/components/weekend/personal-games';
 import {TournamentPlaces} from '@/components/weekend/tournament-places';
 import {OrientationLabel} from '@/components/weekend/orientation-label';
@@ -10,10 +12,9 @@ import { addTournamentPlayer } from '@/app/weekend/actions';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
-import { gamesWonFor, loadEventBoard, matchPlayers, nameOf, standingsFor, currentRound } from '@/lib/event-board';
+import { gamesWonFor, loadTournamentBoard, matchPlayers, nameOf, standingsFor, currentRound } from '@/lib/event-board';
 import { chartSeatCount, manualTieGroups, needsSeats, podForSeat, tournamentLabel, tournamentRoundPhase, type HistoryMatch } from '@/lib/weekend';
 import {
-  addFinal,
   addSeat,
   clearPairings,
   deleteTournament,
@@ -33,7 +34,7 @@ import { GameStatus } from '@/components/events/arena-ui';
 import { deckMemoriesEnabled } from '@/lib/deck-memory-config';
 import { LimitedMemoryList } from '@/components/decks/limited-memory-list';
 
-export default async function TournamentPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<{round?:string}> }) {
+async function TournamentPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<{round?:string}> }) {
   const query=await searchParams;
   const { id } = await params;
   const supabase = await createClient();
@@ -47,7 +48,7 @@ export default async function TournamentPage({ params,searchParams }: { params: 
     redirect(`/events/${tournament.event_id}/play`);
   }
 
-  const board = await loadEventBoard(tournament.event_id);
+  const board = await loadTournamentBoard(tournament.event_id,id);
   if (!board) notFound();
   const row = board.tournaments.find((item) => item.id === id);
   if (!row) notFound();
@@ -57,7 +58,8 @@ export default async function TournamentPage({ params,searchParams }: { params: 
   const mine = joined.find((person) => person.profile_id === board.userId);
   const round = currentRound(board, id);
   const selectedRound=Number(query.round)||round.round;
-  const displayMatches=board.matches.filter(m=>m.tournament_id===id&&!m.is_final&&m.round_number===selectedRound);
+  const viewingHistory = Boolean(query.round && (query.round === 'final' || selectedRound !== round.round));
+  const displayMatches=query.round==='final'?[]:board.matches.filter(m=>m.tournament_id===id&&!m.is_final&&m.round_number===selectedRound);
   const posted = round.matches.length > 0 && round.matches.every((match) => !match.started_at);
   const started = round.matches.some((match) => match.started_at);
   const startedAt = round.matches.find((match) => match.started_at)?.started_at;
@@ -97,7 +99,7 @@ export default async function TournamentPage({ params,searchParams }: { params: 
     return seats.length > 0 && seats.every((seat) => seat.result);
   });
   const readyToFinish = row.field_locked && round.round >= (row.max_rounds || 1) && allReported && !finalWaiting;
-  const showClock = started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null;
+  const showClock = started && row.status !== 'completed' && row.clock_round === round.round && row.clock_remaining_seconds != null && !allReported && !finalMatch && !viewingHistory;
   const phase = tournamentRoundPhase({
     tournamentStatus: row.status,
     readyToFinish,
@@ -110,7 +112,7 @@ export default async function TournamentPage({ params,searchParams }: { params: 
     clockAnchor: row.clock_anchor,
     durationMinutes: row.round_duration_minutes || 50,
   });
-  const statusLabel = phase.label;
+  const statusLabel = finalWaiting ? 'Final in progress' : phase.label;
   const statusState = phase.status;
   const settings = row.status !== 'completed' && board.canManage ? (
     <details className="disclosure tournament-settings"><summary>Tournament settings</summary><div>
@@ -130,12 +132,11 @@ export default async function TournamentPage({ params,searchParams }: { params: 
     </div></details>
   ) : null;
 
-  const roundsSection=(<>      {round.round>0&&<nav className="action-row" aria-label="Round history">{[...new Set(board.matches.filter(m=>m.tournament_id===id&&!m.is_final).map(m=>m.round_number))].sort((a,b)=>(a||0)-(b||0)).map(r=><Link aria-current={selectedRound===r?'page':undefined} key={r} href={'/tournament/'+id+'?round='+r}>Round {r}</Link>)}<Link href={'/events/'+board.event.id+'/history?tournament='+id}>Game history</Link></nav>}
-      <section className="round-board space-y-3">
-        {!showClock && !posted && (
-          <h2 className="font-heading text-2xl">{round.round ? `Round ${round.round}` : 'Pairings'}</h2>
-        )}
-        {openNames.length > 0 && <p className="text-sm text-muted-foreground">Still open: {openNames.join(' · ')}</p>}
+  const roundsSection=(<>      {round.round>0&&<nav className="action-row" aria-label="Round history">{[...new Set(board.matches.filter(m=>m.tournament_id===id&&!m.is_final).map(m=>m.round_number))].sort((a,b)=>(a||0)-(b||0)).map(r=><Link aria-current={selectedRound===r?'page':undefined} key={r} href={'/tournament/'+id+'?round='+r}>Round {r}</Link>)}{finalMatch&&<Link aria-current={query.round==='final'?'page':undefined} href={'/tournament/'+id+'?round=final#final'}>Final</Link>}<Link href={'/events/'+board.event.id+'/history?tournament='+id}>Game history</Link></nav>}
+      {query.round!=='final'&&<section className="round-board space-y-3">
+        <h2 className="font-heading text-2xl">{query.round==='final'?'Final':selectedRound ? `Round ${selectedRound}${row.status==='completed'?' · Results':viewingHistory ? ' · Previous results' : ' · Current round'}` : 'Pairings'}</h2>
+        {viewingHistory && <Link className="text-link" href={'/tournament/'+id}>Return to live tournament →</Link>}
+        {!viewingHistory && openNames.length > 0 && <p className="text-sm text-muted-foreground">Still open: {openNames.join(' · ')}</p>}
         <div className="round-match-grid">
         {[...displayMatches].sort((a,b)=>(a.table_number||999)-(b.table_number||999)).map((match) => {
           const players = matchPlayers(board, match.id);
@@ -143,7 +144,7 @@ export default async function TournamentPage({ params,searchParams }: { params: 
           const reported = players.length > 0 && players.every((seat) => seat.result);
           const playing = Boolean(match.started_at) && !bye && !reported;
           const matchup = bye ? `${players[0]?.name || 'Player'} has the bye` : players.map((player) => player.name).join(' vs ');
-          const table = match.table_label || (match.table_number ? `Table ${match.table_number}` : bye ? 'Bye' : 'Match');
+          const table = tableName(match);
           return (
             <article id={`match-${match.id}`} key={match.id} className="match-card space-y-3 rounded-xl border border-border p-4">
               <div className="flex items-baseline justify-between gap-3">
@@ -155,7 +156,7 @@ export default async function TournamentPage({ params,searchParams }: { params: 
                   {match.is_rematch && <span className="text-xs uppercase tracking-widest text-link">Rematch</span>}
                   {bye && <GameStatus state={reported ? 'complete' : 'setup'}>Bye</GameStatus>}
                   {!bye && playing && <GameStatus state="live">Playing</GameStatus>}
-                  {!bye && reported && <GameStatus state="complete">Final</GameStatus>}
+                  {!bye && reported && <GameStatus state="complete">Result recorded</GameStatus>}
                   {!bye && !playing && !reported && posted && <GameStatus state="setup">Not started</GameStatus>}
                 </div>
               </div>
@@ -177,14 +178,14 @@ export default async function TournamentPage({ params,searchParams }: { params: 
             players={joined.map((person) => ({ id: person.id, name: nameOf(board, person.profile_id) }))}
           />
         )}
-      </section>
+      </section>}
 
 </>);
   const finalSection=(<>      {finalMatch && (
-        <section className="space-y-3 rounded-xl border border-primary/30 p-4">
+        <section id="final" className="space-y-3 rounded-xl border border-primary/30 p-4">
           <h2 className="font-heading text-2xl">Final</h2>
           <p>{matchPlayers(board, finalMatch.id).map((player) => player.name).join(' vs ')}</p>
-          <p className="text-sm text-muted-foreground">{matchPlayers(board, finalMatch.id).every(player => player.result) ? matchPlayers(board, finalMatch.id).map(player => `${player.name}: ${player.result}`).join(' · ') : 'Awaiting final result'}</p>
+          <p className="text-sm text-muted-foreground">{matchPlayers(board, finalMatch.id).every(player => player.result) ? resultText(matchPlayers(board, finalMatch.id)) : 'Awaiting final result'}</p>
           {board.canManage && (
             matchPlayers(board, finalMatch.id).every((player) => player.result) ? (
               <details className="disclosure">
@@ -216,7 +217,7 @@ export default async function TournamentPage({ params,searchParams }: { params: 
         <h2 className="font-heading text-2xl">Swiss standings</h2>
         <details className="disclosure standings-key"><summary>How ties are ranked</summary><p>Match points, then opponent match-win percentage, then head-to-head when two tied players met. Game scores do not change the order.</p></details>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="tournament-standings-table w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-widest text-muted-foreground">
               <tr>
                 <th className="py-2">Position</th>
@@ -251,11 +252,11 @@ export default async function TournamentPage({ params,searchParams }: { params: 
       <header className="tournament-live-head">
         <div className="tournament-live-copy">
           <Link href={`/events/${tournament.event_id}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Event</Link>
-          <p className="font-mono text-xs uppercase tracking-[0.28em] text-link">{tournamentLabel(row.format)}{round.round ? ` · Round ${round.round}` : ''}</p>
+          <p className="font-mono text-xs uppercase tracking-[0.28em] text-link">{tournamentLabel(row.format)}{finalWaiting ? ' · Final' : round.round ? ` · Round ${round.round}` : ''}</p>
           <h1 className="font-heading text-4xl">{row.name}</h1>
-          <GameStatus state={statusState}>{statusLabel}</GameStatus>
+          <GameStatus state={finalWaiting?'live':statusState}>{statusLabel}</GameStatus>
           <p className="text-sm text-muted-foreground">
-            {joined.length} players · {row.max_rounds} rounds
+            {joined.length} players · {row.max_rounds} {row.max_rounds===1?'round':'rounds'}
             {row.pod_count === 2 ? ' · two pods' : ''}
             {startedAt ? ` · started ${new Date(startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}` : ''}
           </p>
@@ -294,8 +295,8 @@ export default async function TournamentPage({ params,searchParams }: { params: 
         <section className="room-finish" aria-label="Finish tournament">
           <h3>Finish tournament</h3>
           <p className="subtle mb-4">Round {round.round} results are in. Lock places from the standings below.</p>
-          {!finalMatch && <div className="mb-4"><ActButton label="Add top-two final instead" variant="outline" action={addFinal.bind(null, id)} /></div>}
           <FinishForm
+            allowFinal={!finalMatch}
             tournamentId={id}
             ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
             tieGroups={ties}
@@ -312,14 +313,12 @@ export default async function TournamentPage({ params,searchParams }: { params: 
         <ActButton label="Join tournament" action={joinTournament.bind(null, id)} />
       )}
       {board.userId && row.field_locked && !mine && <p className="text-sm text-muted-foreground">The field locked when round 1 started.</p>}
-      {deckMemoriesEnabled() && board.userId && roster.some(person => person.profile_id === board.userId) && (
-        <Link href={`/tournament/${id}/deck`} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted">Save your deck</Link>
-      )}
+
 
       {!posted && !started && settings}
 
       {board.canManage && !row.field_locked && row.status !== 'completed' && (
-        <AddPlayers kind="tournament" players={board.members.filter(member => !joined.some(player => player.profile_id === member.id)).map(member => ({ id:member.id, name:member.name }))} action={addTournamentPlayer.bind(null,id)} />
+        <AddPlayers key={id} kind="tournament" players={board.members.filter(member => !joined.some(player => player.profile_id === member.id)).map(member => ({ id:member.id, name:member.name }))} action={addTournamentPlayer.bind(null,id)} />
       )}
 
       {needsSeats(row.format) && round.round === 0 && row.status !== 'completed' && (
@@ -381,14 +380,14 @@ export default async function TournamentPage({ params,searchParams }: { params: 
         </section>
       )}
 
-      {round.round===0&&<section className="panel"><h2>Setup readiness</h2><p>{joined.length} joined · {joined.filter(p=>p.draft_seat).length} seated · {row.max_rounds} rounds · {row.round_duration_minutes||50} minutes</p>{needsSeats(row.format)&&joined.some(p=>!p.draft_seat)&&<p>Needs a draft seat: {joined.filter(p=>!p.draft_seat).map(p=>nameOf(board,p.profile_id)).join(', ')}</p>}{!needsSeats(row.format)&&<p>Sealed has no draft seats. Round 1 pairs randomly.</p>}<p>Suggested rounds for {joined.length} players: {suggestedRounds(joined.length)}.</p>{board.canManage&&row.max_rounds!==suggestedRounds(joined.length)&&<ActButton variant="outline" label={"Use "+suggestedRounds(joined.length)+" rounds"} action={setTournamentSetup.bind(null,{tournamentId:id,maxRounds:suggestedRounds(joined.length)})}/>} {joined.length<2&&<p>Add at least two players before posting pairings.</p>}</section>}
+      {round.round===0&&<section className="panel"><h2>Setup readiness</h2><p>{joined.length} joined{needsSeats(row.format)?` · ${joined.filter(p=>p.draft_seat).length} seated`:null} · {row.max_rounds} rounds · {row.round_duration_minutes||50} minutes</p>{needsSeats(row.format)&&joined.some(p=>!p.draft_seat)&&<p>Needs a draft seat: {joined.filter(p=>!p.draft_seat).map(p=>nameOf(board,p.profile_id)).join(', ')}</p>}{!needsSeats(row.format)&&<p>Sealed has no draft seats. Round 1 pairs randomly.</p>}<p>{joined.length>=2&&<>Suggested rounds for {joined.length} players: {suggestedRounds(joined.length)}.</>}</p>{joined.length>=2&&board.canManage&&row.max_rounds!==suggestedRounds(joined.length)&&<ActButton variant="outline" label={"Use "+suggestedRounds(joined.length)+" rounds"} action={setTournamentSetup.bind(null,{tournamentId:id,maxRounds:suggestedRounds(joined.length)})}/>} {joined.length<2&&<p>Add at least two players before posting pairings.</p>}</section>}
       {row.status==='completed'?<>{finalSection}{standingsSection}{roundsSection}</>:<>{roundsSection}{finalSection}{standingsSection}</>}
       {board.canManage && row.status !== 'completed' && row.field_locked && !readyToFinish && (
         <details className="disclosure">
           <summary>End tournament early</summary>
           <div className="space-y-4">
-            {!finalMatch && <ActButton label="Add top-two final" variant="outline" action={addFinal.bind(null, id)} />}
             <FinishForm
+            allowFinal={!finalMatch}
               tournamentId={id}
               ranked={standings.map((player) => ({ id: player.id, name: player.name }))}
               tieGroups={ties}
@@ -405,7 +404,12 @@ export default async function TournamentPage({ params,searchParams }: { params: 
       )}
 
       {(posted || started) && settings}
-      {round.round>0&&<LimitedMemoryList tournamentId={id} />}
+      {deckMemoriesEnabled() && board.userId && roster.some(person => person.profile_id === board.userId) && (
+        <Link href={`/tournament/${id}/deck`} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted">Save your deck</Link>
+      )}
+      {round.round>0&&<Suspense fallback={<p className="subtle" role="status">Loading deck memories…</p>}><LimitedMemoryList tournamentId={id} /></Suspense>}
     </main></>
   );
 }
+
+export default withLiveSnapshot(TournamentPage);

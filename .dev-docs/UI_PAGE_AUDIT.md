@@ -319,3 +319,19 @@ Owner requested remembered event entry and reduced emphasis on past losses/place
 Mixed fixture includes a live Saturday table and a confirmed prior eighth place with a consistent losing record. At390×844, Table1, Scott and Report result appear in the first practical viewport; prior placement is absent until Results is opened. A completed-only event shows new-game actions and keeps prior results collapsed. Both states reflow without page overflow at320/390/768/1024/1366. Evidence: .next-verify/weekend-screenshots/active-before-past-{390,1366}-{light,dark}.jpg, past-results-expanded-390-light.jpg, finished-games-collapsed-390-light.jpg. Keyboard Enter opens/closes the disclosure.
 
 Supabase migrations are now applied; all existing record counts/checksums match. Authenticated fixture and house-browser event-return checks passed; fixtures were removed. See the updated release runbook and acceptance ledger for remaining full-release gates.
+
+
+## October 29, 2026 — user-facing weekend QA
+
+A fresh browser-only workflow review is recorded in [QA_USER_REVIEW_2026-10-29.md](QA_USER_REVIEW_2026-10-29.md). It covers personal phone and house-laptop use, actual disposable saves, round transitions/corrections, an optional final, agenda concurrency, Limited confirmation, and a downloaded recap PNG. The review found a tied-final failure and mobile/context/pagination issues. The originally claimed Commander metadata mismatch was a reviewer error and is retracted: Beloved Companion and Ever Faithful are different cards. The report separates observed outcomes from unverified hardware, authentication, concurrency, export, and accessibility checks. No application fixes were made during that review; follow-up changes and evidence are in [QA_REVIEW_IMPLEMENTATION_2026-10-29.md](QA_REVIEW_IMPLEMENTATION_2026-10-29.md).
+
+
+### October 29 QA follow-up implementation
+
+All twenty review findings have an implementation disposition, with F02 explicitly retracted as a mistaken comparison of two different cards. See [QA_REVIEW_IMPLEMENTATION_2026-10-29.md](QA_REVIEW_IMPLEMENTATION_2026-10-29.md) for Pass/Not verified evidence and remaining release boundaries. Real disposable Room testing covers multi-select eight-player assembly, posting versus starting, all four reports with Next open table, reordered tied finalists, the optional final, correction with Done retained, and explicit Finish. The final first/second places remain independent of Swiss points.
+
+Evidence: [phone and house captures](qa/2026-10-29/implemented), including names in light/dark at320/390, House Room light/dark at1366×768, phone encounters, draft/confirmation states, and PNG/print recap. All four house report controls and eight standings rows fit; Room reflows at320/768/1024. The two-page browser print PDF was rendered and inspected; aligned records and player blocks stay readable. Physical-phone keyboard/safe-area checks, mobile Safari, native200% zoom and a full screen-reader/contrast audit remain Not verified. Changed files lint clean; full source lint retains37 errors in unchanged code.
+
+### October 30 performance release
+
+Routine navigation pending feedback and retained snapshots preserve the approved design system. Room light/dark captures at390 and1366 were inspected; browser checks verify no horizontal overflow. Existing UX regression tests pass across names, event validation, tie review, commander search, Room, encounters, recap export and deck autosave recovery. See [performance implementation and evidence](PERFORMANCE_IMPLEMENTATION_2026-10-30.md). Hardware/mobile Safari and screen-reader coverage remain unverified.

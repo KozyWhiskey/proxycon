@@ -1,13 +1,16 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { performanceEnabled, requestPerformanceId, timedFetch } from '@/lib/performance'
 
 export async function createClient() {
   const cookieStore = await cookies()
+  const diagnosticFetch = performanceEnabled() ? timedFetch(await requestPerformanceId()) : undefined
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      ...(diagnosticFetch ? { global: { fetch: diagnosticFetch } } : {}),
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value

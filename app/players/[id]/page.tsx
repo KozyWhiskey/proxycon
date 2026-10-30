@@ -1,3 +1,4 @@
+import { withLiveSnapshot } from '@/lib/live-page';
 import {loadEventBoard} from '@/lib/event-board';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -12,7 +13,7 @@ import { type Deck } from '@/lib/types';
 import { ManaIdentity, ManaDivider } from '@/components/ui/mana-identity';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 
-export default async function PlayerPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<{event?:string}> }) {
+async function PlayerPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<{event?:string}> }) {
   const current = await requirePlaygroup();
   const meId = current.profile?.id;
   const { id } = await params;
@@ -97,3 +98,5 @@ export default async function PlayerPage({ params,searchParams }: { params: Prom
     </main>
   );
 }
+
+export default withLiveSnapshot(PlayerPage);

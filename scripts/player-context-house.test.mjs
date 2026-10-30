@@ -1,1 +1,16 @@
-import assert from 'node:assert/strict';import ts from 'typescript';import {readFile} from 'node:fs/promises';const source=await readFile('lib/player-session.ts','utf8');const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;let mode='house';const client={auth:{getUser:async()=>({data:{user:{id:'device',is_anonymous:true}}})},rpc:async()=>({data:{profileId:'an-owned-anonymous-profile',mode,isAdmin:false},error:null})};const m={exports:{}};new Function('require','module','exports',compiled)(()=>({createClient:async()=>client}),m,m.exports);assert.equal((await m.exports.resolvePlayer()).playerId,null,'House context cannot inherit an owned anonymous profile');mode='player';assert.equal((await m.exports.resolvePlayer()).playerId,'an-owned-anonymous-profile');console.log('House resolver isolation passed.');
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+import {readFile} from 'node:fs/promises';
+const code=ts.transpileModule(await readFile('lib/player-session.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+let mode='house',authCalls=0,rpcCalls=0,failure=false;
+let request=new Map();
+const cache=fn=>(...args)=>{if(!request.has(fn))request.set(fn,fn(...args));return request.get(fn);};
+const client={auth:{getUser:async()=>{authCalls++;return {data:{user:{id:'device',is_anonymous:true}},error:null};}},rpc:async()=>{rpcCalls++;return failure?{data:null,error:{message:'unavailable'}}:{data:{profileId:'owned-profile',mode,isAdmin:false},error:null};}};
+const m={exports:{}};
+new Function('require','module','exports',code)(id=>id==='react'?{cache}:id==='@/lib/performance'?{profile:(_name,fn)=>fn()}:{createClient:async()=>client},m,m.exports);
+const [a,b]=await Promise.all([m.exports.resolvePlayer(),m.exports.resolvePlayer()]);
+assert.equal(a.playerId,null);assert.equal(b.playerId,null);assert.equal(authCalls,1);assert.equal(rpcCalls,1);
+mode='player';request=new Map();assert.equal((await m.exports.resolvePlayer()).playerId,'owned-profile');
+mode='house';assert.equal((await m.exports.resolvePlayerFresh()).playerId,null,'An explicit fresh resolution cannot inherit memoized player context');
+failure=true;request=new Map();await assert.rejects(m.exports.resolvePlayer(),/player context/,'A network failure must not silently turn a selected player into an unbound browser');
+console.log('Player context: house isolation, request reuse, fresh resolution and failed retrieval passed.');

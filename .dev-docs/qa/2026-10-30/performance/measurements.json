@@ -1,0 +1,676 @@
+{
+  "date": "2026-10-30",
+  "sourceCommit": "41ffca2 plus existing uncommitted working-tree changes",
+  "scope": "Isolated current-source Next.js 16.0.10 production build with full proxy; local browser/server, live configured Supabase; desktop CPU, 390x844 viewport, no artificial network/CPU throttling; deck-memory pilot enabled",
+  "fixture": {
+    "players": 12,
+    "tournaments": 1,
+    "decks": 24,
+    "baselineMatches": 36,
+    "baselineParticipantRows": 120,
+    "scaleMatches": 236,
+    "scaleParticipantRows": 920
+  },
+  "baseline": [
+    {
+      "name": "document Events",
+      "n": 4,
+      "firstMs": 2356,
+      "medianMs": 919,
+      "warmMedianMs": 882,
+      "minMs": 771,
+      "maxMs": 2356,
+      "ttfbMedianMs": 847
+    },
+    {
+      "name": "document Play",
+      "n": 4,
+      "firstMs": 816,
+      "medianMs": 802,
+      "warmMedianMs": 789,
+      "minMs": 604,
+      "maxMs": 816,
+      "ttfbMedianMs": 727
+    },
+    {
+      "name": "document Room",
+      "n": 4,
+      "firstMs": 614,
+      "medianMs": 599,
+      "warmMedianMs": 584,
+      "minMs": 512,
+      "maxMs": 1057,
+      "ttfbMedianMs": 521
+    },
+    {
+      "name": "document Tournament",
+      "n": 4,
+      "firstMs": 724,
+      "medianMs": 886,
+      "warmMedianMs": 1047,
+      "minMs": 652,
+      "maxMs": 1060,
+      "ttfbMedianMs": 805
+    },
+    {
+      "name": "document Tournament match",
+      "n": 4,
+      "firstMs": 579,
+      "medianMs": 555,
+      "warmMedianMs": 530,
+      "minMs": 516,
+      "maxMs": 723,
+      "ttfbMedianMs": 493
+    },
+    {
+      "name": "document Quick match",
+      "n": 4,
+      "firstMs": 650,
+      "medianMs": 639,
+      "warmMedianMs": 627,
+      "minMs": 615,
+      "maxMs": 806,
+      "ttfbMedianMs": 573
+    },
+    {
+      "name": "document Start game",
+      "n": 4,
+      "firstMs": 582,
+      "medianMs": 589,
+      "warmMedianMs": 596,
+      "minMs": 517,
+      "maxMs": 838,
+      "ttfbMedianMs": 521
+    },
+    {
+      "name": "document Record game",
+      "n": 4,
+      "firstMs": 618,
+      "medianMs": 606,
+      "warmMedianMs": 595,
+      "minMs": 568,
+      "maxMs": 652,
+      "ttfbMedianMs": 542
+    },
+    {
+      "name": "document Stats",
+      "n": 4,
+      "firstMs": 629,
+      "medianMs": 591,
+      "warmMedianMs": 572,
+      "minMs": 564,
+      "maxMs": 629,
+      "ttfbMedianMs": 523
+    },
+    {
+      "name": "document Event players",
+      "n": 4,
+      "firstMs": 1325,
+      "medianMs": 690,
+      "warmMedianMs": 651,
+      "minMs": 506,
+      "maxMs": 1325,
+      "ttfbMedianMs": 621
+    },
+    {
+      "name": "document History",
+      "n": 4,
+      "firstMs": 716,
+      "medianMs": 662,
+      "warmMedianMs": 659,
+      "minMs": 587,
+      "maxMs": 716,
+      "ttfbMedianMs": 591
+    },
+    {
+      "name": "document Agenda",
+      "n": 4,
+      "firstMs": 703,
+      "medianMs": 752,
+      "warmMedianMs": 759,
+      "minMs": 703,
+      "maxMs": 780,
+      "ttfbMedianMs": 687
+    },
+    {
+      "name": "document Recap",
+      "n": 4,
+      "firstMs": 633,
+      "medianMs": 600,
+      "warmMedianMs": 590,
+      "minMs": 517,
+      "maxMs": 633,
+      "ttfbMedianMs": 532
+    },
+    {
+      "name": "document Event tools",
+      "n": 4,
+      "firstMs": 800,
+      "medianMs": 751,
+      "warmMedianMs": 703,
+      "minMs": 565,
+      "maxMs": 952,
+      "ttfbMedianMs": 686
+    },
+    {
+      "name": "document My decks",
+      "n": 4,
+      "firstMs": 506,
+      "medianMs": 562,
+      "warmMedianMs": 570,
+      "minMs": 506,
+      "maxMs": 706,
+      "ttfbMedianMs": 497
+    },
+    {
+      "name": "document Playgroup",
+      "n": 4,
+      "firstMs": 540,
+      "medianMs": 493,
+      "warmMedianMs": 477,
+      "minMs": 407,
+      "maxMs": 540,
+      "ttfbMedianMs": 423
+    },
+    {
+      "name": "document Profile",
+      "n": 4,
+      "firstMs": 355,
+      "medianMs": 406,
+      "warmMedianMs": 458,
+      "minMs": 329,
+      "maxMs": 458,
+      "ttfbMedianMs": 331
+    },
+    {
+      "name": "document Player detail",
+      "n": 4,
+      "firstMs": 396,
+      "medianMs": 437,
+      "warmMedianMs": 448,
+      "minMs": 396,
+      "maxMs": 499,
+      "ttfbMedianMs": 372
+    },
+    {
+      "name": "click Stats",
+      "n": 4,
+      "firstMs": 572,
+      "medianMs": 554,
+      "warmMedianMs": 536,
+      "minMs": 504,
+      "maxMs": 693,
+      "ttfbMedianMs": null
+    },
+    {
+      "name": "click Event players",
+      "n": 4,
+      "firstMs": 624,
+      "medianMs": 566,
+      "warmMedianMs": 509,
+      "minMs": 474,
+      "maxMs": 773,
+      "ttfbMedianMs": null
+    },
+    {
+      "name": "click Play",
+      "n": 4,
+      "firstMs": 759,
+      "medianMs": 709,
+      "warmMedianMs": 675,
+      "minMs": 675,
+      "maxMs": 759,
+      "ttfbMedianMs": null
+    },
+    {
+      "name": "click Room",
+      "n": 4,
+      "firstMs": 510,
+      "medianMs": 510,
+      "warmMedianMs": 510,
+      "minMs": 510,
+      "maxMs": 609,
+      "ttfbMedianMs": null
+    }
+  ],
+  "scale": [
+    {
+      "name": "document Events",
+      "n": 3,
+      "firstMs": 1993,
+      "medianMs": 1057,
+      "warmMedianMs": 1040,
+      "minMs": 1022,
+      "maxMs": 1993,
+      "ttfbMedianMs": 989
+    },
+    {
+      "name": "document Play",
+      "n": 3,
+      "firstMs": 894,
+      "medianMs": 885,
+      "warmMedianMs": 796,
+      "minMs": 707,
+      "maxMs": 894,
+      "ttfbMedianMs": 805
+    },
+    {
+      "name": "document Room",
+      "n": 3,
+      "firstMs": 640,
+      "medianMs": 640,
+      "warmMedianMs": 621,
+      "minMs": 581,
+      "maxMs": 661,
+      "ttfbMedianMs": 564
+    },
+    {
+      "name": "document Tournament",
+      "n": 3,
+      "firstMs": 762,
+      "medianMs": 762,
+      "warmMedianMs": 883,
+      "minMs": 741,
+      "maxMs": 1026,
+      "ttfbMedianMs": 683
+    },
+    {
+      "name": "document Stats",
+      "n": 3,
+      "firstMs": 668,
+      "medianMs": 706,
+      "warmMedianMs": 707,
+      "minMs": 668,
+      "maxMs": 707,
+      "ttfbMedianMs": 625
+    },
+    {
+      "name": "document History",
+      "n": 3,
+      "firstMs": 610,
+      "medianMs": 631,
+      "warmMedianMs": 689,
+      "minMs": 610,
+      "maxMs": 747,
+      "ttfbMedianMs": 558
+    },
+    {
+      "name": "document Recap",
+      "n": 3,
+      "firstMs": 593,
+      "medianMs": 593,
+      "warmMedianMs": 701,
+      "minMs": 580,
+      "maxMs": 822,
+      "ttfbMedianMs": 528
+    },
+    {
+      "name": "click Stats",
+      "n": 3,
+      "firstMs": 565,
+      "medianMs": 590,
+      "warmMedianMs": 593,
+      "minMs": 565,
+      "maxMs": 597,
+      "ttfbMedianMs": null
+    },
+    {
+      "name": "click Event players",
+      "n": 3,
+      "firstMs": 644,
+      "medianMs": 644,
+      "warmMedianMs": 645,
+      "minMs": 613,
+      "maxMs": 678,
+      "ttfbMedianMs": null
+    },
+    {
+      "name": "click Play",
+      "n": 3,
+      "firstMs": 680,
+      "medianMs": 796,
+      "warmMedianMs": 904,
+      "minMs": 680,
+      "maxMs": 1012,
+      "ttfbMedianMs": null
+    },
+    {
+      "name": "click Room",
+      "n": 3,
+      "firstMs": 1228,
+      "medianMs": 697,
+      "warmMedianMs": 688,
+      "minMs": 679,
+      "maxMs": 1228,
+      "ttfbMedianMs": null
+    }
+  ],
+  "functionsAndCalls": [
+    {
+      "name": "fetch /auth/v1/user",
+      "n": 1919,
+      "median": 63.7,
+      "p95": 131.6,
+      "max": 698.6,
+      "totalMs": 138984,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/rpc/current_player_context",
+      "n": 257,
+      "median": 64,
+      "p95": 126.2,
+      "max": 456.5,
+      "totalMs": 19180,
+      "failures": 0
+    },
+    {
+      "name": "function resolvePlayer",
+      "n": 257,
+      "median": 132.1,
+      "p95": 233.1,
+      "max": 675.3,
+      "totalMs": 35478,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/profiles",
+      "n": 114,
+      "median": 64.5,
+      "p95": 130,
+      "max": 308.2,
+      "totalMs": 8160,
+      "failures": 0
+    },
+    {
+      "name": "function getCurrentUser",
+      "n": 102,
+      "median": 207.4,
+      "p95": 363.9,
+      "max": 590.3,
+      "totalMs": 22530,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/events",
+      "n": 83,
+      "median": 66.7,
+      "p95": 153.9,
+      "max": 267.4,
+      "totalMs": 6445,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/event_members",
+      "n": 83,
+      "median": 70.9,
+      "p95": 122.8,
+      "max": 334.6,
+      "totalMs": 6671,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/matches",
+      "n": 79,
+      "median": 68.4,
+      "p95": 123.6,
+      "max": 181.2,
+      "totalMs": 6000,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/tournaments",
+      "n": 166,
+      "median": 62.1,
+      "p95": 113.9,
+      "max": 608.3,
+      "totalMs": 11973,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/event_prizes",
+      "n": 79,
+      "median": 63.8,
+      "p95": 151.6,
+      "max": 269,
+      "totalMs": 5976,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/match_participants",
+      "n": 79,
+      "median": 71,
+      "p95": 151.7,
+      "max": 258.5,
+      "totalMs": 6441,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/decks",
+      "n": 95,
+      "median": 67.1,
+      "p95": 139.4,
+      "max": 257.1,
+      "totalMs": 7104,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/tournament_participants",
+      "n": 79,
+      "median": 66.7,
+      "p95": 156.8,
+      "max": 257.5,
+      "totalMs": 6042,
+      "failures": 0
+    },
+    {
+      "name": "function loadEventBoard",
+      "n": 79,
+      "median": 455.4,
+      "p95": 729.6,
+      "max": 1107.9,
+      "totalMs": 37651,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/event_agenda_items",
+      "n": 18,
+      "median": 65.9,
+      "p95": 130.4,
+      "max": 130.4,
+      "totalMs": 1243,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/rpc/remember_weekend_event",
+      "n": 49,
+      "median": 68.1,
+      "p95": 120.7,
+      "max": 175.5,
+      "totalMs": 3734,
+      "failures": 0
+    },
+    {
+      "name": "fetch /rest/v1/event_decks",
+      "n": 8,
+      "median": 60.4,
+      "p95": 130.5,
+      "max": 130.5,
+      "totalMs": 565,
+      "failures": 0
+    },
+    {
+      "name": "function LimitedMemoryList",
+      "n": 8,
+      "median": 130.8,
+      "p95": 179.8,
+      "max": 179.8,
+      "totalMs": 1093,
+      "failures": 0
+    }
+  ],
+  "idleRefresh": {
+    "observedWindowMs": 23008,
+    "boardLoads": 2,
+    "boardDurationsMs": [
+      532,
+      528
+    ],
+    "backendFetches": 52
+  },
+  "assets": [
+    {
+      "path": "/mana/W.svg",
+      "n": 6,
+      "warmMedianMs": 63,
+      "statuses": [
+        200
+      ]
+    },
+    {
+      "path": "/mana/U.svg",
+      "n": 6,
+      "warmMedianMs": 61,
+      "statuses": [
+        200
+      ]
+    },
+    {
+      "path": "/fonts/manrope.woff2",
+      "n": 6,
+      "warmMedianMs": 64,
+      "statuses": [
+        200
+      ]
+    },
+    {
+      "path": "/_next/static/media/fedf4c9280b16369-s.p.woff2",
+      "n": 6,
+      "warmMedianMs": 1,
+      "statuses": [
+        200
+      ]
+    },
+    {
+      "path": "/favicon.ico",
+      "n": 6,
+      "warmMedianMs": 2,
+      "statuses": [
+        200
+      ]
+    }
+  ],
+  "cpu": [
+    {
+      "matches": 36,
+      "participantRows": 72,
+      "operation": "one standings calculation plus matchPlayers for every match",
+      "medianMs": 0.05529999999998836,
+      "p95Ms": 0.09309999999999263
+    },
+    {
+      "matches": 236,
+      "participantRows": 472,
+      "operation": "one standings calculation plus matchPlayers for every match",
+      "medianMs": 0.4911000000000172,
+      "p95Ms": 0.6982999999999606
+    },
+    {
+      "matches": 1000,
+      "participantRows": 2000,
+      "operation": "one standings calculation plus matchPlayers for every match",
+      "medianMs": 9.723899999999958,
+      "p95Ms": 10.091699999999946
+    }
+  ],
+  "actions": [
+    {
+      "name": "Tournament result correction",
+      "start": 1793367026323,
+      "end": 1793367029832,
+      "responseHeadersMs": 2029,
+      "totalMs": 3509.3528000000006,
+      "status": 200,
+      "commitRpcMs": 179,
+      "timeToCommitHeadersMs": 1117,
+      "boardLoads": 3,
+      "boardDurationsMs": [
+        749,
+        840,
+        760
+      ],
+      "backendFetchInvocations": 76
+    },
+    {
+      "name": "Tournament result correction",
+      "start": 1793367031954,
+      "end": 1793367034249,
+      "responseHeadersMs": 1140.6068999999989,
+      "totalMs": 2294.792599999999,
+      "status": 200,
+      "commitRpcMs": 95,
+      "timeToCommitHeadersMs": 600,
+      "boardLoads": 3,
+      "boardDurationsMs": [
+        491,
+        502,
+        762
+      ],
+      "backendFetchInvocations": 76
+    },
+    {
+      "name": "Tournament result correction",
+      "start": 1793367036021,
+      "end": 1793367038716,
+      "responseHeadersMs": 1568.6533999999992,
+      "totalMs": 2695.0627999999997,
+      "status": 200,
+      "commitRpcMs": 64,
+      "timeToCommitHeadersMs": 974,
+      "boardLoads": 3,
+      "boardDurationsMs": [
+        499,
+        716,
+        722
+      ],
+      "backendFetchInvocations": 76
+    },
+    {
+      "name": "Tournament result correction",
+      "start": 1793367040353,
+      "end": 1793367042864,
+      "responseHeadersMs": 1301.9519,
+      "totalMs": 2511.3189999999995,
+      "status": 200,
+      "commitRpcMs": 71,
+      "timeToCommitHeadersMs": 855,
+      "boardLoads": 3,
+      "boardDurationsMs": [
+        652,
+        917,
+        701
+      ],
+      "backendFetchInvocations": 76
+    }
+  ],
+  "errors": {
+    "baseline": [],
+    "scale": [],
+    "failedSamples": []
+  },
+  "limitations": [
+    "Deployed results were subsequently measured with explicit user approval and are separately stored in deployed-measurements.json.",
+    "Small screen sample sizes; maxima are observed outliers, not production p95 values.",
+    "Visible-content timing is h1 visibility plus two animation frames, not LCP or guaranteed full hydration.",
+    "Fetch measurements end at response headers and include SDK/framework caching; they do not isolate SQL execution or body parsing.",
+    "CPU microbenchmark uses synthetic tournament data; not a real phone CPU measurement.",
+    "No cold artwork/Scryfall, photo recognition, email delivery, or OAuth-provider timings."
+  ],
+  "cleanup": {
+    "at": "2026-10-30T13:32:45.158Z",
+    "eventsRemoved": 1,
+    "profilesRemoved": 12,
+    "authUsersRemoved": 1,
+    "profilingServerStopped": true
+  }
+}
