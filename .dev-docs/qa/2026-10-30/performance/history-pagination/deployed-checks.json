@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-30T21:25:47.345Z",
+  "revision": "159bd5a2cec9355ed00d38de5c32e7f2a27fb83d",
+  "screen": "History",
+  "environment": "Deployed Vercel, live Supabase, unthrottled mobile viewport",
+  "n": 10,
+  "baselineMedianMs": 729,
+  "interimFallbackMedianMs": 760,
+  "medianMs": 699,
+  "minMs": 524,
+  "maxMs": 4181,
+  "samplesMs": [
+    524,
+    579,
+    590,
+    593,
+    632,
+    765,
+    779,
+    850,
+    1010,
+    4181
+  ],
+  "errors": [],
+  "cleanup": "completed",
+  "limitation": "Sequential observational samples; baseline/interim used four loads; no CPU/network throttling. Same fixture shape, hosted backend and main-content timing. Network and cold-start variability remain."
+}
