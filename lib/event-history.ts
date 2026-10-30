@@ -26,8 +26,8 @@ export async function loadEventHistory(id: string, q: HistoryQuery) {
     const { rows, days } = historyRows(full,q);
     return { board:full, rows:rows.slice(0,historyLimit(q)), total:rows.length, days };
   };
-  // Enable after installing the additive RPC; avoid failed probes and duplicate reads during rollout.
-  if (process.env.WEEKEND_HISTORY_PAGINATION !== 'true') return fallback();
+  // The additive RPC is deployed. Keep an explicit rollback switch and compatibility for older hosts.
+  if (process.env.WEEKEND_HISTORY_PAGINATION === 'false') return fallback();
   const ctx = await resolvePlayer();
   const [b, response] = await Promise.all([
     loadEventContext(id),

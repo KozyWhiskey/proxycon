@@ -1,0 +1,171 @@
+{
+  "checks": [
+    "Authenticated RPC matches direct RLS-visible records, canonical filters, count, days, ordering, scores and seat data",
+    "Limits retain existing minimum/load-more behavior",
+    "Unknown event returns no records",
+    "Unauthenticated execution is denied"
+  ],
+  "queryCases": 26,
+  "matches": 236,
+  "seats": 920,
+  "medianRpcMs": 101,
+  "samples": [
+    {
+      "ms": 118,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28737
+    },
+    {
+      "ms": 109,
+      "matches": 40,
+      "seats": 160,
+      "bytes": 57417
+    },
+    {
+      "ms": 222,
+      "matches": 229,
+      "seats": 904,
+      "bytes": 325803
+    },
+    {
+      "ms": 117,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28737
+    },
+    {
+      "ms": 106,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28737
+    },
+    {
+      "ms": 106,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 93,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28736
+    },
+    {
+      "ms": 106,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 73,
+      "matches": 6,
+      "seats": 12,
+      "bytes": 6019
+    },
+    {
+      "ms": 127,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 223,
+      "matches": 6,
+      "seats": 12,
+      "bytes": 6019
+    },
+    {
+      "ms": 130,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28736
+    },
+    {
+      "ms": 98,
+      "matches": 6,
+      "seats": 12,
+      "bytes": 6019
+    },
+    {
+      "ms": 86,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 90,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28737
+    },
+    {
+      "ms": 74,
+      "matches": 20,
+      "seats": 80,
+      "bytes": 28736
+    },
+    {
+      "ms": 171,
+      "matches": 40,
+      "seats": 160,
+      "bytes": 57417
+    },
+    {
+      "ms": 84,
+      "matches": 6,
+      "seats": 12,
+      "bytes": 6019
+    },
+    {
+      "ms": 81,
+      "matches": 1,
+      "seats": 2,
+      "bytes": 1049
+    },
+    {
+      "ms": 98,
+      "matches": 6,
+      "seats": 12,
+      "bytes": 6019
+    },
+    {
+      "ms": 103,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 73,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 75,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 68,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 88,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    },
+    {
+      "ms": 113,
+      "matches": 0,
+      "seats": 0,
+      "bytes": 57
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,23 @@
+{
+  "project": "apnwvugvwlfopxtryjwk",
+  "migration": "scripts/sql/weekend_performance.sql",
+  "appliedThrough": "Owner-authorized existing Supabase dashboard session",
+  "installed": true,
+  "securityInvoker": true,
+  "stableRead": true,
+  "anonymousCanExecute": false,
+  "authenticatedCanExecute": true,
+  "existingRlsPreserved": true,
+  "integrityBeforeAndAfter": [
+    {"table":"profiles","rows":14,"checksum":"c1b2ded50f344f2976dd6e73492b3929"},
+    {"table":"events","rows":3,"checksum":"5aec0fedab9d7d04e8c040127196e5f7"},
+    {"table":"event_members","rows":27,"checksum":"863779f284981f8a5dd8d0f37999a665"},
+    {"table":"tournaments","rows":19,"checksum":"7605b04b3e2c937172da908498e54328"},
+    {"table":"tournament_participants","rows":114,"checksum":"e41efc87564f54b7c65fff7eb16d3539"},
+    {"table":"matches","rows":167,"checksum":"2de1904ae89d669551fa703fc9342b9f"},
+    {"table":"match_participants","rows":322,"checksum":"082fef446057012a8f44b39df0e80dd1"},
+    {"table":"decks","rows":10,"checksum":"16207e9acdae1d8388119e4db4ec9199"}
+  ],
+  "checksumsUnchanged": true,
+  "testFixtureCleanup": "completed"
+}
