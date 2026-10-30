@@ -1,0 +1,317 @@
+{
+  "at": "2026-10-30T17:29:14.437Z",
+  "origin": "https://upkeep.vercel.app",
+  "applicationRevision": "f1813cdb3c5d077e67bf8782817a4fe6c4106504",
+  "baselineRevision": "Not available for original deployed baseline; this release includes the owner-approved UX changes.",
+  "scope": "Deployed Vercel, live Supabase, unthrottled mobile viewport",
+  "measurement": "Same main-content visibility timer as baseline; four document samples per screen and twenty click samples per path, compared with four baseline click samples. No artificial CPU/network throttling.",
+  "comparisons": [
+    {
+      "name": "document Events",
+      "n": 4,
+      "beforeMs": 1154,
+      "afterMs": 936,
+      "improvementPercent": 19,
+      "minMs": 667,
+      "maxMs": 1902
+    },
+    {
+      "name": "document Play",
+      "n": 4,
+      "beforeMs": 954,
+      "afterMs": 694,
+      "improvementPercent": 27,
+      "minMs": 573,
+      "maxMs": 997
+    },
+    {
+      "name": "document Room",
+      "n": 4,
+      "beforeMs": 747,
+      "afterMs": 678,
+      "improvementPercent": 9,
+      "minMs": 541,
+      "maxMs": 1040
+    },
+    {
+      "name": "document Tournament",
+      "n": 4,
+      "beforeMs": 782,
+      "afterMs": 660,
+      "improvementPercent": 16,
+      "minMs": 539,
+      "maxMs": 750
+    },
+    {
+      "name": "document Tournament match",
+      "n": 4,
+      "beforeMs": 801,
+      "afterMs": 614,
+      "improvementPercent": 23,
+      "minMs": 570,
+      "maxMs": 946
+    },
+    {
+      "name": "document Quick match",
+      "n": 4,
+      "beforeMs": 709,
+      "afterMs": 578,
+      "improvementPercent": 18,
+      "minMs": 495,
+      "maxMs": 796
+    },
+    {
+      "name": "document Start game",
+      "n": 4,
+      "beforeMs": 714,
+      "afterMs": 662,
+      "improvementPercent": 7,
+      "minMs": 592,
+      "maxMs": 765
+    },
+    {
+      "name": "document Record game",
+      "n": 4,
+      "beforeMs": 679,
+      "afterMs": 648,
+      "improvementPercent": 5,
+      "minMs": 553,
+      "maxMs": 1066
+    },
+    {
+      "name": "document Stats",
+      "n": 4,
+      "beforeMs": 708,
+      "afterMs": 648,
+      "improvementPercent": 8,
+      "minMs": 622,
+      "maxMs": 761
+    },
+    {
+      "name": "document Event players",
+      "n": 4,
+      "beforeMs": 585,
+      "afterMs": 585,
+      "improvementPercent": 0,
+      "minMs": 467,
+      "maxMs": 837
+    },
+    {
+      "name": "document History",
+      "n": 4,
+      "beforeMs": 729,
+      "afterMs": 803,
+      "improvementPercent": -10,
+      "minMs": 657,
+      "maxMs": 894
+    },
+    {
+      "name": "document Agenda",
+      "n": 4,
+      "beforeMs": 922,
+      "afterMs": 530,
+      "improvementPercent": 43,
+      "minMs": 456,
+      "maxMs": 850
+    },
+    {
+      "name": "document Recap",
+      "n": 4,
+      "beforeMs": 864,
+      "afterMs": 561,
+      "improvementPercent": 35,
+      "minMs": 525,
+      "maxMs": 1048
+    },
+    {
+      "name": "document Event tools",
+      "n": 4,
+      "beforeMs": 783,
+      "afterMs": 659,
+      "improvementPercent": 16,
+      "minMs": 469,
+      "maxMs": 837
+    },
+    {
+      "name": "document My decks",
+      "n": 4,
+      "beforeMs": 774,
+      "afterMs": 602,
+      "improvementPercent": 22,
+      "minMs": 534,
+      "maxMs": 645
+    },
+    {
+      "name": "document Playgroup",
+      "n": 4,
+      "beforeMs": 536,
+      "afterMs": 567,
+      "improvementPercent": -6,
+      "minMs": 517,
+      "maxMs": 922
+    },
+    {
+      "name": "document Profile",
+      "n": 4,
+      "beforeMs": 516,
+      "afterMs": 521,
+      "improvementPercent": -1,
+      "minMs": 436,
+      "maxMs": 687
+    },
+    {
+      "name": "document Player detail",
+      "n": 4,
+      "beforeMs": 571,
+      "afterMs": 629,
+      "improvementPercent": -10,
+      "minMs": 464,
+      "maxMs": 727
+    },
+    {
+      "name": "click Stats",
+      "n": 20,
+      "beforeMs": 639,
+      "afterMs": 520,
+      "improvementPercent": 19,
+      "minMs": 429,
+      "maxMs": 663
+    },
+    {
+      "name": "click Event players",
+      "n": 20,
+      "beforeMs": 655,
+      "afterMs": 544,
+      "improvementPercent": 17,
+      "minMs": 432,
+      "maxMs": 717
+    },
+    {
+      "name": "click Play",
+      "n": 20,
+      "beforeMs": 797,
+      "afterMs": 520,
+      "improvementPercent": 35,
+      "minMs": 436,
+      "maxMs": 652
+    },
+    {
+      "name": "click Room",
+      "n": 20,
+      "beforeMs": 588,
+      "afterMs": 477,
+      "improvementPercent": 19,
+      "minMs": 384,
+      "maxMs": 635
+    }
+  ],
+  "actions": [
+    {
+      "name": "Tournament initial result save",
+      "n": 1,
+      "beforeMedianMs": 1809,
+      "afterMedianMs": 1805,
+      "responseHeadersMedianMs": 1224,
+      "samples": [
+        {
+          "totalMs": 1805,
+          "status": 200,
+          "foregroundRequests": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "method": "POST",
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "method": "GET",
+              "status": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tournament result correction",
+      "n": 4,
+      "beforeMedianMs": 1710,
+      "afterMedianMs": 1344,
+      "responseHeadersMedianMs": 815,
+      "samples": [
+        {
+          "totalMs": 1327,
+          "status": 200,
+          "foregroundRequests": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "method": "POST",
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "method": "GET",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 1360,
+          "status": 200,
+          "foregroundRequests": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "method": "POST",
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "method": "GET",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 1578,
+          "status": 200,
+          "foregroundRequests": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "method": "POST",
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "method": "GET",
+              "status": 200
+            }
+          ]
+        },
+        {
+          "totalMs": 1210,
+          "status": 200,
+          "foregroundRequests": [
+            {
+              "path": "/tournament/:id/match/:id",
+              "method": "POST",
+              "status": 200
+            },
+            {
+              "path": "/tournament/:id",
+              "method": "GET",
+              "status": 200
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "oldMatchForegroundRefreshes": 0,
+  "errors": [],
+  "cleanup": "completed",
+  "limitations": [
+    "Observational samples include cold starts and network variability; not statistical guarantees.",
+    "History RPC is not installed in the hosted database; compatibility fallback is active.",
+    "These timings are separate from local production-build measurements."
+  ],
+  "followUp": "A subsequent rollout guard disables RPC probing until WEEKEND_HISTORY_PAGINATION=true. History timings in this file measure f1813cd before that guard."
+}

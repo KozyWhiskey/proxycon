@@ -38,6 +38,22 @@ All eighteen direct-load medians and four navigation paths are in [implemented m
 
 Final application source fingerprint: `8685823029db04d6c59bdc9896768960bf5f8e88bf63e2e5bf607773daad8590`. Production build completed with the same fingerprint before and after. The optional SQL function was not installed in the hosted database during these local measurements, so History uses the compatibility fallback. Earlier loading-boundary experiments regressed reveal timing and were removed; those measurements are excluded.
 
+## Deployed verification
+
+Vercel served application commit `f1813cdb3c5d077e67bf8782817a4fe6c4106504`, verified through revision metadata. Another eighteen screens × four loads and four navigation paths × twenty repetitions completed without failed page loads or captured browser runtime errors. Five result writes succeeded; the marked fixture was removed. [Sanitized deployed results](qa/2026-10-30/performance/implemented/deployed-measurements.json).
+
+| Deployed workflow | Baseline median | Released median | Reduction |
+| --- | ---: | ---: | ---: |
+| Navigate to Play | 797 ms | 520 ms | 35% |
+| Navigate to Room | 588 ms | 477 ms | 19% |
+| Navigate to Stats | 639 ms | 520 ms | 19% |
+| Navigate to Players | 655 ms | 544 ms | 17% |
+| Correct result and return | 1,710 ms | 1,344 ms | 21% |
+
+Initial result entry was approximately unchanged (1,809→1,805 ms, one sample each). Direct Agenda and Recap loads improved43% and35%. Direct Players was unchanged. Playgroup (+6%), Profile (+1%), player detail (+10%) and History (+10%) did not show improvement in this small deployed sample. Cold starts and network variation remain visible; the old deployed baseline did not expose a source revision and this release also includes approved UX changes. All raw ranges and limitations are retained in the aggregate report.
+
+The History result identified avoidable rollout overhead: the missing RPC probe was followed by the full compatibility load. A follow-up now selects the existing loader directly unless `WEEKEND_HISTORY_PAGINATION=true`; after installing the SQL function, enable that flag to use database pagination. Tests verify no context/RPC preflight when disabled, equivalent fallback when enabled but unavailable, and retained failure semantics. This preserves existing history behavior while deployment access is pending.
+
 ## Validation
 
 - TypeScript and production webpack build.
@@ -54,7 +70,7 @@ Repository-wide ESLint retains 37 existing errors in legacy/untouched files; cha
 
 The app exposes the Vercel commit revision as a metadata tag so deployment verification can target this exact release. Master is the requested release destination. Deployed timings should be recorded separately from local production-build timings.
 
-`scripts/sql/weekend_performance.sql` is additive and repeatable, changes no tables or policies, and is verified in PGlite. Hosted installation is pending authorized dashboard access: a CLI credential was unavailable and automatic approval review rejected browser-session discovery because it could expose unrelated private session metadata. The application remains compatible without the function. Apply it through the approved project SQL editor, then verify authenticated history filters/counts and RLS before claiming the database pagination gain.
+`scripts/sql/weekend_performance.sql` is additive and repeatable, changes no tables or policies, and is verified in PGlite. Hosted installation is pending authorized dashboard access: a CLI credential was unavailable and automatic approval review rejected browser-session discovery because it could expose unrelated private session metadata. The application uses the existing history loader by default. Apply the function through the approved project SQL editor, verify authenticated history filters/counts and RLS, then enable `WEEKEND_HISTORY_PAGINATION=true` before claiming the database pagination gain.
 
 ## Repeatable measurement
 

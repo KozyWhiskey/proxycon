@@ -28,3 +28,16 @@ seed();ctx={...ctx,playerId:'not-a-member'};const outsider=await loaders.loadEve
 seed();fault='metadata';const compatible=await loaders.loadEventBoard(event);assert.equal(compatible.upgradeRequired,true);assert.equal(compatible.matches.length,6);
 seed();fault='matches';await assert.rejects(loaders.loadEventBoard(event),/refresh/);assert.equal(await loaders.loadEventBoard('invalid'),null);assert.equal(await loaders.loadEventBoard(other),null);
 console.log('Focused loaders passed: complete rounds/results, current assignments, match/deck equivalence, context scope, >1000 seats, bounded batches, house/member isolation, optional metadata and failed reads.');
+const previousHistoryFlag=process.env.WEEKEND_HISTORY_PAGINATION;
+try {
+ let fullReads=0,contextReads=0,rpcReads=0,rpcError=null;
+ const page={matches:full.matches,seats:full.seats,total:full.matches.length,days:[]};
+ const history=await compile('lib/event-history.ts',{'@/lib/weekend':rules,'@/lib/event-board':{...view,loadEventBoard:async()=>{fullReads++;return full;},loadEventContext:async()=>{contextReads++;return full;}},'@/lib/player-session':{resolvePlayer:async()=>({supabase:{rpc:async()=>{rpcReads++;return {data:page,error:rpcError};}}})}});
+ delete process.env.WEEKEND_HISTORY_PAGINATION;
+ const legacy=await history.loadEventHistory(event,{});assert(legacy.rows.length>0);assert.equal(fullReads,1);assert.equal(contextReads,0);assert.equal(rpcReads,0);
+ process.env.WEEKEND_HISTORY_PAGINATION='true';
+ const paged=await history.loadEventHistory(event,{});assert.deepEqual(paged.rows,page.matches);assert.equal(fullReads,1);assert.equal(contextReads,1);assert.equal(rpcReads,1);
+ rpcError={code:'PGRST202'};assert.deepEqual((await history.loadEventHistory(event,{})).rows,legacy.rows);assert.equal(fullReads,2);
+ rpcError={code:'NETWORK'};await assert.rejects(history.loadEventHistory(event,{}),/refresh game history/);assert.equal(fullReads,2);
+ console.log('History rollout passed: no preflight before enablement, paged output, missing-RPC compatibility and network failure retention.');
+} finally {if(previousHistoryFlag===undefined)delete process.env.WEEKEND_HISTORY_PAGINATION;else process.env.WEEKEND_HISTORY_PAGINATION=previousHistoryFlag;}

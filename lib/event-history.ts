@@ -20,6 +20,14 @@ export function historyRows(b: EventBoard, q: HistoryQuery) {
 }
 
 export async function loadEventHistory(id: string, q: HistoryQuery) {
+  const fallback = async () => {
+    const full = await loadEventBoard(id);
+    if (!full) return null;
+    const { rows, days } = historyRows(full,q);
+    return { board:full, rows:rows.slice(0,historyLimit(q)), total:rows.length, days };
+  };
+  // Enable after installing the additive RPC; avoid failed probes and duplicate reads during rollout.
+  if (process.env.WEEKEND_HISTORY_PAGINATION !== 'true') return fallback();
   const ctx = await resolvePlayer();
   const [b, response] = await Promise.all([
     loadEventContext(id),
@@ -29,10 +37,7 @@ export async function loadEventHistory(id: string, q: HistoryQuery) {
   if (response.error) {
     // Safe rollout on a host whose additive read RPC is not deployed yet; network failures stay failures.
     if (!['PGRST202','42883'].includes(response.error.code)) throw new Error('Could not refresh game history. Try again.');
-    const full = await loadEventBoard(id);
-    if (!full) return null;
-    const { rows, days } = historyRows(full,q);
-    return { board:full, rows:rows.slice(0,historyLimit(q)), total:rows.length, days };
+    return fallback();
   }
   const page = response.data as { matches: EventBoard['matches']; seats: EventBoard['seats']; total:number; days:string[] };
   if (!page || !Array.isArray(page.matches) || !Array.isArray(page.seats)) throw new Error('Could not read game history.');
